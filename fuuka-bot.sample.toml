@@ -1,0 +1,4 @@
+# The command prefix.
+command_prefix = "%%"
+# Homeserver URL.
+homeserver_url = "https://matrix.example.com"

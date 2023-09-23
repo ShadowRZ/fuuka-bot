@@ -24,7 +24,7 @@
 
         # For `nix develop`:
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ rustc cargo rust-analyzer pkg-config ];
+          nativeBuildInputs = with pkgs; [ rustc cargo rust-analyzer rustfmt clippy pkg-config ];
           buildInputs = with pkgs; [ openssl ];
         };
       }
