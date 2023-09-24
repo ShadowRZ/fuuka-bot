@@ -1,5 +1,6 @@
 pub mod bot_commands;
 pub mod callbacks;
+pub mod member_updates;
 
 use callbacks::FuukaBotCallbacks;
 use matrix_sdk::{config::SyncSettings, Client, Session};

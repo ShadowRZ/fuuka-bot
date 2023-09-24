@@ -1,10 +1,13 @@
 use anyhow::Context;
 use file_format::FileFormat;
+use futures_util::pin_mut;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
+use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
 use matrix_sdk::room::Joined;
+use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
 use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
@@ -13,16 +16,22 @@ use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::ThumbnailInfo;
+use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
-use ruma::MilliSecondsSinceUnixEpoch;
 use std::io::Cursor;
+use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
 use time::Duration;
 use time::OffsetDateTime;
 use time::Weekday;
+use tokio_stream::StreamExt;
+use tracing::event;
+use tracing::Level;
+
+use crate::member_updates::MemberChanges;
 
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
@@ -40,6 +49,7 @@ pub async fn fuuka_bot_dispatch_command(
             "ping" => ping_command(ev, room).await?,
             "room_id" => room_id_command(ev, room).await?,
             "user_id" => user_id_command(ev, room).await?,
+            "name_changes" => name_changes_command(ev, room).await?,
             _ => _unknown_command(ev, room, command).await?,
         }
     }
@@ -128,6 +138,61 @@ async fn user_id_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyh
     let content = RoomMessageEventContent::text_plain(user_id.as_str())
         .make_reply_to(&ev.into_full_event(room.room_id().into()));
     room.send(content, None).await?;
+
+    Ok(())
+}
+
+async fn name_changes_command(
+    ev: OriginalSyncRoomMessageEvent,
+    room: Joined,
+) -> anyhow::Result<()> {
+    let user_id = get_reply_target(&ev, &room).await?;
+
+    let member = room.get_member(&user_id).await?;
+    if let Some(member) = member {
+        let mut body = String::new();
+        let current_name = member.display_name().unwrap_or("(None)");
+        let result = format!("Current Name: {current_name}\n");
+        body.push_str(&result);
+        let mut count: i32 = 0;
+
+        let event: &MemberEvent = member.event();
+        match event {
+            MemberEvent::Sync(event) => {
+                let stream = MemberChanges::new_stream(&room, event.clone()).take(4);
+                pin_mut!(stream);
+                while let Some(event) = stream.next().await {
+                    // `MembershipChange::Joined` because API can only return the current state.
+                    if let MembershipChange::Joined = event.membership_change() {
+                        match event.content.displayname {
+                            Some(displayname) => {
+                                count -= 1;
+                                let nanos: i128 =
+                                    <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
+                                let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                    .format(&Rfc3339)?;
+                                let result =
+                                    format!("{count}: Changed to {displayname} ({timestamp})\n");
+                                body.push_str(&result);
+                            }
+                            None => {
+                                let result = format!("{count}: Removed display name.\n");
+                                body.push_str(&result);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => event!(
+                Level::WARN,
+                "INTERNAL ERROR: A member event in a joined room should not be stripped."
+            ),
+        }
+
+        let content = RoomMessageEventContent::text_plain(body)
+            .make_reply_to(&ev.into_full_event(room.room_id().into()));
+        room.send(content, None).await?;
+    }
 
     Ok(())
 }

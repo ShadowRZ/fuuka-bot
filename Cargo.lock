@@ -896,7 +896,9 @@ name = "fuuka-bot"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-stream",
  "file-format",
+ "futures-util",
  "image",
  "matrix-sdk",
  "reqwest",
@@ -906,6 +908,7 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "tokio-stream",
  "toml 0.8.0",
  "tracing",
  "tracing-subscriber",
@@ -2732,6 +2735,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17f6bb557fd245c28e6411aa56b6403c689ad95061f50e4be16c274e70a17e48"
 dependencies = [
  "deranged",
+ "itoa",
  "serde",
  "time-core",
  "time-macros",
@@ -2804,6 +2808,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
 dependencies = [
  "native-tls",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
  "tokio",
 ]
 
