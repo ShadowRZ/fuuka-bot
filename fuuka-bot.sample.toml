@@ -2,3 +2,6 @@
 command_prefix = "%%"
 # Homeserver URL.
 homeserver_url = "https://matrix.example.com"
+
+[features."!XXXXXXXXXXX:example.org"]
+jerryxiao = true

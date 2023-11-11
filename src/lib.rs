@@ -1,16 +1,30 @@
 pub mod bot_commands;
 pub mod callbacks;
+pub mod jerryxiao;
 pub mod member_updates;
+pub mod message_responses;
+pub mod utils;
 
 use callbacks::FuukaBotCallbacks;
+use matrix_sdk::ruma::RoomId;
 use matrix_sdk::{config::SyncSettings, Client, Session};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::{event, Level};
+
+use crate::message_responses::FuukaBotMessages;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FuukaBotConfig {
     pub command_prefix: String,
     pub homeserver_url: String,
+    pub features: HashMap<String, FuukaBotFeatures>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FuukaBotFeatures {
+    pub jerryxiao: bool,
 }
 
 #[derive(Clone)]
@@ -20,7 +34,7 @@ pub struct FuukaBotContext {
 
 pub struct FuukaBot {
     client: matrix_sdk::Client,
-    context: FuukaBotContext,
+    context: Arc<FuukaBotContext>,
 }
 
 impl FuukaBot {
@@ -31,7 +45,10 @@ impl FuukaBot {
         let client = builder.build().await?;
         client.restore_login(session).await?;
         let context = FuukaBotContext { config };
-        Ok(FuukaBot { client, context })
+        Ok(FuukaBot {
+            client,
+            context: context.into(),
+        })
     }
 
     pub async fn run(&self) -> anyhow::Result<()> {
@@ -41,6 +58,14 @@ impl FuukaBot {
         event!(Level::INFO, "Initial sync completed.");
         self.client
             .add_event_handler(FuukaBotCallbacks::on_room_message);
+        // Register room specific handlers.
+        for (room, feature) in &self.context.config.features {
+            let room = <&RoomId>::try_from(room.as_str())?;
+            if feature.jerryxiao {
+                self.client
+                    .add_room_event_handler(room, FuukaBotMessages::jerryxiao);
+            }
+        }
         let settings = SyncSettings::default().token(self.client.sync_token().await.unwrap());
         self.client.sync(settings).await?;
         Ok(())

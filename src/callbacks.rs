@@ -6,13 +6,14 @@ use matrix_sdk::room::{Joined, Room};
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use std::sync::Arc;
 pub struct FuukaBotCallbacks;
 
 impl FuukaBotCallbacks {
     pub async fn on_room_message(
         ev: OriginalSyncRoomMessageEvent,
         room: Room,
-        ctx: Ctx<FuukaBotContext>,
+        ctx: Ctx<Arc<FuukaBotContext>>,
     ) -> anyhow::Result<()> {
         let client = room.client();
         let user_id = client.user_id().unwrap();

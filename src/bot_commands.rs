@@ -11,14 +11,12 @@ use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
 use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
-use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::ThumbnailInfo;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::MxcUri;
-use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
 use std::io::Cursor;
@@ -32,6 +30,7 @@ use tracing::event;
 use tracing::Level;
 
 use crate::member_updates::MemberChanges;
+use crate::utils::get_reply_target_fallback;
 
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
@@ -133,7 +132,7 @@ async fn room_id_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyh
 }
 
 async fn user_id_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
-    let user_id = get_reply_target(&ev, &room).await?;
+    let user_id = get_reply_target_fallback(&ev, &room).await?;
 
     let content = RoomMessageEventContent::text_plain(user_id.as_str())
         .make_reply_to(&ev.into_full_event(room.room_id().into()));
@@ -146,7 +145,7 @@ async fn name_changes_command(
     ev: OriginalSyncRoomMessageEvent,
     room: Joined,
 ) -> anyhow::Result<()> {
-    let user_id = get_reply_target(&ev, &room).await?;
+    let user_id = get_reply_target_fallback(&ev, &room).await?;
 
     let member = room.get_member(&user_id).await?;
     if let Some(member) = member {
@@ -198,7 +197,7 @@ async fn name_changes_command(
 }
 
 async fn send_avatar_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
-    let target = get_reply_target(&ev, &room).await?;
+    let target = get_reply_target_fallback(&ev, &room).await?;
     if let Some(member) = room.get_member(&target).await? {
         if let Some(avatar_url) = member.avatar_url() {
             let name = member.display_name().unwrap_or(target.as_str());
@@ -247,19 +246,4 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
     info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
     Ok(info)
-}
-
-async fn get_reply_target(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Joined,
-) -> anyhow::Result<OwnedUserId> {
-    match &ev.content.relates_to {
-        Some(Relation::Reply { in_reply_to }) => {
-            let event_id = &in_reply_to.event_id;
-            let event = room.event(event_id).await?.event.deserialize()?;
-            let ret = event.sender();
-            Ok(ret.into())
-        }
-        _ => Ok(ev.sender.clone()),
-    }
 }
