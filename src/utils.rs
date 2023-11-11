@@ -35,7 +35,7 @@ pub async fn get_reply_target_fallback(
 pub fn make_pill(member: &RoomMember) -> String {
     let user_id = member.user_id().as_str();
     let name = member.name();
-    format!("<a href=\"https://matrix.to/#{}\">@{}</a>", user_id, name)
+    format!("<a href=\"https://matrix.to/#/{}\">@{}</a>", user_id, name)
 }
 
 pub fn member_name_or_id(member: &RoomMember) -> &str {
