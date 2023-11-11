@@ -23,7 +23,13 @@ impl FuukaBotCallbacks {
         if let Room::Joined(room) = room {
             let body = remove_plain_reply_fallback(ev.content.body()).trim();
             if let Some(commands) = body.strip_prefix(&ctx.config.command_prefix) {
-                if let Err(e) = fuuka_bot_dispatch_command(ev.clone(), room.clone(), commands).await
+                if let Err(e) = fuuka_bot_dispatch_command(
+                    ev.clone(),
+                    room.clone(),
+                    commands,
+                    client.homeserver().await,
+                )
+                .await
                 {
                     send_error_message(ev, room, e).await?;
                 }

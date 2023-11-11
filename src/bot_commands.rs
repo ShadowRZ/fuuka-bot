@@ -6,6 +6,7 @@ use image::GenericImageView;
 use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
+use matrix_sdk::reqwest::Url;
 use matrix_sdk::room::Joined;
 use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
@@ -26,16 +27,16 @@ use time::Duration;
 use time::OffsetDateTime;
 use time::Weekday;
 use tokio_stream::StreamExt;
-use tracing::event;
-use tracing::Level;
 
 use crate::member_updates::MemberChanges;
+use crate::utils::avatar_http_url;
 use crate::utils::get_reply_target_fallback;
 
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
     room: Joined,
     command: &str,
+    homeserver: Url,
 ) -> anyhow::Result<()> {
     let args: Vec<&str> = command.split_ascii_whitespace().collect();
     if let Some(command) = args.first() {
@@ -49,6 +50,7 @@ pub async fn fuuka_bot_dispatch_command(
             "room_id" => room_id_command(ev, room).await?,
             "user_id" => user_id_command(ev, room).await?,
             "name_changes" => name_changes_command(ev, room).await?,
+            "avatar_changes" => avatar_changes_command(ev, room, homeserver).await?,
             _ => _unknown_command(ev, room, command).await?,
         }
     }
@@ -182,8 +184,66 @@ async fn name_changes_command(
                     }
                 }
             }
-            _ => event!(
-                Level::WARN,
+            _ => tracing::warn!(
+                "INTERNAL ERROR: A member event in a joined room should not be stripped."
+            ),
+        }
+
+        let content = RoomMessageEventContent::text_plain(body)
+            .make_reply_to(&ev.into_full_event(room.room_id().into()));
+        room.send(content, None).await?;
+    }
+
+    Ok(())
+}
+
+async fn avatar_changes_command(
+    ev: OriginalSyncRoomMessageEvent,
+    room: Joined,
+    homeserver: Url,
+) -> anyhow::Result<()> {
+    let user_id = get_reply_target_fallback(&ev, &room).await?;
+
+    let member = room.get_member(&user_id).await?;
+    if let Some(member) = member {
+        let mut body = String::new();
+        let current_avatar = avatar_http_url(member.avatar_url(), &homeserver)?
+            .map(|result| result.to_string())
+            .unwrap_or("(None)".to_string());
+        let result = format!("Current Avatar: {current_avatar}\n");
+        body.push_str(&result);
+        let mut count: i32 = 0;
+
+        let event: &MemberEvent = member.event();
+        match event {
+            MemberEvent::Sync(event) => {
+                let stream = MemberChanges::new_stream(&room, event.clone()).take(4);
+                pin_mut!(stream);
+                while let Some(event) = stream.next().await {
+                    // `MembershipChange::Joined` because API can only return the current state.
+                    if let MembershipChange::Joined = event.membership_change() {
+                        match event.content.avatar_url {
+                            Some(avatar_url) => {
+                                count -= 1;
+                                let nanos: i128 =
+                                    <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
+                                let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                    .format(&Rfc3339)?;
+                                let avatar_link =
+                                    avatar_http_url(Some(&avatar_url), &homeserver)?.unwrap();
+                                let result =
+                                    format!("{count}: Changed to {avatar_link} ({timestamp})\n");
+                                body.push_str(&result);
+                            }
+                            None => {
+                                let result = format!("{count}: Removed avatar.\n");
+                                body.push_str(&result);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => tracing::warn!(
                 "INTERNAL ERROR: A member event in a joined room should not be stripped."
             ),
         }

@@ -11,7 +11,6 @@ use matrix_sdk::{config::SyncSettings, Client, Session};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{event, Level};
 
 use crate::message_responses::FuukaBotMessages;
 
@@ -53,9 +52,9 @@ impl FuukaBot {
 
     pub async fn run(&self) -> anyhow::Result<()> {
         self.client.add_event_handler_context(self.context.clone());
-        event!(Level::INFO, "Initial sync beginning...");
+        tracing::info!("Initial sync beginning...");
         self.client.sync_once(SyncSettings::default()).await?;
-        event!(Level::INFO, "Initial sync completed.");
+        tracing::info!("Initial sync completed.");
         self.client
             .add_event_handler(FuukaBotCallbacks::on_room_message);
         // Register room specific handlers.

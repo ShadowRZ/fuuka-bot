@@ -1,8 +1,10 @@
+use anyhow::Result;
+use matrix_sdk::reqwest::Url;
 use matrix_sdk::room::Joined;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
-use matrix_sdk::ruma::OwnedUserId;
+use matrix_sdk::ruma::{MxcUri, OwnedUserId};
 
 pub async fn get_reply_target(
     ev: &OriginalSyncRoomMessageEvent,
@@ -33,13 +35,21 @@ pub async fn get_reply_target_fallback(
 pub fn make_pill(member: &RoomMember) -> String {
     let user_id = member.user_id().as_str();
     let name = member.name();
-    format!(
-        "<a href=\"https://matrix.to/#{}\">@{}</a>",
-        user_id, name
-    )
+    format!("<a href=\"https://matrix.to/#{}\">@{}</a>", user_id, name)
 }
 
 pub fn member_name_or_id(member: &RoomMember) -> &str {
     let user_id = member.user_id().as_str();
     member.display_name().unwrap_or(user_id)
+}
+
+pub fn avatar_http_url(avatar_uri: Option<&MxcUri>, homeserver: &Url) -> Result<Option<Url>> {
+    if let Some(avatar_uri) = avatar_uri {
+        let (server_name, media_id) = avatar_uri.parts()?;
+        let result = homeserver
+            .join(format!("/_matrix/media/r0/download/{}/{}", server_name, media_id).as_str())?;
+        Ok(Some(result))
+    } else {
+        Ok(None)
+    }
 }
