@@ -1,10 +1,7 @@
+use crate::utils::make_pill;
 use anyhow::anyhow;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
-use time::macros::format_description;
-use time::OffsetDateTime;
-
-use crate::utils::make_pill;
 
 pub async fn make_jerryxiao_event_content(
     room: &Room,
@@ -110,104 +107,4 @@ pub async fn make_jerryxiao_event_content(
             ))
         }
     }
-}
-
-pub async fn make_randomdraw_event_content(
-    room: &Room,
-    user_id: &UserId,
-    query: &str,
-    prob: bool,
-) -> anyhow::Result<RoomMessageEventContent> {
-    let member = room
-        .get_member(user_id)
-        .await?
-        .ok_or(anyhow!("INTERNAL ERROR: This user should be avaliable"))?;
-    let hash = crc32fast::hash(user_id.as_bytes());
-    let date = OffsetDateTime::now_utc();
-    let format = format_description!("[year][month][day]");
-    let seed: u64 = if query.is_empty() {
-        let formatted = format!("{}{}", date.format(&format)?, hash);
-        formatted.parse()?
-    } else {
-        let query_hash = crc32fast::hash(query.as_bytes());
-        let formatted = format!("{}{}{}", query_hash, date.format(&format)?, hash);
-        formatted.parse()?
-    };
-    let mut rng = fastrand::Rng::with_seed(seed);
-    let draw_result = rng.u32(0..=10000) as f32 / 10000.0;
-    let result_type = rng.bool();
-    let user_pill = make_pill(&member);
-    let result = if prob {
-        let result = if result_type {
-            draw_result
-        } else {
-            1.0 - draw_result
-        };
-        format!("{result:.2}")
-    } else {
-        const CHOICE: [&str; 7] = ["大凶", "凶", "小凶", "尚可", "小吉", "吉", "大吉"];
-        const MAXIDX: usize = CHOICE.len() - 1;
-        let mut resultidx = (draw_result * (CHOICE.len() as f32)) as usize;
-        resultidx = if resultidx > MAXIDX {
-            MAXIDX
-        } else {
-            resultidx
-        };
-        CHOICE[resultidx].to_string()
-    };
-
-    let content = if query.is_empty() {
-        if prob {
-            let luck_string = if result_type {
-                "行大运"
-            } else {
-                "倒大霉"
-            };
-            RoomMessageEventContent::text_html(
-                format!(
-                    "你好, {}\n汝今天{}概率是 {}",
-                    member.name(),
-                    luck_string,
-                    result
-                ),
-                format!(
-                    "你好, {}\n汝今天{}概率是 {}",
-                    user_pill, luck_string, result
-                ),
-            )
-        } else {
-            RoomMessageEventContent::text_html(
-                format!("你好, {}\n汝的今日运势: {}", member.name(), result),
-                format!("你好, {}\n汝的今日运势: {}", user_pill, result),
-            )
-        }
-    } else {
-        if prob {
-            let happen_or_not_string = if result_type { "发生" } else { "不发生" };
-            RoomMessageEventContent::text_html(
-                format!(
-                    "你好, {}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
-                    member.name(),
-                    query,
-                    result,
-                    happen_or_not_string
-                ),
-                format!(
-                    "你好, {}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
-                    user_pill, query, result, happen_or_not_string
-                ),
-            )
-        } else {
-            RoomMessageEventContent::text_html(
-                format!(
-                    "你好, {}\n所求事项: {}\n结果: {}",
-                    member.name(),
-                    query,
-                    result
-                ),
-                format!("你好, {}\n所求事项: {}\n结果: {}", user_pill, query, result),
-            )
-        }
-    };
-    Ok(content)
 }
