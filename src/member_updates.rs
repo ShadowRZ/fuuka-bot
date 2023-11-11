@@ -1,5 +1,5 @@
 use async_stream::stream;
-use matrix_sdk::room::Joined;
+use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::member::OriginalRoomMemberEvent;
 use matrix_sdk::ruma::events::room::member::SyncRoomMemberEvent;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
@@ -11,11 +11,11 @@ use tokio_stream::Stream;
 
 pub struct MemberChanges {
     replaces_state: Option<OwnedEventId>,
-    room: Joined,
+    room: Room,
 }
 
 impl MemberChanges {
-    fn new(room: &Joined, ev: &OriginalRoomMemberEvent) -> MemberChanges {
+    fn new(room: &Room, ev: &OriginalRoomMemberEvent) -> MemberChanges {
         MemberChanges {
             room: room.clone(),
             replaces_state: Some(ev.event_id.clone()),
@@ -23,7 +23,7 @@ impl MemberChanges {
     }
 
     pub fn new_stream(
-        room: &Joined,
+        room: &Room,
         ev: SyncRoomMemberEvent,
     ) -> impl Stream<Item = OriginalRoomMemberEvent> + '_ {
         stream! {

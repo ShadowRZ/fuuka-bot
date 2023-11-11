@@ -2,10 +2,13 @@ use crate::bot_commands::fuuka_bot_dispatch_command;
 use crate::FuukaBotContext;
 use anyhow::Error;
 use matrix_sdk::event_handler::Ctx;
-use matrix_sdk::room::{Joined, Room};
+use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
-use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::ruma::events::room::message::{
+    AddMentions, ForwardThread, OriginalSyncRoomMessageEvent,
+};
+use matrix_sdk::RoomState;
 use std::sync::Arc;
 pub struct FuukaBotCallbacks;
 
@@ -15,24 +18,23 @@ impl FuukaBotCallbacks {
         room: Room,
         ctx: Ctx<Arc<FuukaBotContext>>,
     ) -> anyhow::Result<()> {
+        // It should be a joined room.
+        if room.state() != RoomState::Joined {
+            return Ok(());
+        }
         let client = room.client();
         let user_id = client.user_id().unwrap();
         if ev.sender == user_id {
             return Ok(());
         }
-        if let Room::Joined(room) = room {
-            let body = remove_plain_reply_fallback(ev.content.body()).trim();
-            if let Some(commands) = body.strip_prefix(&ctx.config.command_prefix) {
-                if let Err(e) = fuuka_bot_dispatch_command(
-                    ev.clone(),
-                    room.clone(),
-                    commands,
-                    client.homeserver().await,
-                )
-                .await
-                {
-                    send_error_message(ev, room, e).await?;
-                }
+
+        let body = remove_plain_reply_fallback(ev.content.body()).trim();
+        if let Some(commands) = body.strip_prefix(&ctx.config.command_prefix) {
+            if let Err(e) =
+                fuuka_bot_dispatch_command(ev.clone(), room.clone(), commands, client.homeserver())
+                    .await
+            {
+                send_error_message(ev, room, e).await?;
             }
         }
 
@@ -42,12 +44,15 @@ impl FuukaBotCallbacks {
 
 async fn send_error_message(
     ev: OriginalSyncRoomMessageEvent,
-    room: Joined,
+    room: Room,
     err: Error,
 ) -> anyhow::Result<()> {
-    let content = RoomMessageEventContent::text_plain(format!("{:#}", err))
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+    let content = RoomMessageEventContent::text_plain(format!("{:#}", err)).make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
+    room.send(content).await?;
 
     // Send this error back to log to tracing.
     Err(err)

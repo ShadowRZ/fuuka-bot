@@ -7,8 +7,10 @@ use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
 use matrix_sdk::reqwest::Url;
-use matrix_sdk::room::Joined;
+use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::member::MembershipChange;
+use matrix_sdk::ruma::events::room::message::AddMentions;
+use matrix_sdk::ruma::events::room::message::ForwardThread;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
 use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
@@ -34,7 +36,7 @@ use crate::utils::get_reply_target_fallback;
 
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
-    room: Joined,
+    room: Room,
     command: &str,
     homeserver: Url,
 ) -> anyhow::Result<()> {
@@ -60,31 +62,38 @@ pub async fn fuuka_bot_dispatch_command(
 
 async fn _unknown_command(
     ev: OriginalSyncRoomMessageEvent,
-    room: Joined,
+    room: Room,
     command: &str,
 ) -> anyhow::Result<()> {
     let content = RoomMessageEventContent::text_plain(format!("Unknown command {command}."))
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+        .make_reply_to(
+            &ev.into_full_event(room.room_id().into()),
+            ForwardThread::Yes,
+            AddMentions::Yes,
+        );
+    room.send(content).await?;
 
     Ok(())
 }
 
-async fn help_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
+async fn help_command(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
     let client = room.client();
     let user_id = client.user_id().unwrap();
     let body = format!("Fuuka Bot\nUser ID: {user_id}");
 
-    let content = RoomMessageEventContent::text_plain(body)
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+    let content = RoomMessageEventContent::text_plain(body).make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
+    room.send(content).await?;
 
     Ok(())
 }
 
 async fn crazy_thursday_command(
     ev: OriginalSyncRoomMessageEvent,
-    room: Joined,
+    room: Room,
 ) -> anyhow::Result<()> {
     let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
     let body = if now.weekday() != Weekday::Thursday {
@@ -104,49 +113,58 @@ async fn crazy_thursday_command(
     } else {
         "Crazy Thursday!".to_string()
     };
-    let content = RoomMessageEventContent::text_plain(body)
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+    let content = RoomMessageEventContent::text_plain(body).make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
+    room.send(content).await?;
 
     Ok(())
 }
 
-async fn ping_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
+async fn ping_command(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
     let now = MilliSecondsSinceUnixEpoch::now().0;
     let event_ts = ev.origin_server_ts.0;
     let delta: i64 = (now - event_ts).into();
     let duration = Duration::milliseconds(delta);
     let body = format!("Pong after {duration:.8}");
 
-    let content = RoomMessageEventContent::text_plain(body)
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+    let content = RoomMessageEventContent::text_plain(body).make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
+    room.send(content).await?;
 
     Ok(())
 }
 
-async fn room_id_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
-    let content = RoomMessageEventContent::text_plain(room.room_id())
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+async fn room_id_command(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
+    let content = RoomMessageEventContent::text_plain(room.room_id()).make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
+    room.send(content).await?;
 
     Ok(())
 }
 
-async fn user_id_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
+async fn user_id_command(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
     let user_id = get_reply_target_fallback(&ev, &room).await?;
 
-    let content = RoomMessageEventContent::text_plain(user_id.as_str())
-        .make_reply_to(&ev.into_full_event(room.room_id().into()));
-    room.send(content, None).await?;
+    let content = RoomMessageEventContent::text_plain(user_id.as_str()).make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
+    room.send(content).await?;
 
     Ok(())
 }
 
-async fn name_changes_command(
-    ev: OriginalSyncRoomMessageEvent,
-    room: Joined,
-) -> anyhow::Result<()> {
+async fn name_changes_command(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
     let user_id = get_reply_target_fallback(&ev, &room).await?;
 
     let member = room.get_member(&user_id).await?;
@@ -189,9 +207,12 @@ async fn name_changes_command(
             ),
         }
 
-        let content = RoomMessageEventContent::text_plain(body)
-            .make_reply_to(&ev.into_full_event(room.room_id().into()));
-        room.send(content, None).await?;
+        let content = RoomMessageEventContent::text_plain(body).make_reply_to(
+            &ev.into_full_event(room.room_id().into()),
+            ForwardThread::Yes,
+            AddMentions::Yes,
+        );
+        room.send(content).await?;
     }
 
     Ok(())
@@ -199,7 +220,7 @@ async fn name_changes_command(
 
 async fn avatar_changes_command(
     ev: OriginalSyncRoomMessageEvent,
-    room: Joined,
+    room: Room,
     homeserver: Url,
 ) -> anyhow::Result<()> {
     let user_id = get_reply_target_fallback(&ev, &room).await?;
@@ -248,32 +269,41 @@ async fn avatar_changes_command(
             ),
         }
 
-        let content = RoomMessageEventContent::text_plain(body)
-            .make_reply_to(&ev.into_full_event(room.room_id().into()));
-        room.send(content, None).await?;
+        let content = RoomMessageEventContent::text_plain(body).make_reply_to(
+            &ev.into_full_event(room.room_id().into()),
+            ForwardThread::Yes,
+            AddMentions::Yes,
+        );
+        room.send(content).await?;
     }
 
     Ok(())
 }
 
-async fn send_avatar_command(ev: OriginalSyncRoomMessageEvent, room: Joined) -> anyhow::Result<()> {
+async fn send_avatar_command(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
     let target = get_reply_target_fallback(&ev, &room).await?;
     if let Some(member) = room.get_member(&target).await? {
         if let Some(avatar_url) = member.avatar_url() {
             let name = member.display_name().unwrap_or(target.as_str());
             let info = get_image_info(avatar_url, &room.client()).await?;
-            let content =
-                RoomMessageEventContent::new(MessageType::Image(ImageMessageEventContent::plain(
-                    format!("[Avatar of {name}]"),
-                    avatar_url.into(),
-                    Some(Box::new(info)),
-                )));
-            let content = content.make_reply_to(&ev.into_full_event(room.room_id().into()));
-            room.send(content, None).await?;
+            let content = RoomMessageEventContent::new(MessageType::Image(
+                ImageMessageEventContent::plain(format!("[Avatar of {name}]"), avatar_url.into())
+                    .info(Some(Box::new(info))),
+            ));
+            let content = content.make_reply_to(
+                &ev.into_full_event(room.room_id().into()),
+                ForwardThread::Yes,
+                AddMentions::Yes,
+            );
+            room.send(content).await?;
         } else {
             let content = RoomMessageEventContent::text_plain("The user has no avatar.")
-                .make_reply_to(&ev.into_full_event(room.room_id().into()));
-            room.send(content, None).await?;
+                .make_reply_to(
+                    &ev.into_full_event(room.room_id().into()),
+                    ForwardThread::Yes,
+                    AddMentions::Yes,
+                );
+            room.send(content).await?;
         }
     }
     Ok(())

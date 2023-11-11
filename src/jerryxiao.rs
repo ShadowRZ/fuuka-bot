@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use matrix_sdk::room::Joined;
+use matrix_sdk::room::Room;
 use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
 
 use crate::utils::make_pill;
@@ -8,7 +8,7 @@ pub async fn make_jerryxiao_event_content(
     from_sender: &UserId,
     to_sender: &UserId,
     text: &str,
-    room: &Joined,
+    room: &Room,
     reversed: bool,
 ) -> anyhow::Result<RoomMessageEventContent> {
     let from_member = room

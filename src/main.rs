@@ -1,7 +1,7 @@
 use fuuka_bot::FuukaBot;
 use fuuka_bot::FuukaBotConfig;
+use matrix_sdk::matrix_auth::MatrixSession;
 use matrix_sdk::Client;
-use matrix_sdk::Session;
 use reqwest::Url;
 use rpassword::read_password;
 use std::env;
@@ -19,19 +19,30 @@ async fn save_login_session(
 ) -> anyhow::Result<()> {
     let url = Url::parse(homeserver)?;
     let client = Client::new(url).await?;
+    let client_auth = client.matrix_auth();
 
-    let session: Session = client
-        .login_username(username, password)
-        .send()
-        .await?
-        .into();
+    loop {
+        match client_auth.login_username(username, password).await {
+            Ok(_) => {
+                println!("Logged in as {username}");
+                break;
+            }
+            Err(error) => {
+                println!("Error logging in: {error}");
+                println!("Trying again......\n");
+            }
+        }
+    }
+    let session = client_auth
+        .session()
+        .expect("A logged-in client should have a session");
     fs::write(SESSION_JSON_FILE, serde_json::to_string(&session)?)?;
     Ok(())
 }
 
-fn get_session() -> Option<Session> {
+fn get_session() -> Option<MatrixSession> {
     if let Ok(contents) = fs::read_to_string(SESSION_JSON_FILE) {
-        if let Ok(session) = serde_json::from_str::<Session>(&contents) {
+        if let Ok(session) = serde_json::from_str::<MatrixSession>(&contents) {
             Some(session)
         } else {
             None
@@ -76,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    let session: Session = get_session().expect("Getting session failed!");
+    let session = get_session().expect("Getting session failed!");
 
     let bot = FuukaBot::new(config, session).await?;
     bot.run().await
