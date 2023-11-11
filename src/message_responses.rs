@@ -15,8 +15,8 @@ impl FuukaBotMessages {
             if splited.next().unwrap().is_ascii() {
                 return Ok(());
             };
+            let from_sender = &ev.sender;
             if let Some(remaining) = body.strip_prefix('/') {
-                let from_sender = &ev.sender;
                 if let Some(to_sender) = get_reply_target(&ev, &room).await? {
                     let content = make_jerryxiao_event_content(
                         from_sender,
@@ -30,7 +30,6 @@ impl FuukaBotMessages {
                     room.send(content, None).await?;
                 }
             } else if let Some(remaining) = body.strip_prefix("!!") {
-                let from_sender = &ev.sender;
                 if let Some(to_sender) = get_reply_target(&ev, &room).await? {
                     let content = make_jerryxiao_event_content(
                         from_sender,
@@ -44,7 +43,6 @@ impl FuukaBotMessages {
                     room.send(content, None).await?;
                 }
             } else if let Some(remaining) = body.strip_prefix('\\') {
-                let from_sender = &ev.sender;
                 if let Some(to_sender) = get_reply_target(&ev, &room).await? {
                     let content = make_jerryxiao_event_content(
                         from_sender,
@@ -58,7 +56,6 @@ impl FuukaBotMessages {
                     room.send(content, None).await?;
                 }
             } else if let Some(remaining) = body.strip_prefix("¡¡") {
-                let from_sender = &ev.sender;
                 if let Some(to_sender) = get_reply_target(&ev, &room).await? {
                     let content = make_jerryxiao_event_content(
                         from_sender,

@@ -16,7 +16,7 @@ pub async fn make_jerryxiao_event_content(
         .await?
         .ok_or(anyhow!("INTERNAL ERROR: This user should be avaliable"))?;
     let to_member = room
-        .get_member(if reversed { to_sender } else { from_sender })
+        .get_member(if reversed { from_sender } else { to_sender })
         .await?
         .ok_or(anyhow!("INTERNAL ERROR: This user should be avaliable"))?;
 
