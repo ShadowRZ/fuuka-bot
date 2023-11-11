@@ -308,6 +308,6 @@ async fn divergence_command(
     };
     let hash = make_divergence(room_hash, event_id_hash);
     Ok(Some(RoomMessageEventContent::text_plain(format!(
-        "{hash:.2}%"
+        "{hash:.6}%"
     ))))
 }
