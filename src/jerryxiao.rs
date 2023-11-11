@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
-use num_bigint::BigUint;
 use time::macros::format_description;
 use time::OffsetDateTime;
 
@@ -126,20 +125,15 @@ pub async fn make_randomdraw_event_content(
     let hash = crc32fast::hash(user_id.as_bytes());
     let date = OffsetDateTime::now_utc();
     let format = format_description!("[year][month][day]");
-    let seed: BigUint = if query.is_empty() {
+    let seed: u64 = if query.is_empty() {
         let formatted = format!("{}{}", date.format(&format)?, hash);
         formatted.parse()?
     } else {
-        let digest = md5::compute(query.as_bytes());
-        let formatted = format!(
-            "{}{}{}",
-            u64::from_str_radix(format!("{:x}", digest).as_str(), 16)?,
-            date.format(&format)?,
-            hash
-        );
+        let query_hash = crc32fast::hash(query.as_bytes());
+        let formatted = format!("{}{}{}", query_hash, date.format(&format)?, hash);
         formatted.parse()?
     };
-    let mut rng = fastrand::Rng::with_seed(seed.to_u64_digits()[0]);
+    let mut rng = fastrand::Rng::with_seed(seed);
     let draw_result = rng.u32(0..=10000) as f32 / 10000.0;
     let result_type = rng.bool();
     let user_pill = make_pill(&member);
