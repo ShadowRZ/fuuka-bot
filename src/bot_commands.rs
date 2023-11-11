@@ -14,6 +14,7 @@ use matrix_sdk::ruma::events::room::message::ForwardThread;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
 use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
+use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::MediaSource;
@@ -33,6 +34,7 @@ use tokio_stream::StreamExt;
 use crate::member_updates::MemberChanges;
 use crate::utils::avatar_http_url;
 use crate::utils::get_reply_target_fallback;
+use crate::utils::make_divergence;
 
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
@@ -53,6 +55,7 @@ pub async fn fuuka_bot_dispatch_command(
             "user_id" => user_id_command(&ev, &room).await?,
             "name_changes" => name_changes_command(&ev, &room).await?,
             "avatar_changes" => avatar_changes_command(&ev, &room, &homeserver).await?,
+            "divergence" => divergence_command(&ev, &room).await?,
             _ => _unknown_command(command).await?,
         };
         if let Some(content) = content {
@@ -289,4 +292,22 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
     info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
     Ok(info)
+}
+
+async fn divergence_command(
+    ev: &OriginalSyncRoomMessageEvent,
+    room: &Room,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let room_hash = crc32fast::hash(room.room_id().as_bytes());
+    let event_id_hash = match &ev.content.relates_to {
+        Some(Relation::Reply { in_reply_to }) => {
+            let event_id = &in_reply_to.event_id;
+            Some(crc32fast::hash(event_id.as_bytes()))
+        }
+        _ => None,
+    };
+    let hash = make_divergence(room_hash, event_id_hash);
+    Ok(Some(RoomMessageEventContent::text_plain(format!(
+        "{hash:.2}%"
+    ))))
 }

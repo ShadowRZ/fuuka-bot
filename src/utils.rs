@@ -53,3 +53,13 @@ pub fn avatar_http_url(avatar_uri: Option<&MxcUri>, homeserver: &Url) -> Result<
         Ok(None)
     }
 }
+
+pub fn make_divergence(room_hash: u32, event_id_hash: Option<u32>) -> f32 {
+    let seed = room_hash
+        + match event_id_hash {
+            Some(event_id_hash) => event_id_hash,
+            None => 0,
+        };
+    let mut rng = fastrand::Rng::with_seed(seed.into());
+    rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
+}
