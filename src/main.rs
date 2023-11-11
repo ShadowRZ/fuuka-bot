@@ -1,3 +1,4 @@
+use anyhow::Context;
 use fuuka_bot::FuukaBot;
 use fuuka_bot::FuukaBotConfig;
 use matrix_sdk::matrix_auth::MatrixSession;
@@ -40,35 +41,23 @@ async fn save_login_session(
     Ok(())
 }
 
-fn get_session() -> Option<MatrixSession> {
-    if let Ok(contents) = fs::read_to_string(SESSION_JSON_FILE) {
-        if let Ok(session) = serde_json::from_str::<MatrixSession>(&contents) {
-            Some(session)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+fn get_session() -> anyhow::Result<MatrixSession> {
+    let contents = fs::read_to_string(SESSION_JSON_FILE)?;
+    let session = serde_json::from_str::<MatrixSession>(&contents)?;
+    Ok(session)
 }
 
-fn get_config() -> Option<FuukaBotConfig> {
-    if let Ok(contents) = fs::read_to_string(CONFIG_FILE) {
-        if let Ok(config) = toml::from_str::<FuukaBotConfig>(&contents) {
-            Some(config)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+fn get_config() -> anyhow::Result<FuukaBotConfig> {
+    let contents = fs::read_to_string(CONFIG_FILE)?;
+    let config = toml::from_str::<FuukaBotConfig>(&contents)?;
+    Ok(config)
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
-    let config: FuukaBotConfig = get_config().expect("Getting config failed!");
+    let config: FuukaBotConfig = get_config().context("Getting config failed!")?;
 
     if let Some(arg1) = env::args().nth(1) {
         if arg1 == "login" {
@@ -87,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    let session = get_session().expect("Getting session failed!");
+    let session = get_session().context("Getting session failed!")?;
 
     let bot = FuukaBot::new(config, session).await?;
     bot.run().await

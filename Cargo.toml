@@ -24,3 +24,6 @@ toml = "*"
 time = { version = "*", features = ["macros", "formatting"] }
 async-stream = "*"
 futures-util = "*"
+crc32fast = "*"
+fastrand = "*"
+md5 = "*"
