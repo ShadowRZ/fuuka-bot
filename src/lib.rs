@@ -12,6 +12,7 @@ use matrix_sdk::{config::SyncSettings, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use thiserror::Error;
 
 use crate::message_responses::FuukaBotMessages;
 
@@ -72,4 +73,18 @@ impl FuukaBot {
 
         Ok(())
     }
+}
+
+#[derive(Debug, Error)]
+pub enum FuukaBotError {
+    #[error("To run this command, the sending user should be able to ban users (on the Matrix side, if applies).")]
+    RequiresBannable,
+    #[error("This command should be used on a reply.")]
+    RequiresReply,
+    #[error("Command is missing required paramter: {0}.")]
+    MissingParamter(&'static str),
+    #[error("The specified user does not exist.")]
+    UserNotFound,
+    #[error("This user should be avaliable.")]
+    ShouldAvaliable,
 }

@@ -1,5 +1,5 @@
 use crate::utils::make_pill;
-use anyhow::anyhow;
+use crate::FuukaBotError;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
 
@@ -13,11 +13,11 @@ pub async fn make_jerryxiao_event_content(
     let from_member = room
         .get_member(if reversed { to_sender } else { from_sender })
         .await?
-        .ok_or(anyhow!("INTERNAL ERROR: This user should be avaliable"))?;
+        .ok_or(FuukaBotError::ShouldAvaliable)?;
     let to_member = room
         .get_member(if reversed { from_sender } else { to_sender })
         .await?
-        .ok_or(anyhow!("INTERNAL ERROR: This user should be avaliable"))?;
+        .ok_or(FuukaBotError::ShouldAvaliable)?;
 
     let from_pill = make_pill(&from_member);
     let to_pill = make_pill(&to_member);

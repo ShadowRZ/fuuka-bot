@@ -37,6 +37,7 @@ use crate::utils::avatar_http_url;
 use crate::utils::get_reply_target;
 use crate::utils::get_reply_target_fallback;
 use crate::utils::make_divergence;
+use crate::FuukaBotError;
 
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
@@ -147,7 +148,7 @@ async fn name_changes_command(
     let user_id = get_reply_target_fallback(ev, room).await?;
 
     let Some(member) = room.get_member(&user_id).await? else {
-        return Ok(None);
+        return Err(FuukaBotError::ShouldAvaliable)?;
     };
 
     let mut body = String::new();
@@ -199,7 +200,7 @@ async fn avatar_changes_command(
     let user_id = get_reply_target_fallback(ev, room).await?;
 
     let Some(member) = room.get_member(&user_id).await? else {
-        return Ok(None);
+        return Err(FuukaBotError::ShouldAvaliable)?;
     };
 
     let mut body = String::new();
@@ -325,14 +326,15 @@ async fn ignore_command(
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let sender = &ev.sender;
 
-    let Some(target) = get_reply_target(&ev, &room).await? else {
-        return Ok(None);
+    let Some(target) = get_reply_target(ev, room).await? else {
+        return Err(FuukaBotError::RequiresReply)?;
     };
 
     if room.can_user_ban(sender).await? {
-        let member = room.get_member(&target).await?.ok_or(anyhow::anyhow!(
-            "INTERNAL ERROR: This user should be avaliable"
-        ))?;
+        let member = room
+            .get_member(&target)
+            .await?
+            .ok_or(FuukaBotError::ShouldAvaliable)?;
         member.ignore().await?;
         Ok(Some(RoomMessageEventContent::text_plain(format!(
             "Ignored {} ({})",
@@ -340,9 +342,7 @@ async fn ignore_command(
             sender
         ))))
     } else {
-        Ok(Some(RoomMessageEventContent::text_plain(
-            "To run this command, the sending user should be able to ban users (on the Matrix side, if applies)."
-        )))
+        Err(FuukaBotError::RequiresBannable)?
     }
 }
 
@@ -355,14 +355,14 @@ async fn unignore_command(
 
     let target = match user {
         Some(user) => OwnedUserId::try_from(user)?,
-        None => return Ok(None),
+        None => return Err(FuukaBotError::MissingParamter("user"))?,
     };
 
     if room.can_user_ban(sender).await? {
         let member = room
             .get_member(&target)
             .await?
-            .ok_or(anyhow::anyhow!("This user does not exist."))?;
+            .ok_or(FuukaBotError::UserNotFound)?;
         member.unignore().await?;
         Ok(Some(RoomMessageEventContent::text_plain(format!(
             "Unignored {} ({})",
@@ -370,8 +370,6 @@ async fn unignore_command(
             sender
         ))))
     } else {
-        Ok(Some(RoomMessageEventContent::text_plain(
-            "To run this command, the sending user should be able to ban users (on the Matrix side, if applies)."
-        )))
+        Err(FuukaBotError::RequiresBannable)?
     }
 }

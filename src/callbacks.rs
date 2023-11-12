@@ -1,5 +1,6 @@
 use crate::bot_commands::fuuka_bot_dispatch_command;
 use crate::FuukaBotContext;
+use crate::FuukaBotError;
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
@@ -46,13 +47,30 @@ async fn send_error_message(
     room: Room,
     err: anyhow::Error,
 ) -> anyhow::Result<()> {
-    let content =
-        RoomMessageEventContent::text_plain(format!("⁉️ An unexpected error occoured: {err:#}"))
-            .make_reply_to(
-                &ev.into_full_event(room.room_id().into()),
-                ForwardThread::Yes,
-                AddMentions::Yes,
-            );
+    let content = match err.downcast_ref::<FuukaBotError>() {
+        Some(FuukaBotError::MissingParamter(_)) => {
+            RoomMessageEventContent::text_plain(format!("Invaild input: {err:#}"))
+        }
+        Some(FuukaBotError::RequiresBannable | FuukaBotError::RequiresReply) => {
+            RoomMessageEventContent::text_plain(format!(
+                "Command requirement is unsatisfied: {err:#}"
+            ))
+        }
+        Some(FuukaBotError::UserNotFound) => {
+            RoomMessageEventContent::text_plain(format!("Runtime error: {err:#}"))
+        }
+        Some(&FuukaBotError::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
+            "⁉️ The bot fired an internal error: {err:#}"
+        )),
+        None => {
+            RoomMessageEventContent::text_plain(format!("⁉️ An unexpected error occoured: {err:#}"))
+        }
+    };
+    let content = content.make_reply_to(
+        &ev.into_full_event(room.room_id().into()),
+        ForwardThread::Yes,
+        AddMentions::Yes,
+    );
     room.send(content).await?;
 
     // Send this error back to log to tracing.

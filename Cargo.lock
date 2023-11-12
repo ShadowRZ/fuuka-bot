@@ -920,6 +920,7 @@ dependencies = [
  "ruma",
  "serde",
  "serde_json",
+ "thiserror",
  "time",
  "tokio",
  "tokio-stream",
