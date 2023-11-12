@@ -3,7 +3,9 @@ use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallba
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
 use matrix_sdk::RoomState;
-use ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::ruma::UserId;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use ruma::events::Mentions;
 
 use crate::{jerryxiao::make_jerryxiao_event_content, utils::get_reply_target};
 
@@ -22,49 +24,51 @@ impl FuukaBotMessages {
         if splited.next().unwrap().is_ascii() {
             return Ok(());
         };
-        let content = _dispatch_jerryxiao(&ev, &room, body).await?;
-        if let Some(content) = content {
+
+        let from_sender = &ev.sender;
+        let Some(to_sender) = get_reply_target(&ev, &room).await? else {
+            return Ok(());
+        };
+
+        if let Some(content) = _dispatch_jerryxiao(&room, body, from_sender, &to_sender).await? {
             let content = content.make_reply_to(
                 &ev.into_full_event(room.room_id().into()),
                 ForwardThread::Yes,
                 AddMentions::Yes,
-            );
+            ).add_mentions(Mentions::with_user_ids([to_sender]));
             room.send(content).await?;
         }
+
         Ok(())
     }
 }
 
 async fn _dispatch_jerryxiao(
-    ev: &OriginalSyncRoomMessageEvent,
     room: &Room,
     body: &str,
+    from_sender: &UserId,
+    to_sender: &UserId,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let from_sender = &ev.sender;
-    if let Some(to_sender) = get_reply_target(ev, room).await? {
-        if let Some(remaining) = body.strip_prefix('/') {
-            Ok(Some(
-                make_jerryxiao_event_content(room, from_sender, &to_sender, remaining, false)
-                    .await?,
-            ))
-        } else if let Some(remaining) = body.strip_prefix("!!") {
-            Ok(Some(
-                make_jerryxiao_event_content(room, from_sender, &to_sender, remaining, false)
-                    .await?,
-            ))
-        } else if let Some(remaining) = body.strip_prefix('\\') {
-            Ok(Some(
-                make_jerryxiao_event_content(room, from_sender, &to_sender, remaining, true)
-                    .await?,
-            ))
-        } else if let Some(remaining) = body.strip_prefix("¡¡") {
-            Ok(Some(
-                make_jerryxiao_event_content(room, from_sender, &to_sender, remaining, true)
-                    .await?,
-            ))
-        } else {
-            Ok(None)
-        }
+    if let Some(remaining) = body.strip_prefix('/') {
+        Ok(Some(
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false)
+                .await?,
+        ))
+    } else if let Some(remaining) = body.strip_prefix("!!") {
+        Ok(Some(
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false)
+                .await?,
+        ))
+    } else if let Some(remaining) = body.strip_prefix('\\') {
+        Ok(Some(
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true)
+                .await?,
+        ))
+    } else if let Some(remaining) = body.strip_prefix("¡¡") {
+        Ok(Some(
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true)
+                .await?,
+        ))
     } else {
         Ok(None)
     }
