@@ -21,6 +21,7 @@ use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::ThumbnailInfo;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::MxcUri;
+use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
 use std::io::Cursor;
@@ -33,6 +34,7 @@ use tokio_stream::StreamExt;
 
 use crate::member_updates::MemberChanges;
 use crate::utils::avatar_http_url;
+use crate::utils::get_reply_target;
 use crate::utils::get_reply_target_fallback;
 use crate::utils::make_divergence;
 
@@ -59,6 +61,8 @@ pub async fn fuuka_bot_dispatch_command(
         "name_changes" => name_changes_command(&ev, &room).await?,
         "avatar_changes" => avatar_changes_command(&ev, &room, &homeserver).await?,
         "divergence" => divergence_command(&ev, &room).await?,
+        "ignore" => ignore_command(&ev, &room).await?,
+        "unignore" => unignore_command(&ev, &room, args.get(1).copied()).await?,
         _ => _unknown_command(command).await?,
     }) else {
         return Ok(());
@@ -313,4 +317,61 @@ async fn divergence_command(
     Ok(Some(RoomMessageEventContent::text_plain(format!(
         "{hash:.6}%"
     ))))
+}
+
+async fn ignore_command(
+    ev: &OriginalSyncRoomMessageEvent,
+    room: &Room,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let sender = &ev.sender;
+
+    let Some(target) = get_reply_target(&ev, &room).await? else {
+        return Ok(None);
+    };
+
+    if room.can_user_ban(sender).await? {
+        let member = room.get_member(&target).await?.ok_or(anyhow::anyhow!(
+            "INTERNAL ERROR: This user should be avaliable"
+        ))?;
+        member.ignore().await?;
+        Ok(Some(RoomMessageEventContent::text_plain(format!(
+            "Ignored {} ({})",
+            member.display_name().unwrap_or("(No Name)"),
+            sender
+        ))))
+    } else {
+        Ok(Some(RoomMessageEventContent::text_plain(
+            "To run this command, the sending user should be able to ban users (on the Matrix side, if applies)."
+        )))
+    }
+}
+
+async fn unignore_command(
+    ev: &OriginalSyncRoomMessageEvent,
+    room: &Room,
+    user: Option<&str>,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let sender = &ev.sender;
+
+    let target = match user {
+        Some(user) => OwnedUserId::try_from(user)?,
+        None => return Ok(None),
+    };
+
+    if room.can_user_ban(sender).await? {
+        let member = room
+            .get_member(&target)
+            .await?
+            .ok_or(anyhow::anyhow!("This user does not exist."))?;
+        member.unignore().await?;
+        Ok(Some(RoomMessageEventContent::text_plain(format!(
+            "Unignored {} ({})",
+            member.display_name().unwrap_or("(No Name)"),
+            sender
+        ))))
+    } else {
+        Ok(Some(RoomMessageEventContent::text_plain(
+            "To run this command, the sending user should be able to ban users (on the Matrix side, if applies)."
+        )))
+    }
 }
