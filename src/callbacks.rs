@@ -1,6 +1,5 @@
 use crate::bot_commands::fuuka_bot_dispatch_command;
 use crate::FuukaBotContext;
-use anyhow::Error;
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
@@ -45,13 +44,15 @@ impl FuukaBotCallbacks {
 async fn send_error_message(
     ev: OriginalSyncRoomMessageEvent,
     room: Room,
-    err: Error,
+    err: anyhow::Error,
 ) -> anyhow::Result<()> {
-    let content = RoomMessageEventContent::text_plain(format!("{:#}", err)).make_reply_to(
-        &ev.into_full_event(room.room_id().into()),
-        ForwardThread::Yes,
-        AddMentions::Yes,
-    );
+    let content =
+        RoomMessageEventContent::text_plain(format!("⁉️ An unexpected error occoured: {err:#}"))
+            .make_reply_to(
+                &ev.into_full_event(room.room_id().into()),
+                ForwardThread::Yes,
+                AddMentions::Yes,
+            );
     room.send(content).await?;
 
     // Send this error back to log to tracing.
