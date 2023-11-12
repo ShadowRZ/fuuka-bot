@@ -88,9 +88,11 @@ async fn _unknown_command(command: &str) -> anyhow::Result<Option<RoomMessageEve
 async fn help_command(room: &Room) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let client = room.client();
     let user_id = client.user_id().unwrap();
-    let body = format!("Fuuka Bot\nUser ID: {user_id}");
 
-    Ok(Some(RoomMessageEventContent::text_plain(body)))
+    Ok(Some(RoomMessageEventContent::text_html(
+        format!("Fuuka Bot - User ID: {user_id}\nCommand reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
+        format!("Fuuka Bot - User ID: {user_id}<br/>Command reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
+    )))
 }
 
 async fn crazy_thursday_command() -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -255,7 +257,7 @@ async fn send_avatar_command(
     let target = get_reply_target_fallback(ev, room).await?;
 
     let Some(member) = room.get_member(&target).await? else {
-        return Ok(None);
+        return Err(FuukaBotError::RequiresReply)?;
     };
 
     match member.avatar_url() {
