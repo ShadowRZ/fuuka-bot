@@ -174,7 +174,7 @@ pub async fn make_randomdraw_event_content(
             };
             RoomMessageEventContent::text_html(
                 format!(
-                    "你好, {}\n汝今天{}概率是 {}",
+                    "你好, @{}\n汝今天{}概率是 {}",
                     member.name(),
                     luck_string,
                     result
@@ -186,7 +186,7 @@ pub async fn make_randomdraw_event_content(
             )
         } else {
             RoomMessageEventContent::text_html(
-                format!("你好, {}\n汝的今日运势: {}", member.name(), result),
+                format!("你好, @{}\n汝的今日运势: {}", member.name(), result),
                 format!("你好, {}<br/>汝的今日运势: {}", user_pill, result),
             )
         }
@@ -195,7 +195,7 @@ pub async fn make_randomdraw_event_content(
             let happen_or_not_string = if result_type { "发生" } else { "不发生" };
             RoomMessageEventContent::text_html(
                 format!(
-                    "你好, {}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
+                    "你好, @{}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
                     member.name(),
                     query,
                     result,
@@ -209,7 +209,7 @@ pub async fn make_randomdraw_event_content(
         } else {
             RoomMessageEventContent::text_html(
                 format!(
-                    "你好, {}\n所求事项: {}\n结果: {}",
+                    "你好, @{}\n所求事项: {}\n结果: {}",
                     member.name(),
                     query,
                     result
