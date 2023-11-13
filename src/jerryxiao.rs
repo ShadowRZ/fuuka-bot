@@ -152,7 +152,7 @@ pub async fn make_randomdraw_event_content(
         } else {
             1.0 - draw_result
         };
-        format!("{result:.2}")
+        format!("{:.2}%", result * 100.0)
     } else {
         const CHOICE: [&str; 7] = ["大凶", "凶", "小凶", "尚可", "小吉", "吉", "大吉"];
         const MAXIDX: usize = CHOICE.len() - 1;
@@ -180,14 +180,14 @@ pub async fn make_randomdraw_event_content(
                     result
                 ),
                 format!(
-                    "你好, {}\n汝今天{}概率是 {}",
+                    "你好, {}<br/>汝今天{}概率是 {}",
                     user_pill, luck_string, result
                 ),
             )
         } else {
             RoomMessageEventContent::text_html(
                 format!("你好, {}\n汝的今日运势: {}", member.name(), result),
-                format!("你好, {}\n汝的今日运势: {}", user_pill, result),
+                format!("你好, {}<br/>汝的今日运势: {}", user_pill, result),
             )
         }
     } else {
@@ -202,7 +202,7 @@ pub async fn make_randomdraw_event_content(
                     happen_or_not_string
                 ),
                 format!(
-                    "你好, {}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
+                    "你好, {}<br/>所求事项: {}<br/>结果: 此事有 {} 的概率{}",
                     user_pill, query, result, happen_or_not_string
                 ),
             )
@@ -214,7 +214,7 @@ pub async fn make_randomdraw_event_content(
                     query,
                     result
                 ),
-                format!("你好, {}\n所求事项: {}\n结果: {}", user_pill, query, result),
+                format!("你好, {}<br/>所求事项: {}<br/>结果: {}", user_pill, query, result),
             )
         }
     };
