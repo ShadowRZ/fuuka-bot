@@ -129,8 +129,18 @@ pub async fn make_randomdraw_event_content(
         formatted.parse()?
     } else {
         let query_hash = crc32fast::hash(query.as_bytes());
-        let formatted = format!("{}{}{}", query_hash, date.format(&format)?, hash);
-        formatted.parse()?
+        let right_hash = crc32fast::hash(format!("{}{}", date.format(&format)?, hash).as_bytes());
+        // https://stackoverflow.com/a/67041964
+        let result = {
+            let l_bytes = query_hash.to_ne_bytes();
+            let r_bytes = right_hash.to_ne_bytes();
+            let mut result: [u8; 8] = [0; 8];
+            let (left, right) = result.split_at_mut(l_bytes.len());
+            left.copy_from_slice(&l_bytes);
+            right.copy_from_slice(&r_bytes);
+            result
+        };
+        u64::from_ne_bytes(result)
     };
     let mut rng = fastrand::Rng::with_seed(seed);
     let draw_result = rng.u32(0..=10000) as f32 / 10000.0;

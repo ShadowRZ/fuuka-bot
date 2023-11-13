@@ -54,15 +54,16 @@ impl FuukaBotMessages {
         }
 
         let body = remove_plain_reply_fallback(ev.content.body()).trim();
-        let content = _dispatch_randomdraw(&ev, &room, body).await?;
-        if let Some(content) = content {
-            let content = content.make_reply_to(
-                &ev.into_full_event(room.room_id().into()),
-                ForwardThread::Yes,
-                AddMentions::Yes,
-            );
-            room.send(content).await?;
-        }
+        let Some(content) = _dispatch_randomdraw(&ev, &room, body).await? else {
+            return Ok(());
+        };
+
+        let content = content.make_reply_to(
+            &ev.into_full_event(room.room_id().into()),
+            ForwardThread::Yes,
+            AddMentions::Yes,
+        );
+        room.send(content).await?;
         Ok(())
     }
 }
