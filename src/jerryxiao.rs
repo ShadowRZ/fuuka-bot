@@ -214,7 +214,10 @@ pub async fn make_randomdraw_event_content(
                     query,
                     result
                 ),
-                format!("你好, {}<br/>所求事项: {}<br/>结果: {}", user_pill, query, result),
+                format!(
+                    "你好, {}<br/>所求事项: {}<br/>结果: {}",
+                    user_pill, query, result
+                ),
             )
         }
     };
