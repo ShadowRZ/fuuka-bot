@@ -28,6 +28,8 @@ pub struct FuukaBotConfig {
 pub struct FuukaBotFeatures {
     #[serde(default)]
     pub jerryxiao: bool,
+    #[serde(default)]
+    pub randomdraw: bool,
 }
 
 pub struct FuukaBotContext {
@@ -66,6 +68,10 @@ impl FuukaBot {
             if feature.jerryxiao {
                 self.client
                     .add_room_event_handler(room, FuukaBotMessages::jerryxiao);
+            }
+            if feature.randomdraw {
+                self.client
+                    .add_room_event_handler(room, FuukaBotMessages::randomdraw);
             }
         }
         let settings = SyncSettings::default().token(response.next_batch);
