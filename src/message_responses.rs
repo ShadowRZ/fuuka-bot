@@ -154,7 +154,7 @@ async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventCo
         let cand = match expr.parse::<DiceCandidate>() {
             Ok(cand) => cand,
             Err(e) => {
-                return Ok(Some(nom_error_message(body, e)));
+                return Ok(Some(nom_error_message(expr, e)));
             }
         };
         let result = cand.expr.eval();
