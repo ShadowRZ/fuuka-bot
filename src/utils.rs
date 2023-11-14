@@ -73,29 +73,15 @@ pub fn make_divergence(room_hash: u32, event_id_hash: Option<u32>) -> f32 {
 
 /// Given a [nom::error::Error] and the input, returns the [RoomMessageEventContent] to send to the room
 pub fn nom_error_message(input: &str, e: nom::error::Error<String>) -> RoomMessageEventContent {
-    use nom::Offset;
-    let offset = input.offset(&e.input);
-    let prefix = &input.as_bytes()[..offset];
-    // Count the number of newlines in the first `offset` bytes of input
-    let line_number = prefix.iter().filter(|&&b| b == b'\n').count() + 1;
-
-    // Find the line that includes the subslice:
-    // Find the *last* newline before the substring starts
-    let line_begin = prefix
-        .iter()
-        .rev()
-        .position(|&b| b == b'\n')
-        .map(|pos| offset - pos)
-        .unwrap_or(0);
-
-    // Find the full line after that newline
-    let line = input[line_begin..]
-        .lines()
-        .next()
-        .unwrap_or(&input[line_begin..])
-        .trim_end();
-    // The (1-indexed) column number is the offset of our substring into that line
-    let column_number = line.offset(&e.input) + 1;
+    let offset = input.rfind(e.input.as_str()).unwrap_or_else(|| e.input.len());
+    let (prefix, suffix) = input.split_at(offset);
+    let prefix_parts = prefix.split('\n').collect::<Vec<_>>();
+    let line_number = prefix_parts.len();
+    let column_number = prefix_parts.last().map(|s| s.len() + 1).unwrap_or(0);
+    let suffix_parts = suffix.split('\n').collect::<Vec<_>>();
+    let line = Option::zip(prefix_parts.last(), suffix_parts.first())
+        .map(|(a, b)| format!("{a}{b}"))
+        .unwrap_or("".to_string());
 
     RoomMessageEventContent::text_html(
         format!(
