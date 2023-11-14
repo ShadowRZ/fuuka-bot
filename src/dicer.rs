@@ -1,16 +1,16 @@
 //! Implments dicer function, and parsing based on [Nom](https://docs.rs/nom).
 //!
 //! ## Expression Syntax
-//! 
+//!
 //! An token enclosed in `=` specifies parsing a primitive type of Rust.
-//! 
-//! 
+//!
+//!
 //! ```
 //! expr -> term "=>" =u32=;
-//! 
+//!
 //! term -> factor ( ("+" | "-") factor )*;
 //! factor -> dice_or_int ( ("+" | "-") dice_or_int )*;
-//! 
+//!
 //! dice_or_int => ( ( =u32= ('d' | 'D') =u32= ) | =i32= );
 //! ```
 

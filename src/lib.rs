@@ -1,5 +1,5 @@
 //! Fuuka Bot Internals for interested.
-//! 
+//!
 //! **WARNING: External crate links are broken in the build documentation on GitHub Pages, sorry.**
 #[warn(missing_docs)]
 #[warn(rustdoc::missing_crate_level_docs)]
