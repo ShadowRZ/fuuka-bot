@@ -11,6 +11,7 @@ use ruma::events::Mentions;
 
 use crate::dicer::DiceCandidate;
 use crate::jerryxiao::make_randomdraw_event_content;
+use crate::utils::nom_error_message;
 use crate::{jerryxiao::make_jerryxiao_event_content, utils::get_reply_target};
 
 /// A ZST for containing messages responses.
@@ -149,7 +150,13 @@ async fn _dispatch_randomdraw(
 
 async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventContent>> {
     if let Some(expr) = body.strip_prefix("@=") {
-        let cand = expr.parse::<DiceCandidate>()?;
+        let expr = expr.trim();
+        let cand = match expr.parse::<DiceCandidate>() {
+            Ok(cand) => cand,
+            Err(e) => {
+                return Ok(Some(nom_error_message(body, e)));
+            }
+        };
         let result = cand.expr.eval();
         let string = match cand.target {
             Some(target) => {

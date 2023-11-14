@@ -19,6 +19,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::char;
 use nom::character::complete::multispace0;
 use nom::character::complete::{i32, u32};
+use nom::combinator::cut;
 use nom::combinator::{eof, map, opt};
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
@@ -124,7 +125,7 @@ fn expr(input: &str) -> IResult<&str, DiceCandidate> {
             term,
             opt(preceded(
                 tag("=>"),
-                delimited(multispace0, u32, multispace0),
+                cut(delimited(multispace0, u32, multispace0)),
             )),
         ),
         |(expr, target)| DiceCandidate { expr, target },
@@ -171,11 +172,11 @@ fn factor(input: &str) -> IResult<&str, Expr> {
     let result = fold_many0(
         alt((
             |input| {
-                let (remaining, mul) = preceded(char('*'), dice_or_int)(input)?;
+                let (remaining, mul) = preceded(char('*'), cut(dice_or_int))(input)?;
                 Ok((remaining, (Op::Mul, mul)))
             },
             |input| {
-                let (remaining, div) = preceded(char('/'), dice_or_int)(input)?;
+                let (remaining, div) = preceded(char('/'), cut(dice_or_int))(input)?;
                 Ok((remaining, (Op::Div, div)))
             },
         )),
@@ -199,11 +200,11 @@ fn term(input: &str) -> IResult<&str, Expr> {
     let result = fold_many0(
         alt((
             |input| {
-                let (remaining, expr) = preceded(char('+'), factor)(input)?;
+                let (remaining, expr) = preceded(char('+'), cut(factor))(input)?;
                 Ok((remaining, (Op::Add, expr)))
             },
             |input| {
-                let (remaining, expr) = preceded(char('-'), factor)(input)?;
+                let (remaining, expr) = preceded(char('-'), cut(factor))(input)?;
                 Ok((remaining, (Op::Sub, expr)))
             },
         )),
@@ -226,7 +227,7 @@ fn dice_or_int(input: &str) -> IResult<&str, Expr> {
             multispace0,
             alt((
                 map(
-                    separated_pair(opt(u32), tag_no_case("d"), u32),
+                    separated_pair(opt(u32), tag_no_case("d"), cut(u32)),
                     |(count, sides)| {
                         DiceOrInt::Dice(Dice {
                             count: count.unwrap_or(1),
