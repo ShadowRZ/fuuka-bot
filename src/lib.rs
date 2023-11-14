@@ -62,7 +62,8 @@ impl FuukaBot {
         let response = self.client.sync_once(SyncSettings::default()).await?;
         tracing::info!("Initial sync completed.");
         self.client
-            .add_event_handler(FuukaBotCallbacks::on_room_message);
+            .add_event_handler(FuukaBotCallbacks::on_room_command);
+        self.client.add_event_handler(FuukaBotMessages::dicer);
         // Register room specific handlers.
         for (room, feature) in &self.context.config.features {
             let room = <&RoomId>::try_from(room.as_str())?;

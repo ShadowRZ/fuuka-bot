@@ -7,6 +7,7 @@ use nom::combinator::{eof, map, opt};
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 use nom::{bytes::complete::tag_no_case, IResult};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DiceCandidate {
@@ -14,12 +15,19 @@ pub struct DiceCandidate {
     pub target: Option<u32>,
 }
 
-impl<'input> TryFrom<&'input str> for DiceCandidate {
-    type Error = nom::Err<nom::error::Error<&'input str>>;
+impl FromStr for DiceCandidate {
+    type Err = nom::error::Error<String>;
 
-    fn try_from(input: &'input str) -> Result<Self, <Self as TryFrom<&'input str>>::Error> {
-        let (_, result) = terminated(expr, eof)(input)?;
-        Ok(result)
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        use nom::error::Error;
+        use nom::Finish;
+        match terminated(expr, eof)(input).finish() {
+            Ok((_, result)) => Ok(result),
+            Err(Error { input, code }) => Err(Error {
+                input: input.to_string(),
+                code,
+            }),
+        }
     }
 }
 

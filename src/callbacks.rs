@@ -13,7 +13,7 @@ use std::sync::Arc;
 pub struct FuukaBotCallbacks;
 
 impl FuukaBotCallbacks {
-    pub async fn on_room_message(
+    pub async fn on_room_command(
         ev: OriginalSyncRoomMessageEvent,
         room: Room,
         ctx: Ctx<Arc<FuukaBotContext>>,
