@@ -190,36 +190,34 @@ pub async fn make_randomdraw_event_content(
                 format!("你好, {}<br/>汝的今日运势: {}", user_pill, result),
             )
         }
+    } else if prob {
+        let happen_or_not_string = if result_type { "发生" } else { "不发生" };
+        RoomMessageEventContent::text_html(
+            format!(
+                "你好, @{}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
+                member.name(),
+                query,
+                result,
+                happen_or_not_string
+            ),
+            format!(
+                "你好, {}<br/>所求事项: {}<br/>结果: 此事有 {} 的概率{}",
+                user_pill, query, result, happen_or_not_string
+            ),
+        )
     } else {
-        if prob {
-            let happen_or_not_string = if result_type { "发生" } else { "不发生" };
-            RoomMessageEventContent::text_html(
-                format!(
-                    "你好, @{}\n所求事项: {}\n结果: 此事有 {} 的概率{}",
-                    member.name(),
-                    query,
-                    result,
-                    happen_or_not_string
-                ),
-                format!(
-                    "你好, {}<br/>所求事项: {}<br/>结果: 此事有 {} 的概率{}",
-                    user_pill, query, result, happen_or_not_string
-                ),
-            )
-        } else {
-            RoomMessageEventContent::text_html(
-                format!(
-                    "你好, @{}\n所求事项: {}\n结果: {}",
-                    member.name(),
-                    query,
-                    result
-                ),
-                format!(
-                    "你好, {}<br/>所求事项: {}<br/>结果: {}",
-                    user_pill, query, result
-                ),
-            )
-        }
+        RoomMessageEventContent::text_html(
+            format!(
+                "你好, @{}\n所求事项: {}\n结果: {}",
+                member.name(),
+                query,
+                result
+            ),
+            format!(
+                "你好, {}<br/>所求事项: {}<br/>结果: {}",
+                user_pill, query, result
+            ),
+        )
     };
     Ok(content)
 }

@@ -46,20 +46,20 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn eval(self, rng: &mut fastrand::Rng) -> i32 {
+    pub fn eval(self) -> i32 {
         match self {
             Self::DiceOrInt(result) => match result {
                 DiceOrInt::Dice(dice) => {
                     let Dice { count, sides } = dice;
-                    (rng.u32(1..=sides) * count) as i32
+                    (fastrand::u32(1..=sides) * count) as i32
                 }
                 DiceOrInt::Int(num) => num,
             },
             Self::BinOp { lhs, op, rhs } => match op {
-                Op::Add => lhs.eval(rng) + rhs.eval(rng),
-                Op::Sub => lhs.eval(rng) - rhs.eval(rng),
-                Op::Mul => lhs.eval(rng) * rhs.eval(rng),
-                Op::Div => lhs.eval(rng) / rhs.eval(rng),
+                Op::Add => lhs.eval() + rhs.eval(),
+                Op::Sub => lhs.eval() - rhs.eval(),
+                Op::Mul => lhs.eval() * rhs.eval(),
+                Op::Div => lhs.eval() / rhs.eval(),
             },
         }
     }
@@ -86,6 +86,41 @@ fn expr(input: &str) -> IResult<&str, DiceCandidate> {
     )(input)
 }
 
+// XXX: Allow this
+// Returning directly gives this error:
+// error[E0597]: `result` does not live long enough
+//    --> src/dicer.rs:103:12
+//     |
+// 92  | /     fold_many0(
+// 93  | |         alt((
+// 94  | |             |input| {
+// 95  | |                 let (remaining, mul) = preceded(char('*'), dice_or_int)(input)?;
+// ...   |
+// 103 | |         || result.clone(),
+//     | |         -- ^^^^^^ borrowed value does not live long enough
+//     | |         |
+//     | |         value captured here
+// ...   |
+// 111 | |         },
+// 112 | |     )(remaining)
+//     | |_____- a temporary with access to the borrow is created here ...
+// 113 |   }
+//     |   -
+//     |   |
+//     |   `result` dropped here while still borrowed
+//     |   ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type `impl FnMut(&str) -> Result<(&str, Expr), nom::Err<nom::error::Error<&str>>>`
+//     |
+//     = note: the temporary is part of an expression at the end of a block;
+//             consider forcing this temporary to be dropped sooner, before the block's local variables are dropped
+// help: for example, you could save the expression's value in a new local variable `x` and then make `x` be the expression at the end of the block
+//     |
+// 92  ~     let x = fold_many0(
+// 93  |         alt((
+//   ...
+// 111 |         },
+// 112 ~     )(remaining); x
+//     |
+#[allow(clippy::let_and_return)]
 fn factor(input: &str) -> IResult<&str, Expr> {
     let (remaining, result) = dice_or_int(input)?;
     let result = fold_many0(
@@ -112,6 +147,8 @@ fn factor(input: &str) -> IResult<&str, Expr> {
     result
 }
 
+// XXX: Allow this
+#[allow(clippy::let_and_return)]
 fn term(input: &str) -> IResult<&str, Expr> {
     let (remaining, result) = dice_or_int(input)?;
     let result = fold_many0(
