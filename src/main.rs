@@ -9,6 +9,9 @@ use std::env;
 use std::fs;
 use std::io;
 use std::io::Write;
+use tokio::signal;
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 
 static SESSION_JSON_FILE: &str = "credentials.json";
 static CONFIG_FILE: &str = "fuuka-bot.toml";
@@ -78,6 +81,52 @@ async fn main() -> anyhow::Result<()> {
 
     let session = get_session().context("Getting session failed!")?;
 
+    let cts = CancellationToken::new();
+    let bot_cts = cts.clone();
+    spawn_shutdown_handler(cts).await;
+
     let bot = FuukaBot::new(config, session).await?;
-    bot.run().await
+    let task: JoinHandle<anyhow::Result<()>> = tokio::spawn(async move {
+        tokio::select! {
+            _ = bot_cts.cancelled() => {
+                tracing::info!("Shutdown signal received, starting graceful shutdown");
+                Ok(())
+            }
+            _ = bot.run() => {
+                Ok(())
+            }
+        }
+    });
+
+    task.await?
+}
+
+async fn spawn_shutdown_handler(cts: CancellationToken) {
+    tokio::spawn(async move {
+        let ctrl_c = async {
+            signal::ctrl_c()
+                .await
+                .expect("failed to install Ctrl+C handler");
+        };
+
+        #[cfg(unix)]
+        let terminate = async {
+            signal::unix::signal(signal::unix::SignalKind::terminate())
+                .expect("failed to install signal handler")
+                .recv()
+                .await;
+        };
+
+        #[cfg(not(unix))]
+        let terminate = std::future::pending::<()>();
+
+        tokio::select! {
+            _ = ctrl_c => {
+                cts.cancel();
+            },
+            _ = terminate => {
+                cts.cancel();
+            },
+        }
+    });
 }

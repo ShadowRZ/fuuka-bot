@@ -16,6 +16,7 @@ ruma = { version = "0.9.2", features = ["html"] }
 image = "*"
 file-format = "*"
 tokio-stream = "*"
+tokio-util = "*"
 tracing = "*"
 tracing-subscriber = "*"
 reqwest = "*"
