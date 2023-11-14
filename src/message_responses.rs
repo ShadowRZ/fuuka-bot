@@ -1,3 +1,5 @@
+//! Responses to messages that are not commands.
+
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
@@ -11,9 +13,11 @@ use crate::dicer::DiceCandidate;
 use crate::jerryxiao::make_randomdraw_event_content;
 use crate::{jerryxiao::make_jerryxiao_event_content, utils::get_reply_target};
 
+/// A ZST for containing messages responses.
 pub struct FuukaBotMessages;
 
 impl FuukaBotMessages {
+    /// The callback handler for Jerry Xiao functions.
     pub async fn jerryxiao(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
         // It should be a joined room.
         if room.state() != RoomState::Joined {
@@ -48,6 +52,7 @@ impl FuukaBotMessages {
         Ok(())
     }
 
+    /// The callback handler for randomdraw.
     pub async fn randomdraw(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
         // It should be a joined room.
         if room.state() != RoomState::Joined {
@@ -68,6 +73,7 @@ impl FuukaBotMessages {
         Ok(())
     }
 
+    /// The callback handler for dicer.
     pub async fn dicer(ev: OriginalSyncRoomMessageEvent, room: Room) -> anyhow::Result<()> {
         // It should be a joined room.
         if room.state() != RoomState::Joined {

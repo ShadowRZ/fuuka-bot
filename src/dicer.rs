@@ -1,3 +1,19 @@
+//! Implments dicer function, and parsing based on [Nom](https://docs.rs/nom).
+//!
+//! ## Expression Syntax
+//! 
+//! An token enclosed in `=` specifies parsing a primitive type of Rust.
+//! 
+//! 
+//! ```
+//! expr -> term "=>" =u32=;
+//! 
+//! term -> factor ( ("+" | "-") factor )*;
+//! factor -> dice_or_int ( ("+" | "-") dice_or_int )*;
+//! 
+//! dice_or_int => ( ( =u32= ('d' | 'D') =u32= ) | =i32= );
+//! ```
+
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::char;
@@ -9,9 +25,12 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 use nom::{bytes::complete::tag_no_case, IResult};
 use std::str::FromStr;
 
+/// A dice candicate.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DiceCandidate {
+    /// The expression of the dice roll.
     pub expr: Expr,
+    /// An optional target for the dice roll.
     pub target: Option<u32>,
 }
 
@@ -31,29 +50,42 @@ impl FromStr for DiceCandidate {
     }
 }
 
+/// A dice roll.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Dice {
+    /// How many times to roll.
     pub count: u32,
+    /// How many sides the dice roll has.
     pub sides: u32,
 }
 
+/// A unit in expression that represents either a dice roll or an interger.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum DiceOrInt {
+    /// A dice roll.
     Dice(Dice),
+    /// An oridary interger.
     Int(i32),
 }
 
+/// An expression.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Expr {
+    /// A unit in expression that represents either a dice roll or an interger.
     DiceOrInt(DiceOrInt),
+    /// A binary operator.
     BinOp {
+        /// Left hand expression.
         lhs: Box<Expr>,
+        /// The operator.
         op: Op,
+        /// Right hand expression.
         rhs: Box<Expr>,
     },
 }
 
 impl Expr {
+    /// Evaluate the expression.
     pub fn eval(self) -> i32 {
         match self {
             Self::DiceOrInt(result) => match result {
@@ -73,11 +105,16 @@ impl Expr {
     }
 }
 
+/// The supported operator.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Op {
+    /// `+`.
     Add,
+    /// `-`.
     Sub,
+    /// `*`.
     Mul,
+    /// `/`.
     Div,
 }
 
@@ -158,7 +195,7 @@ fn factor(input: &str) -> IResult<&str, Expr> {
 // XXX: Allow this
 #[allow(clippy::let_and_return)]
 fn term(input: &str) -> IResult<&str, Expr> {
-    let (remaining, result) = dice_or_int(input)?;
+    let (remaining, result) = factor(input)?;
     let result = fold_many0(
         alt((
             |input| {

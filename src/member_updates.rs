@@ -1,3 +1,5 @@
+//! Member updates stream handler.
+
 use async_stream::stream;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::member::OriginalRoomMemberEvent;
@@ -9,6 +11,7 @@ use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::{EventId, OwnedEventId};
 use tokio_stream::Stream;
 
+/// Represents a member changes internal state.
 pub struct MemberChanges {
     replaces_state: Option<OwnedEventId>,
     room: Room,
@@ -22,6 +25,7 @@ impl MemberChanges {
         }
     }
 
+    /// Creates a new [Stream] that outputs a series of [OriginalRoomMemberEvent] starting from the given [SyncRoomMemberEvent].
     pub fn new_stream(
         room: &Room,
         ev: SyncRoomMemberEvent,

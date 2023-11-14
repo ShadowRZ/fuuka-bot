@@ -1,3 +1,5 @@
+//! Implments various Jerry Xiao like functions.
+
 use crate::utils::make_pill;
 use crate::FuukaBotError;
 use matrix_sdk::room::Room;
@@ -5,6 +7,7 @@ use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
 use time::macros::format_description;
 use time::OffsetDateTime;
 
+/// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room, two senders and text.
 pub async fn make_jerryxiao_event_content(
     room: &Room,
     from_sender: &UserId,
@@ -111,6 +114,7 @@ pub async fn make_jerryxiao_event_content(
     }
 }
 
+/// Constructs the [RoomMessageEventContent] result of randomdraw from the given room, sender and text.
 pub async fn make_randomdraw_event_content(
     room: &Room,
     user_id: &UserId,

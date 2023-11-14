@@ -1,3 +1,5 @@
+//! Generic Matrix event callback handler.
+
 use crate::bot_commands::fuuka_bot_dispatch_command;
 use crate::FuukaBotContext;
 use crate::FuukaBotError;
@@ -10,9 +12,12 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::RoomState;
 use std::sync::Arc;
+
+/// A ZST for containing callbacks.
 pub struct FuukaBotCallbacks;
 
 impl FuukaBotCallbacks {
+    /// The callback handler for commands.
     pub async fn on_room_command(
         ev: OriginalSyncRoomMessageEvent,
         room: Room,

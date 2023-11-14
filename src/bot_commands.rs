@@ -1,3 +1,5 @@
+//! Bot commands handler.
+
 use anyhow::Context;
 use file_format::FileFormat;
 use futures_util::pin_mut;
@@ -39,6 +41,7 @@ use crate::utils::get_reply_target_fallback;
 use crate::utils::make_divergence;
 use crate::FuukaBotError;
 
+/// Dispatches the command and send the command outout.
 pub async fn fuuka_bot_dispatch_command(
     ev: OriginalSyncRoomMessageEvent,
     room: Room,
