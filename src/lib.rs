@@ -1,5 +1,6 @@
 pub mod bot_commands;
 pub mod callbacks;
+pub mod dicer;
 pub mod jerryxiao;
 pub mod member_updates;
 pub mod message_responses;
