@@ -3,6 +3,7 @@
 use anyhow::Context;
 use file_format::FileFormat;
 use futures_util::pin_mut;
+use futures_util::StreamExt;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
 use matrix_sdk::deserialized_responses::MemberEvent;
@@ -32,7 +33,6 @@ use time::macros::offset;
 use time::Duration;
 use time::OffsetDateTime;
 use time::Weekday;
-use futures_util::StreamExt;
 
 use crate::member_updates::MemberChanges;
 use crate::utils::avatar_http_url;
@@ -168,7 +168,9 @@ async fn name_changes_command(
             let stream = MemberChanges::new_stream(room, event.clone()).peekable();
             pin_mut!(stream);
             while let Some(event) = stream.next().await {
-                if count <= -5 { break; }
+                if count <= -5 {
+                    break;
+                }
 
                 let prev_event = stream.as_mut().peek().await;
                 let detail = prev_event.map(|e| e.content.details());
@@ -246,7 +248,9 @@ async fn avatar_changes_command(
             let stream = MemberChanges::new_stream(room, event.clone()).peekable();
             pin_mut!(stream);
             while let Some(event) = stream.next().await {
-                if count <= -5 { break; }
+                if count <= -5 {
+                    break;
+                }
 
                 let prev_event = stream.as_mut().peek().await;
                 let detail = prev_event.map(|e| e.content.details());
@@ -287,7 +291,9 @@ async fn avatar_changes_command(
                             avatar_http_url(event.content.avatar_url.as_deref(), homeserver)?;
                         let result = format!(
                             "{count}: Joined with avatar {}\n",
-                            avatar_link.map(|link| link.to_string()).unwrap_or("(No avatar)".to_string())
+                            avatar_link
+                                .map(|link| link.to_string())
+                                .unwrap_or("(No avatar)".to_string())
                         );
                         body.push_str(&result);
                     }

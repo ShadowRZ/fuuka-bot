@@ -5,6 +5,7 @@ use crate::FuukaBotContext;
 use crate::FuukaBotError;
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::Room;
+use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{
@@ -44,6 +45,31 @@ impl FuukaBotCallbacks {
         }
 
         Ok(())
+    }
+
+    pub async fn on_stripped_member(ev: StrippedRoomMemberEvent, room: Room) {
+        let client = room.client();
+        let user_id = client.user_id().unwrap();
+        if ev.state_key != user_id {
+            return;
+        }
+
+        tokio::spawn(async move {
+            let room_id = room.room_id();
+            tracing::info!("Autojoining room {}", room_id);
+            let mut delay = 2;
+            while let Err(e) = room.join().await {
+                use tokio::time::{sleep, Duration};
+                tracing::warn!("Failed to join room {room_id} ({e:?}), retrying in {delay}s");
+                sleep(Duration::from_secs(delay)).await;
+                delay *= 2;
+
+                if delay > 3600 {
+                    tracing::error!("Can't join room {room_id} ({e:?})");
+                    break;
+                }
+            }
+        });
     }
 }
 
