@@ -75,7 +75,7 @@ pub fn make_divergence(room_hash: u32, event_id_hash: Option<u32>) -> f32 {
 pub fn nom_error_message(input: &str, e: nom::error::Error<String>) -> RoomMessageEventContent {
     let offset = input
         .rfind(e.input.as_str())
-        .unwrap_or_else(|| e.input.len());
+        .unwrap_or(e.input.len());
     let (prefix, suffix) = input.split_at(offset);
     let prefix_parts = prefix.split('\n').collect::<Vec<_>>();
     let line_number = prefix_parts.len();

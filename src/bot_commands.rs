@@ -32,7 +32,7 @@ use time::macros::offset;
 use time::Duration;
 use time::OffsetDateTime;
 use time::Weekday;
-use tokio_stream::StreamExt;
+use futures_util::StreamExt;
 
 use crate::member_updates::MemberChanges;
 use crate::utils::avatar_http_url;
@@ -165,28 +165,51 @@ async fn name_changes_command(
     let event: &MemberEvent = member.event();
     match event {
         MemberEvent::Sync(event) => {
-            let stream = MemberChanges::new_stream(room, event.clone()).take(4);
+            let stream = MemberChanges::new_stream(room, event.clone()).peekable();
             pin_mut!(stream);
             while let Some(event) = stream.next().await {
-                // `MembershipChange::Joined` because API can only return the current state.
-                if let MembershipChange::Joined = event.membership_change() {
-                    match event.content.displayname {
-                        Some(displayname) => {
-                            count -= 1;
-                            let nanos: i128 =
-                                <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
-                            let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
-                                .format(&Rfc3339)?;
-                            let result =
-                                format!("{count}: Changed to {displayname} ({timestamp})\n");
-                            body.push_str(&result);
-                        }
-                        None => {
-                            let result = format!("{count}: Removed display name.\n");
-                            body.push_str(&result);
+                if count <= -5 { break; }
+
+                let prev_event = stream.as_mut().peek().await;
+                let detail = prev_event.map(|e| e.content.details());
+                let change =
+                    event
+                        .content
+                        .membership_change(detail, &event.sender, &event.state_key);
+                match change {
+                    MembershipChange::ProfileChanged {
+                        displayname_change,
+                        avatar_url_change: _,
+                    } => {
+                        let Some(displayname_change) = displayname_change else {
+                            continue;
+                        };
+                        match displayname_change.new {
+                            Some(displayname) => {
+                                count -= 1;
+                                let nanos: i128 =
+                                    <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
+                                let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                    .format(&Rfc3339)?;
+                                let result =
+                                    format!("{count}: Changed to {displayname} ({timestamp})\n");
+                                body.push_str(&result);
+                            }
+                            None => {
+                                let result = format!("{count}: Removed display name.\n");
+                                body.push_str(&result);
+                            }
                         }
                     }
-                }
+                    MembershipChange::Joined => {
+                        let result = format!(
+                            "{count}: Joined with display name {}.\n",
+                            event.content.displayname.unwrap_or("(No name)".to_string())
+                        );
+                        body.push_str(&result);
+                    }
+                    _ => {}
+                };
             }
         }
         _ => tracing::warn!(
@@ -219,30 +242,55 @@ async fn avatar_changes_command(
     let event: &MemberEvent = member.event();
     match event {
         MemberEvent::Sync(event) => {
-            let stream = MemberChanges::new_stream(room, event.clone()).take(4);
+            let stream = MemberChanges::new_stream(room, event.clone()).peekable();
             pin_mut!(stream);
             while let Some(event) = stream.next().await {
-                // `MembershipChange::Joined` because API can only return the current state.
-                if let MembershipChange::Joined = event.membership_change() {
-                    match event.content.avatar_url {
-                        Some(avatar_url) => {
-                            count -= 1;
-                            let nanos: i128 =
-                                <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
-                            let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
-                                .format(&Rfc3339)?;
-                            let avatar_link =
-                                avatar_http_url(Some(&avatar_url), homeserver)?.unwrap();
-                            let result =
-                                format!("{count}: Changed to {avatar_link} ({timestamp})\n");
-                            body.push_str(&result);
-                        }
-                        None => {
-                            let result = format!("{count}: Removed avatar.\n");
-                            body.push_str(&result);
+                if count <= -5 { break; }
+
+                let prev_event = stream.as_mut().peek().await;
+                let detail = prev_event.map(|e| e.content.details());
+                let change =
+                    event
+                        .content
+                        .membership_change(detail, &event.sender, &event.state_key);
+                match change {
+                    MembershipChange::ProfileChanged {
+                        displayname_change: _,
+                        avatar_url_change,
+                    } => {
+                        let Some(avatar_url_change) = avatar_url_change else {
+                            continue;
+                        };
+                        match avatar_url_change.new {
+                            Some(avatar_url) => {
+                                count -= 1;
+                                let nanos: i128 =
+                                    <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
+                                let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                    .format(&Rfc3339)?;
+                                let avatar_link =
+                                    avatar_http_url(Some(avatar_url), homeserver)?.unwrap();
+                                let result =
+                                    format!("{count}: Changed to {avatar_link} ({timestamp})\n");
+                                body.push_str(&result);
+                            }
+                            None => {
+                                let result = format!("{count}: Removed avatar.\n");
+                                body.push_str(&result);
+                            }
                         }
                     }
-                }
+                    MembershipChange::Joined => {
+                        let avatar_link =
+                            avatar_http_url(event.content.avatar_url.as_deref(), homeserver)?;
+                        let result = format!(
+                            "{count}: Joined with avatar {}.\n",
+                            avatar_link.map(|link| link.to_string()).unwrap_or("(No avatar)".to_string())
+                        );
+                        body.push_str(&result);
+                    }
+                    _ => {}
+                };
             }
         }
         _ => tracing::warn!(
