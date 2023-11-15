@@ -204,7 +204,7 @@ async fn name_changes_command(
                     MembershipChange::Joined => {
                         count -= 1;
                         let result = format!(
-                            "{count}: Joined with display name {}.\n",
+                            "{count}: Joined with display name {}\n",
                             event.content.displayname.unwrap_or("(No name)".to_string())
                         );
                         body.push_str(&result);
@@ -286,7 +286,7 @@ async fn avatar_changes_command(
                         let avatar_link =
                             avatar_http_url(event.content.avatar_url.as_deref(), homeserver)?;
                         let result = format!(
-                            "{count}: Joined with avatar {}.\n",
+                            "{count}: Joined with avatar {}\n",
                             avatar_link.map(|link| link.to_string()).unwrap_or("(No avatar)".to_string())
                         );
                         body.push_str(&result);
