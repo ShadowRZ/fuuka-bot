@@ -5,6 +5,12 @@ use matrix_sdk::matrix_auth::MatrixSession;
 use matrix_sdk::Client;
 use reqwest::Url;
 use rpassword::read_password;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::filter;
+use tracing_subscriber::fmt;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 use std::env;
 use std::fs;
 use std::io;
@@ -58,7 +64,16 @@ fn get_config() -> anyhow::Result<FuukaBotConfig> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    let filter = EnvFilter::from_default_env()
+        .add_directive(LevelFilter::WARN.into())
+        .add_directive("fuuka_bot=debug".parse()?);
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_level(true)
+        .with_target(true)
+        .with_ansi(true)
+        .compact()
+        .init();
 
     let config: FuukaBotConfig = get_config().context("Getting config failed!")?;
 
