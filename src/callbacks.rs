@@ -101,8 +101,8 @@ async fn send_error_message(
         Some(FuukaBotError::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
             "⁉️ The bot fired an internal error: {err:#}"
         )),
-        Some(FuukaBotError::MathOverflow) | Some(FuukaBotError::DivByZero) => {
-            RoomMessageEventContent::text_plain(format!("⁉️ Math error happened: {err:#}"))
+        Some(FuukaBotError::MathOverflow | FuukaBotError::DivByZero) => {
+            RoomMessageEventContent::text_plain(format!("Math error happened: {err:#}"))
         }
         None => {
             RoomMessageEventContent::text_plain(format!("⁉️ An unexpected error occoured: {err:#}"))
@@ -116,5 +116,5 @@ async fn send_error_message(
     room.send(content).await?;
 
     // Send this error back to log to tracing.
-    Err(err)
+    Err(err.context("Error while running command"))
 }
