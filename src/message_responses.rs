@@ -163,13 +163,16 @@ async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventCo
                 return Ok(Some(nom_error_message(expr, e)));
             }
         };
-        let result = match cand.expr.eval() {
+        let task = tokio::task::spawn_blocking(|| {
+            cand.expr.eval()
+        });
+        let result = match task.await? {
             Ok(result) => result,
             Err(err) => return Ok(Some(get_error_message(err))),
         };
         let string = match cand.target {
             Some(target) => {
-                if result < (target as i32) {
+                if result < (target.try_into()?) {
                     Some("Success")
                 } else {
                     Some("Failed")

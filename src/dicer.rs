@@ -89,25 +89,25 @@ pub enum Expr {
 
 impl Expr {
     /// Evaluate the expression.
-    pub fn eval(self) -> anyhow::Result<i32> {
+    pub fn eval(self) -> anyhow::Result<i128> {
         match self {
             Self::DiceOrInt(result) => match result {
                 DiceOrInt::Dice(dice) => {
                     let Dice { count, sides } = dice;
-                    //Ok((fastrand::u32(1..=sides) * count) as i32)
-                    Ok((0..count).fold(0, |acc, _| acc + fastrand::u32(1..=sides)) as i32)
+                                        //Ok((fastrand::u32(1..=sides) * count) as i32)
+                    Ok((0..count).fold(0, |acc, _| acc + fastrand::u32(1..=sides)).try_into()?)
                 }
-                DiceOrInt::Int(num) => Ok(num),
+                DiceOrInt::Int(num) => Ok(num.into()),
             },
             Self::BinOp { lhs, op, rhs } => {
                 match op {
-                    Op::Add => Ok(i32::checked_add(lhs.eval()?, rhs.eval()?)
+                    Op::Add => Ok(i128::checked_add(lhs.eval()?, rhs.eval()?)
                         .ok_or(FuukaBotError::MathOverflow)?),
-                    Op::Sub => Ok(i32::checked_sub(lhs.eval()?, rhs.eval()?)
+                    Op::Sub => Ok(i128::checked_sub(lhs.eval()?, rhs.eval()?)
                         .ok_or(FuukaBotError::MathOverflow)?),
-                    Op::Mul => Ok(i32::checked_mul(lhs.eval()?, rhs.eval()?)
+                    Op::Mul => Ok(i128::checked_mul(lhs.eval()?, rhs.eval()?)
                         .ok_or(FuukaBotError::MathOverflow)?),
-                    Op::Div => Ok(i32::checked_div(lhs.eval()?, rhs.eval()?)
+                    Op::Div => Ok(i128::checked_div(lhs.eval()?, rhs.eval()?)
                         .ok_or(FuukaBotError::DivByZero)?),
                 }
             }
