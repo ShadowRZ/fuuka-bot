@@ -58,20 +58,11 @@ impl MemberChanges {
 }
 
 async fn get_replaces_state(raw: &Raw<AnyTimelineEvent>) -> Option<OwnedEventId> {
-    if let Ok(replaces_state) = raw.get_field::<String>("replaces_state") {
-        match replaces_state {
-            Some(replaces_state) => {
-                if let Ok(ret) = EventId::parse(replaces_state) {
-                    Some(ret)
-                } else {
-                    None
-                }
-            }
-            None => None,
-        }
-    } else {
-        None
-    }
+    raw.get_field::<String>("replaces_state")
+        .ok()
+        .flatten()
+        .map(|e| EventId::parse(e).ok())
+        .flatten()
 }
 
 async fn get_member_event(raw: &Raw<AnyTimelineEvent>) -> Option<OriginalRoomMemberEvent> {
