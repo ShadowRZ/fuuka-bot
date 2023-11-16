@@ -61,8 +61,7 @@ async fn get_replaces_state(raw: &Raw<AnyTimelineEvent>) -> Option<OwnedEventId>
     raw.get_field::<String>("replaces_state")
         .ok()
         .flatten()
-        .map(|e| EventId::parse(e).ok())
-        .flatten()
+        .and_then(|e| EventId::parse(e).ok())
 }
 
 async fn get_member_event(raw: &Raw<AnyTimelineEvent>) -> Option<OriginalRoomMemberEvent> {
