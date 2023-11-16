@@ -28,23 +28,31 @@ impl FuukaBotCallbacks {
         if room.state() != RoomState::Joined {
             return Ok(());
         }
-        let client = room.client();
-        let user_id = client.user_id().unwrap();
-        if ev.sender == user_id {
-            return Ok(());
-        }
 
-        let body = remove_plain_reply_fallback(ev.content.body()).trim();
-        if let Some(commands) = body.strip_prefix(&ctx.config.command_prefix) {
-            if let Err(e) =
-                fuuka_bot_dispatch_command(ev.clone(), room.clone(), commands, client.homeserver())
-                    .await
-            {
-                send_error_message(ev, room, e).await?;
+        tokio::spawn(async move {
+            let client = room.client();
+            let user_id = client.user_id().unwrap();
+            if ev.sender == user_id {
+                return Ok(());
             }
-        }
 
-        Ok(())
+            let body = remove_plain_reply_fallback(ev.content.body()).trim();
+            if let Some(commands) = body.strip_prefix(&ctx.config.command_prefix) {
+                if let Err(e) = fuuka_bot_dispatch_command(
+                    ev.clone(),
+                    room.clone(),
+                    commands,
+                    client.homeserver(),
+                )
+                .await
+                {
+                    send_error_message(ev, room, e).await?;
+                }
+            }
+
+            Ok(())
+        })
+        .await?
     }
 
     pub async fn on_stripped_member(ev: StrippedRoomMemberEvent, room: Room) {

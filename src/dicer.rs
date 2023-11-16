@@ -94,7 +94,8 @@ impl Expr {
             Self::DiceOrInt(result) => match result {
                 DiceOrInt::Dice(dice) => {
                     let Dice { count, sides } = dice;
-                    Ok((fastrand::u32(1..=sides) * count) as i32)
+                    //Ok((fastrand::u32(1..=sides) * count) as i32)
+                    Ok((0..count).fold(0, |acc, _| acc + fastrand::u32(1..=sides)) as i32)
                 }
                 DiceOrInt::Int(num) => Ok(num),
             },

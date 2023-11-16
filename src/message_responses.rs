@@ -25,32 +25,36 @@ impl FuukaBotMessages {
             return Ok(());
         }
 
-        let body = remove_plain_reply_fallback(ev.content.body()).trim();
-        let mut splited = body.split_whitespace();
-        // If the first part of the message is pure ASCII, skip it
-        if splited.next().unwrap().is_ascii() {
-            return Ok(());
-        };
+        tokio::spawn(async move {
+            let body = remove_plain_reply_fallback(ev.content.body()).trim();
+            let mut splited = body.split_whitespace();
+            // If the first part of the message is pure ASCII, skip it
+            if splited.next().unwrap().is_ascii() {
+                return Ok(());
+            };
 
-        let from_sender = &ev.sender;
-        let Some(to_sender) = get_reply_target(&ev, &room).await? else {
-            return Ok(());
-        };
+            let from_sender = &ev.sender;
+            let Some(to_sender) = get_reply_target(&ev, &room).await? else {
+                return Ok(());
+            };
 
-        let Some(content) = _dispatch_jerryxiao(&room, body, from_sender, &to_sender).await? else {
-            return Ok(());
-        };
+            let Some(content) = _dispatch_jerryxiao(&room, body, from_sender, &to_sender).await?
+            else {
+                return Ok(());
+            };
 
-        let content = content
-            .make_reply_to(
-                &ev.into_full_event(room.room_id().into()),
-                ForwardThread::Yes,
-                AddMentions::Yes,
-            )
-            .add_mentions(Mentions::with_user_ids([to_sender]));
-        room.send(content).await?;
+            let content = content
+                .make_reply_to(
+                    &ev.into_full_event(room.room_id().into()),
+                    ForwardThread::Yes,
+                    AddMentions::Yes,
+                )
+                .add_mentions(Mentions::with_user_ids([to_sender]));
+            room.send(content).await?;
 
-        Ok(())
+            Ok(())
+        })
+        .await?
     }
 
     /// The callback handler for randomdraw.
@@ -60,18 +64,21 @@ impl FuukaBotMessages {
             return Ok(());
         }
 
-        let body = remove_plain_reply_fallback(ev.content.body()).trim();
-        let Some(content) = _dispatch_randomdraw(&ev, &room, body).await? else {
-            return Ok(());
-        };
+        tokio::spawn(async move {
+            let body = remove_plain_reply_fallback(ev.content.body()).trim();
+            let Some(content) = _dispatch_randomdraw(&ev, &room, body).await? else {
+                return Ok(());
+            };
 
-        let content = content.make_reply_to(
-            &ev.into_full_event(room.room_id().into()),
-            ForwardThread::Yes,
-            AddMentions::Yes,
-        );
-        room.send(content).await?;
-        Ok(())
+            let content = content.make_reply_to(
+                &ev.into_full_event(room.room_id().into()),
+                ForwardThread::Yes,
+                AddMentions::Yes,
+            );
+            room.send(content).await?;
+            Ok(())
+        })
+        .await?
     }
 
     /// The callback handler for dicer.
@@ -80,25 +87,23 @@ impl FuukaBotMessages {
         if room.state() != RoomState::Joined {
             return Ok(());
         }
-        let client = room.client();
-        let user_id = client.user_id().unwrap();
-        if ev.sender == user_id {
-            return Ok(());
-        }
 
-        let body = remove_plain_reply_fallback(ev.content.body()).trim();
-        let Some(content) = _dispatch_dicer(body).await? else {
-            return Ok(());
-        };
+        tokio::spawn(async move {
+            let body = remove_plain_reply_fallback(ev.content.body()).trim();
+            let Some(content) = _dispatch_dicer(body).await? else {
+                return Ok(());
+            };
 
-        let content = content.make_reply_to(
-            &ev.into_full_event(room.room_id().into()),
-            ForwardThread::Yes,
-            AddMentions::Yes,
-        );
-        room.send(content).await?;
+            let content = content.make_reply_to(
+                &ev.into_full_event(room.room_id().into()),
+                ForwardThread::Yes,
+                AddMentions::Yes,
+            );
+            room.send(content).await?;
 
-        Ok(())
+            Ok(())
+        })
+        .await?
     }
 }
 
