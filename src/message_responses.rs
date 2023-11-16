@@ -11,6 +11,7 @@ use ruma::events::Mentions;
 
 use crate::dicer::DiceCandidate;
 use crate::jerryxiao::make_randomdraw_event_content;
+use crate::utils::get_error_message;
 use crate::utils::nom_error_message;
 use crate::{jerryxiao::make_jerryxiao_event_content, utils::get_reply_target};
 
@@ -162,7 +163,10 @@ async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventCo
                 return Ok(Some(nom_error_message(expr, e)));
             }
         };
-        let result = cand.expr.eval()?;
+        let result = match cand.expr.eval() {
+            Ok(result) => result,
+            Err(err) => return Ok(Some(get_error_message(err))),
+        };
         let string = match cand.target {
             Some(target) => {
                 if result < (target as i32) {

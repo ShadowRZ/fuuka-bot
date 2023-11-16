@@ -9,6 +9,8 @@ use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::{MxcUri, OwnedUserId};
 
+use crate::FuukaBotError;
+
 /// Given a [OriginalSyncRoomMessageEvent], returns the user ID of the reply target.
 pub async fn get_reply_target(
     ev: &OriginalSyncRoomMessageEvent,
@@ -109,4 +111,29 @@ pub fn nom_error_message(input: &str, e: nom::error::Error<String>) -> RoomMessa
                 .unwrap_or("(EOF)".to_string())
         ),
     )
+}
+
+pub fn get_error_message(err: anyhow::Error) -> RoomMessageEventContent {
+    match err.downcast_ref::<FuukaBotError>() {
+        Some(FuukaBotError::MissingParamter(_)) => {
+            RoomMessageEventContent::text_plain(format!("Invaild input: {err:#}"))
+        }
+        Some(FuukaBotError::RequiresBannable | FuukaBotError::RequiresReply) => {
+            RoomMessageEventContent::text_plain(format!(
+                "Command requirement is unsatisfied: {err:#}"
+            ))
+        }
+        Some(FuukaBotError::UserNotFound) => {
+            RoomMessageEventContent::text_plain(format!("Runtime error: {err:#}"))
+        }
+        Some(FuukaBotError::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
+            "⁉️ The bot fired an internal error: {err:#}"
+        )),
+        Some(FuukaBotError::MathOverflow | FuukaBotError::DivByZero) => {
+            RoomMessageEventContent::text_plain(format!("Math error happened: {err:#}"))
+        }
+        None => {
+            RoomMessageEventContent::text_plain(format!("⁉️ An unexpected error occoured: {err:#}"))
+        }
+    }
 }
