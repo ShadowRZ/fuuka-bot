@@ -26,6 +26,8 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 use nom::{bytes::complete::tag_no_case, IResult};
 use std::str::FromStr;
 
+use crate::FuukaBotError;
+
 /// A dice candicate.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DiceCandidate {
@@ -87,21 +89,27 @@ pub enum Expr {
 
 impl Expr {
     /// Evaluate the expression.
-    pub fn eval(self) -> i32 {
+    pub fn eval(self) -> anyhow::Result<i32> {
         match self {
             Self::DiceOrInt(result) => match result {
                 DiceOrInt::Dice(dice) => {
                     let Dice { count, sides } = dice;
-                    (fastrand::u32(1..=sides) * count) as i32
+                    Ok((fastrand::u32(1..=sides) * count) as i32)
                 }
-                DiceOrInt::Int(num) => num,
+                DiceOrInt::Int(num) => Ok(num),
             },
-            Self::BinOp { lhs, op, rhs } => match op {
-                Op::Add => lhs.eval() + rhs.eval(),
-                Op::Sub => lhs.eval() - rhs.eval(),
-                Op::Mul => lhs.eval() * rhs.eval(),
-                Op::Div => lhs.eval() / rhs.eval(),
-            },
+            Self::BinOp { lhs, op, rhs } => {
+                match op {
+                    Op::Add => Ok(i32::checked_add(lhs.eval()?, rhs.eval()?)
+                        .ok_or(FuukaBotError::MathOverflow)?),
+                    Op::Sub => Ok(i32::checked_sub(lhs.eval()?, rhs.eval()?)
+                        .ok_or(FuukaBotError::MathOverflow)?),
+                    Op::Mul => Ok(i32::checked_mul(lhs.eval()?, rhs.eval()?)
+                        .ok_or(FuukaBotError::MathOverflow)?),
+                    Op::Div => Ok(i32::checked_div(lhs.eval()?, rhs.eval()?)
+                        .ok_or(FuukaBotError::DivByZero)?),
+                }
+            }
         }
     }
 }

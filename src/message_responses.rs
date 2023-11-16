@@ -157,7 +157,7 @@ async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventCo
                 return Ok(Some(nom_error_message(expr, e)));
             }
         };
-        let result = cand.expr.eval();
+        let result = cand.expr.eval()?;
         let string = match cand.target {
             Some(target) => {
                 if result < (target as i32) {

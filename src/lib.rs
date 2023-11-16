@@ -115,6 +115,12 @@ pub enum FuukaBotError {
     /// The specified user does not exist.
     #[error("The specified user does not exist.")]
     UserNotFound,
+    /// Math overflow happened.
+    #[error("Math overflow happened.")]
+    MathOverflow,
+    /// Divide by zero happened.
+    #[error("Divisioned by zero.")]
+    DivByZero,
     // Internal errors.
     /// The bot encountered an internal error that the user it checked should be avaliable but didn't.
     #[error("This user should be avaliable.")]

@@ -93,6 +93,9 @@ async fn send_error_message(
         Some(&FuukaBotError::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
             "⁉️ The bot fired an internal error: {err:#}"
         )),
+        Some(&FuukaBotError::MathOverflow) | Some(&FuukaBotError::DivByZero) => {
+            RoomMessageEventContent::text_plain(format!("⁉️ Math error happened: {err:#}"))
+        }
         None => {
             RoomMessageEventContent::text_plain(format!("⁉️ An unexpected error occoured: {err:#}"))
         }
