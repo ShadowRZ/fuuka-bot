@@ -90,10 +90,10 @@ async fn send_error_message(
         Some(FuukaBotError::UserNotFound) => {
             RoomMessageEventContent::text_plain(format!("Runtime error: {err:#}"))
         }
-        Some(&FuukaBotError::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
+        Some(FuukaBotError::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
             "⁉️ The bot fired an internal error: {err:#}"
         )),
-        Some(&FuukaBotError::MathOverflow) | Some(&FuukaBotError::DivByZero) => {
+        Some(FuukaBotError::MathOverflow) | Some(FuukaBotError::DivByZero) => {
             RoomMessageEventContent::text_plain(format!("⁉️ Math error happened: {err:#}"))
         }
         None => {
