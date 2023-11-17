@@ -1,6 +1,5 @@
 //! Bot commands handler.
-
-use anyhow::Context;
+#![warn(missing_docs)]
 use file_format::FileFormat;
 use futures_util::pin_mut;
 use futures_util::StreamExt;
@@ -9,14 +8,11 @@ use image::GenericImageView;
 use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
-use matrix_sdk::reqwest::Url;
-use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::events::room::message::AddMentions;
 use matrix_sdk::ruma::events::room::message::ForwardThread;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
 use matrix_sdk::ruma::events::room::message::MessageType;
-use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::ImageInfo;
@@ -34,62 +30,54 @@ use time::Duration;
 use time::OffsetDateTime;
 use time::Weekday;
 
-use crate::member_updates::MemberChanges;
-use crate::utils::avatar_http_url;
-use crate::utils::get_reply_target;
-use crate::utils::get_reply_target_fallback;
-use crate::utils::make_divergence;
-use crate::FuukaBotError;
+use crate::get_reply_target;
+use crate::get_reply_target_fallback;
+use crate::stream::StreamFactory;
+use crate::traits::MxcUriExt;
+use crate::Error;
+use crate::HandlerContext;
 
 /// Dispatches the command and send the command outout.
-pub async fn fuuka_bot_dispatch_command(
-    ev: OriginalSyncRoomMessageEvent,
-    room: Room,
-    command: &str,
-    homeserver: Url,
-) -> anyhow::Result<()> {
+pub async fn dispatch(ctx: &HandlerContext, command: &str) -> anyhow::Result<()> {
     let args: Vec<&str> = command.split_ascii_whitespace().collect();
     let Some(command) = args.first() else {
         return Ok(());
     };
 
     let Some(content) = (match *command {
-        "help" => help_command(&room).await?,
-        "send_avatar" => send_avatar_command(&ev, &room)
-            .await
-            .context("Sending avatar failed")?,
-        "crazy_thursday" => crazy_thursday_command().await?,
-        "ping" => ping_command(&ev).await?,
-        "room_id" => room_id_command(&room).await?,
-        "user_id" => user_id_command(&ev, &room).await?,
-        "name_changes" => name_changes_command(&ev, &room).await?,
-        "avatar_changes" => avatar_changes_command(&ev, &room, &homeserver).await?,
-        "divergence" => divergence_command(&ev, &room).await?,
-        "ignore" => ignore_command(&ev, &room).await?,
-        "unignore" => unignore_command(&ev, &room, args.get(1).copied()).await?,
-        _ => _unknown_command(command).await?,
+        "help" => help_command(ctx).await?,
+        "send_avatar" => send_avatar_command(ctx).await?,
+        "crazy_thursday" => crazy_thursday_command(ctx).await?,
+        "ping" => ping_command(ctx).await?,
+        "room_id" => room_id_command(ctx).await?,
+        "user_id" => user_id_command(ctx).await?,
+        "name_changes" => name_changes_command(ctx).await?,
+        "avatar_changes" => avatar_changes_command(ctx).await?,
+        "divergence" => divergence_command(ctx).await?,
+        "ignore" => ignore_command(ctx).await?,
+        "unignore" => unignore_command(ctx, args.get(1).copied()).await?,
+        _ => _unknown_command(ctx, command).await?,
     }) else {
         return Ok(());
     };
 
-    let content = content.make_reply_to(
-        &ev.into_full_event(room.room_id().into()),
-        ForwardThread::Yes,
-        AddMentions::Yes,
-    );
-    room.send(content).await?;
+    let content = content.make_reply_to(&ctx.ev, ForwardThread::Yes, AddMentions::Yes);
+    ctx.room.send(content).await?;
 
     Ok(())
 }
 
-async fn _unknown_command(command: &str) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn _unknown_command(
+    _ctx: &HandlerContext,
+    command: &str,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
     Ok(Some(RoomMessageEventContent::text_plain(format!(
         "Unknown command {command}."
     ))))
 }
 
-async fn help_command(room: &Room) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let client = room.client();
+async fn help_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let client = ctx.room.client();
     let user_id = client.user_id().unwrap();
 
     Ok(Some(RoomMessageEventContent::text_html(
@@ -98,7 +86,9 @@ async fn help_command(room: &Room) -> anyhow::Result<Option<RoomMessageEventCont
     )))
 }
 
-async fn crazy_thursday_command() -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn crazy_thursday_command(
+    _ctx: &HandlerContext,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
     let body = if now.weekday() != Weekday::Thursday {
         let date = now.date().next_occurrence(time::Weekday::Thursday);
@@ -121,11 +111,9 @@ async fn crazy_thursday_command() -> anyhow::Result<Option<RoomMessageEventConte
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-async fn ping_command(
-    ev: &OriginalSyncRoomMessageEvent,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn ping_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let now = MilliSecondsSinceUnixEpoch::now().0;
-    let event_ts = ev.origin_server_ts.0;
+    let event_ts = ctx.ev.origin_server_ts.0;
     let delta: i64 = (now - event_ts).into();
     let duration = Duration::milliseconds(delta);
     let body = format!("Pong after {duration:.8}");
@@ -133,28 +121,27 @@ async fn ping_command(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-async fn room_id_command(room: &Room) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    Ok(Some(RoomMessageEventContent::text_plain(room.room_id())))
+async fn room_id_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    Ok(Some(RoomMessageEventContent::text_plain(
+        ctx.room.room_id(),
+    )))
 }
 
-async fn user_id_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let user_id = get_reply_target_fallback(ev, room).await?;
+async fn user_id_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
 
     Ok(Some(RoomMessageEventContent::text_plain(user_id.as_str())))
 }
 
 async fn name_changes_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
+    ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let user_id = get_reply_target_fallback(ev, room).await?;
-
-    let Some(member) = room.get_member(&user_id).await? else {
-        return Err(FuukaBotError::ShouldAvaliable)?;
-    };
+    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
+    let member = ctx
+        .room
+        .get_member(&user_id)
+        .await?
+        .ok_or(Error::ShouldAvaliable)?;
 
     let mut body = String::new();
     let current_name = member.display_name().unwrap_or("(None)");
@@ -165,7 +152,7 @@ async fn name_changes_command(
     let event: &MemberEvent = member.event();
     match event {
         MemberEvent::Sync(event) => {
-            let stream = MemberChanges::new_stream(room, event.clone()).peekable();
+            let stream = StreamFactory::member_state_stream(&ctx.room, event.clone()).peekable();
             pin_mut!(stream);
             while let Some(event) = stream.next().await {
                 if count <= -5 {
@@ -224,18 +211,21 @@ async fn name_changes_command(
 }
 
 async fn avatar_changes_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
-    homeserver: &Url,
+    ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let user_id = get_reply_target_fallback(ev, room).await?;
-
-    let Some(member) = room.get_member(&user_id).await? else {
-        return Err(FuukaBotError::ShouldAvaliable)?;
-    };
+    let homeserver = &ctx.homeserver;
+    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
+    let member = ctx
+        .room
+        .get_member(&user_id)
+        .await?
+        .ok_or(Error::ShouldAvaliable)?;
 
     let mut body = String::new();
-    let current_avatar = avatar_http_url(member.avatar_url(), homeserver)?
+    let current_avatar = member
+        .avatar_url()
+        .map(|url| url.http_url(homeserver))
+        .transpose()?
         .map(|result| result.to_string())
         .unwrap_or("(None)".to_string());
     let result = format!("Current Avatar: {current_avatar}\n");
@@ -245,7 +235,7 @@ async fn avatar_changes_command(
     let event: &MemberEvent = member.event();
     match event {
         MemberEvent::Sync(event) => {
-            let stream = MemberChanges::new_stream(room, event.clone()).peekable();
+            let stream = StreamFactory::member_state_stream(&ctx.room, event.clone()).peekable();
             pin_mut!(stream);
             while let Some(event) = stream.next().await {
                 if count <= -5 {
@@ -273,8 +263,7 @@ async fn avatar_changes_command(
                                     <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
                                 let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
                                     .format(&Rfc3339)?;
-                                let avatar_link =
-                                    avatar_http_url(Some(avatar_url), homeserver)?.unwrap();
+                                let avatar_link = avatar_url.http_url(homeserver)?;
                                 let result =
                                     format!("{count}: Changed to {avatar_link} ({timestamp})\n");
                                 body.push_str(&result);
@@ -287,8 +276,11 @@ async fn avatar_changes_command(
                     }
                     MembershipChange::Joined => {
                         count -= 1;
-                        let avatar_link =
-                            avatar_http_url(event.content.avatar_url.as_deref(), homeserver)?;
+                        let avatar_link = event
+                            .content
+                            .avatar_url
+                            .map(|uri| uri.http_url(homeserver))
+                            .transpose()?;
                         let result = format!(
                             "{count}: Joined with avatar {}\n",
                             avatar_link
@@ -310,19 +302,19 @@ async fn avatar_changes_command(
 }
 
 async fn send_avatar_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
+    ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let target = get_reply_target_fallback(ev, room).await?;
-
-    let Some(member) = room.get_member(&target).await? else {
-        return Err(FuukaBotError::RequiresReply)?;
-    };
+    let target = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
+    let member = ctx
+        .room
+        .get_member(&target)
+        .await?
+        .ok_or(Error::RequiresReply)?;
 
     match member.avatar_url() {
         Some(avatar_url) => {
             let name = member.display_name().unwrap_or(target.as_str());
-            let info = get_image_info(avatar_url, &room.client()).await?;
+            let info = get_image_info(avatar_url, &ctx.room.client()).await?;
             Ok(Some(RoomMessageEventContent::new(MessageType::Image(
                 ImageMessageEventContent::plain(format!("[Avatar of {name}]"), avatar_url.into())
                     .info(Some(Box::new(info))),
@@ -364,38 +356,39 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
 }
 
 async fn divergence_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
+    ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let room_hash = crc32fast::hash(room.room_id().as_bytes());
-    let event_id_hash = match &ev.content.relates_to {
+    let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
+    let event_id_hash = match &ctx.ev.content.relates_to {
         Some(Relation::Reply { in_reply_to }) => {
             let event_id = &in_reply_to.event_id;
             Some(crc32fast::hash(event_id.as_bytes()))
         }
         _ => None,
     };
-    let hash = make_divergence(room_hash, event_id_hash);
+    let hash = {
+        let seed = room_hash + event_id_hash.unwrap_or(0);
+        let mut rng = fastrand::Rng::with_seed(seed.into());
+        rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
+    };
     Ok(Some(RoomMessageEventContent::text_plain(format!(
         "{hash:.6}%"
     ))))
 }
 
-async fn ignore_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let sender = &ev.sender;
+async fn ignore_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let sender = &ctx.sender;
 
-    let Some(target) = get_reply_target(ev, room).await? else {
-        return Err(FuukaBotError::RequiresReply)?;
+    let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
+        return Err(Error::RequiresReply)?;
     };
 
-    if room.can_user_ban(sender).await? {
-        let member = room
+    if ctx.room.can_user_ban(sender).await? {
+        let member = ctx
+            .room
             .get_member(&target)
             .await?
-            .ok_or(FuukaBotError::ShouldAvaliable)?;
+            .ok_or(Error::ShouldAvaliable)?;
         member.ignore().await?;
         Ok(Some(RoomMessageEventContent::text_plain(format!(
             "Ignored {} ({})",
@@ -403,27 +396,27 @@ async fn ignore_command(
             sender
         ))))
     } else {
-        Err(FuukaBotError::RequiresBannable)?
+        Err(Error::RequiresBannable)?
     }
 }
 
 async fn unignore_command(
-    ev: &OriginalSyncRoomMessageEvent,
-    room: &Room,
+    ctx: &HandlerContext,
     user: Option<&str>,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let sender = &ev.sender;
+    let sender = &ctx.sender;
 
     let target = match user {
         Some(user) => OwnedUserId::try_from(user)?,
-        None => return Err(FuukaBotError::MissingParamter("user"))?,
+        None => return Err(Error::MissingParamter("user"))?,
     };
 
-    if room.can_user_ban(sender).await? {
-        let member = room
+    if ctx.room.can_user_ban(sender).await? {
+        let member = ctx
+            .room
             .get_member(&target)
             .await?
-            .ok_or(FuukaBotError::UserNotFound)?;
+            .ok_or(Error::UserNotFound)?;
         member.unignore().await?;
         Ok(Some(RoomMessageEventContent::text_plain(format!(
             "Unignored {} ({})",
@@ -431,6 +424,6 @@ async fn unignore_command(
             sender
         ))))
     } else {
-        Err(FuukaBotError::RequiresBannable)?
+        Err(Error::RequiresBannable)?
     }
 }

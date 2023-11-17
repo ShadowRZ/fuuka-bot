@@ -1,7 +1,7 @@
 //! Implments various Jerry Xiao like functions.
 
-use crate::utils::make_pill;
-use crate::FuukaBotError;
+use crate::traits::RoomMemberExt;
+use crate::Error;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
 use time::macros::format_description;
@@ -18,14 +18,14 @@ pub async fn make_jerryxiao_event_content(
     let from_member = room
         .get_member(if reversed { to_sender } else { from_sender })
         .await?
-        .ok_or(FuukaBotError::ShouldAvaliable)?;
+        .ok_or(Error::ShouldAvaliable)?;
     let to_member = room
         .get_member(if reversed { from_sender } else { to_sender })
         .await?
-        .ok_or(FuukaBotError::ShouldAvaliable)?;
+        .ok_or(Error::ShouldAvaliable)?;
 
-    let from_pill = make_pill(&from_member);
-    let to_pill = make_pill(&to_member);
+    let from_pill = from_member.make_pill();
+    let to_pill = to_member.make_pill();
 
     let chars: Vec<char> = text.chars().collect();
 
@@ -124,7 +124,7 @@ pub async fn make_randomdraw_event_content(
     let member = room
         .get_member(user_id)
         .await?
-        .ok_or(FuukaBotError::ShouldAvaliable)?;
+        .ok_or(Error::ShouldAvaliable)?;
     let hash = crc32fast::hash(user_id.as_bytes());
     let date = OffsetDateTime::now_utc();
     let format = format_description!("[year][month][day]");
@@ -149,7 +149,7 @@ pub async fn make_randomdraw_event_content(
     let mut rng = fastrand::Rng::with_seed(seed);
     let draw_result = rng.u32(0..=10000) as f32 / 10000.0;
     let result_type = rng.bool();
-    let user_pill = make_pill(&member);
+    let user_pill = member.make_pill();
     let result = if prob {
         let result = if result_type {
             draw_result

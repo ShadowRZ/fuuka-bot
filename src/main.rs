@@ -1,6 +1,6 @@
 use anyhow::Context;
+use fuuka_bot::Config;
 use fuuka_bot::FuukaBot;
-use fuuka_bot::FuukaBotConfig;
 use matrix_sdk::matrix_auth::MatrixSession;
 use matrix_sdk::Client;
 use reqwest::Url;
@@ -9,9 +9,6 @@ use std::env;
 use std::fs;
 use std::io;
 use std::io::Write;
-use tokio::signal;
-use tokio::task::JoinHandle;
-use tokio_util::sync::CancellationToken;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
@@ -52,9 +49,9 @@ fn get_session() -> anyhow::Result<MatrixSession> {
     Ok(session)
 }
 
-fn get_config() -> anyhow::Result<FuukaBotConfig> {
+fn get_config() -> anyhow::Result<Config> {
     let contents = fs::read_to_string(CONFIG_FILE)?;
-    let config = toml::from_str::<FuukaBotConfig>(&contents)?;
+    let config = toml::from_str::<Config>(&contents)?;
     Ok(config)
 }
 
@@ -71,7 +68,7 @@ async fn main() -> anyhow::Result<()> {
         .compact()
         .init();
 
-    let config: FuukaBotConfig = get_config().context("Getting config failed!")?;
+    let config: Config = get_config().context("Getting config failed!")?;
 
     if let Some(arg1) = env::args().nth(1) {
         if arg1 == "login" {
@@ -92,52 +89,9 @@ async fn main() -> anyhow::Result<()> {
 
     let session = get_session().context("Getting session failed!")?;
 
-    let cts = CancellationToken::new();
-    let bot_cts = cts.clone();
-    spawn_shutdown_handler(cts).await;
-
-    let bot = FuukaBot::new(config, session).await?;
-    let task: JoinHandle<anyhow::Result<()>> = tokio::spawn(async move {
-        tokio::select! {
-            _ = bot_cts.cancelled() => {
-                tracing::info!("Shutdown signal received, starting graceful shutdown");
-                Ok(())
-            }
-            _ = bot.run() => {
-                Ok(())
-            }
-        }
-    });
-
-    task.await?
-}
-
-async fn spawn_shutdown_handler(cts: CancellationToken) {
-    tokio::spawn(async move {
-        let ctrl_c = async {
-            signal::ctrl_c()
-                .await
-                .expect("failed to install Ctrl+C handler");
-        };
-
-        #[cfg(unix)]
-        let terminate = async {
-            signal::unix::signal(signal::unix::SignalKind::terminate())
-                .expect("failed to install signal handler")
-                .recv()
-                .await;
-        };
-
-        #[cfg(not(unix))]
-        let terminate = std::future::pending::<()>();
-
-        tokio::select! {
-            _ = ctrl_c => {
-                cts.cancel();
-            },
-            _ = terminate => {
-                cts.cancel();
-            },
-        }
-    });
+    FuukaBot::new(config, session)
+        .await?
+        .with_shutdown()
+        .run()
+        .await
 }

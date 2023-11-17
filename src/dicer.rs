@@ -13,7 +13,7 @@
 //!
 //! dice_or_int => ( ( =u32= ('d' | 'D') =u32= ) | =i32= );
 //! ```
-
+#![warn(missing_docs)]
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::char;
@@ -26,7 +26,7 @@ use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 use nom::{bytes::complete::tag_no_case, IResult};
 use std::str::FromStr;
 
-use crate::FuukaBotError;
+use crate::Error;
 
 /// A dice candicate.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -35,6 +35,14 @@ pub struct DiceCandidate {
     pub expr: Expr,
     /// An optional target for the dice roll.
     pub target: Option<u32>,
+}
+
+/// Parsing error that can happen.
+pub struct ParseError {
+    /// The input string.
+    pub input: String,
+    /// The underlying Nom error.
+    pub err: nom::error::Error<String>,
 }
 
 impl FromStr for DiceCandidate {
@@ -94,23 +102,25 @@ impl Expr {
             Self::DiceOrInt(result) => match result {
                 DiceOrInt::Dice(dice) => {
                     let Dice { count, sides } = dice;
-                                        //Ok((fastrand::u32(1..=sides) * count) as i32)
-                    Ok((0..count).fold(0, |acc, _| acc + fastrand::u32(1..=sides)).try_into()?)
+                    //Ok((fastrand::u32(1..=sides) * count) as i32)
+                    Ok((0..count)
+                        .fold(0, |acc, _| acc + fastrand::u32(1..=sides))
+                        .try_into()?)
                 }
                 DiceOrInt::Int(num) => Ok(num.into()),
             },
-            Self::BinOp { lhs, op, rhs } => {
-                match op {
-                    Op::Add => Ok(i128::checked_add(lhs.eval()?, rhs.eval()?)
-                        .ok_or(FuukaBotError::MathOverflow)?),
-                    Op::Sub => Ok(i128::checked_sub(lhs.eval()?, rhs.eval()?)
-                        .ok_or(FuukaBotError::MathOverflow)?),
-                    Op::Mul => Ok(i128::checked_mul(lhs.eval()?, rhs.eval()?)
-                        .ok_or(FuukaBotError::MathOverflow)?),
-                    Op::Div => Ok(i128::checked_div(lhs.eval()?, rhs.eval()?)
-                        .ok_or(FuukaBotError::DivByZero)?),
+            Self::BinOp { lhs, op, rhs } => match op {
+                Op::Add => {
+                    Ok(i128::checked_add(lhs.eval()?, rhs.eval()?).ok_or(Error::MathOverflow)?)
                 }
-            }
+                Op::Sub => {
+                    Ok(i128::checked_sub(lhs.eval()?, rhs.eval()?).ok_or(Error::MathOverflow)?)
+                }
+                Op::Mul => {
+                    Ok(i128::checked_mul(lhs.eval()?, rhs.eval()?).ok_or(Error::MathOverflow)?)
+                }
+                Op::Div => Ok(i128::checked_div(lhs.eval()?, rhs.eval()?).ok_or(Error::DivByZero)?),
+            },
         }
     }
 }
