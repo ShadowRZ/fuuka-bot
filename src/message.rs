@@ -24,7 +24,7 @@ pub async fn dispatch(
         .iter()
         .any(|p| ctx.body.starts_with(*p))
     {
-        if features
+        if !features
             .get(ctx.room.room_id())
             .map(|f| f.jerryxiao)
             .unwrap_or_default()
@@ -44,7 +44,7 @@ pub async fn dispatch(
 
         _dispatch_jerryxiao(&ctx.room, &ctx.body, from_sender, &to_sender).await?
     } else if ["@@", "@%"].iter().any(|p| ctx.body.starts_with(*p)) {
-        if features
+        if !features
             .get(ctx.room.room_id())
             .map(|f| f.randomdraw)
             .unwrap_or_default()
