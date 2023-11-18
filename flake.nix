@@ -19,13 +19,13 @@
         defaultPackage = naersk'.buildPackage {
           src = ./.;
           nativeBuildInputs = with pkgs; [ pkg-config ];
-          buildInputs = with pkgs; [ openssl ];
+          buildInputs = with pkgs; [ openssl sqlite ];
         };
 
         # For `nix develop`:
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [ rustc cargo rust-analyzer rustfmt clippy pkg-config ];
-          buildInputs = with pkgs; [ openssl ];
+          buildInputs = with pkgs; [ openssl sqlite ];
         };
       }
     );
