@@ -11,8 +11,7 @@ anyhow = "1"
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
-# For unknown reason, we must specify the exact version used in matrix-sdk
-ruma = { version = "0.9.2", features = ["html"] }
+ruma = { version = "*", features = ["html"] }
 imagesize = "*"
 file-format = "*"
 tokio-util = "*"
