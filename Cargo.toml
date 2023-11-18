@@ -28,3 +28,6 @@ crc32fast = "*"
 fastrand = "*"
 thiserror = "*"
 nom = "*"
+
+[features]
+bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
