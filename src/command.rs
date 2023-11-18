@@ -45,18 +45,18 @@ pub async fn dispatch(ctx: &HandlerContext, command: &str) -> anyhow::Result<()>
     };
 
     let Some(content) = (match *command {
-        "help" => help_command(ctx).await?,
-        "send_avatar" => send_avatar_command(ctx).await?,
-        "crazy_thursday" => crazy_thursday_command(ctx).await?,
-        "ping" => ping_command(ctx).await?,
-        "room_id" => room_id_command(ctx).await?,
-        "user_id" => user_id_command(ctx).await?,
-        "name_changes" => name_changes_command(ctx).await?,
-        "avatar_changes" => avatar_changes_command(ctx).await?,
-        "divergence" => divergence_command(ctx).await?,
-        "ignore" => ignore_command(ctx).await?,
-        "unignore" => unignore_command(ctx, args.get(1).copied()).await?,
-        _ => _unknown_command(ctx, command).await?,
+        "help" => help(ctx).await?,
+        "send_avatar" => send_avatar(ctx).await?,
+        "crazy_thursday" => crazy_thursday(ctx).await?,
+        "ping" => ping(ctx).await?,
+        "room_id" => room_id(ctx).await?,
+        "user_id" => user_id(ctx).await?,
+        "name_changes" => name_changes(ctx).await?,
+        "avatar_changes" => avatar_changes(ctx).await?,
+        "divergence" => divergence(ctx).await?,
+        "ignore" => ignore(ctx).await?,
+        "unignore" => unignore(ctx, args.get(1).copied()).await?,
+        _ => _unknown(ctx, command).await?,
     }) else {
         return Ok(());
     };
@@ -67,7 +67,8 @@ pub async fn dispatch(ctx: &HandlerContext, command: &str) -> anyhow::Result<()>
     Ok(())
 }
 
-async fn _unknown_command(
+#[tracing::instrument(skip(_ctx))]
+async fn _unknown(
     _ctx: &HandlerContext,
     command: &str,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -76,7 +77,8 @@ async fn _unknown_command(
     ))))
 }
 
-async fn help_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+#[tracing::instrument(skip(ctx))]
+async fn help(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let client = ctx.room.client();
     let user_id = client.user_id().unwrap();
 
@@ -86,7 +88,8 @@ async fn help_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessage
     )))
 }
 
-async fn crazy_thursday_command(
+#[tracing::instrument(skip(_ctx))]
+async fn crazy_thursday(
     _ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
@@ -111,7 +114,8 @@ async fn crazy_thursday_command(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-async fn ping_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+#[tracing::instrument(skip(ctx))]
+async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let now = MilliSecondsSinceUnixEpoch::now().0;
     let event_ts = ctx.ev.origin_server_ts.0;
     let delta: i64 = (now - event_ts).into();
@@ -121,19 +125,22 @@ async fn ping_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessage
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-async fn room_id_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+#[tracing::instrument(skip(ctx))]
+async fn room_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     Ok(Some(RoomMessageEventContent::text_plain(
         ctx.room.room_id(),
     )))
 }
 
-async fn user_id_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+#[tracing::instrument(skip(ctx))]
+async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
 
     Ok(Some(RoomMessageEventContent::text_plain(user_id.as_str())))
 }
 
-async fn name_changes_command(
+#[tracing::instrument(skip(ctx))]
+async fn name_changes(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
@@ -210,7 +217,8 @@ async fn name_changes_command(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-async fn avatar_changes_command(
+#[tracing::instrument(skip(ctx))]
+async fn avatar_changes(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let homeserver = &ctx.homeserver;
@@ -301,7 +309,8 @@ async fn avatar_changes_command(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-async fn send_avatar_command(
+#[tracing::instrument(skip(ctx))]
+async fn send_avatar(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let target = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
@@ -326,6 +335,80 @@ async fn send_avatar_command(
     }
 }
 
+#[tracing::instrument(skip(ctx))]
+async fn divergence(
+    ctx: &HandlerContext,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
+    let event_id_hash = match &ctx.ev.content.relates_to {
+        Some(Relation::Reply { in_reply_to }) => {
+            let event_id = &in_reply_to.event_id;
+            Some(crc32fast::hash(event_id.as_bytes()))
+        }
+        _ => None,
+    };
+    let hash = {
+        let seed = room_hash + event_id_hash.unwrap_or(0);
+        let mut rng = fastrand::Rng::with_seed(seed.into());
+        rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
+    };
+    Ok(Some(RoomMessageEventContent::text_plain(format!(
+        "{hash:.6}%"
+    ))))
+}
+
+#[tracing::instrument(skip(ctx))]
+async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let sender = &ctx.sender;
+
+    let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
+        return Err(Error::RequiresReply)?;
+    };
+
+    if ctx.room.can_user_ban(sender).await? {
+        let member = ctx
+            .room
+            .get_member(&target)
+            .await?
+            .ok_or(Error::ShouldAvaliable)?;
+        member.ignore().await?;
+        Ok(Some(RoomMessageEventContent::text_plain(format!(
+            "Ignored {} ({})",
+            member.display_name().unwrap_or("(No Name)"),
+            sender
+        ))))
+    } else {
+        Err(Error::RequiresBannable)?
+    }
+}
+
+#[tracing::instrument(skip(ctx))]
+async fn unignore(
+    ctx: &HandlerContext,
+    user: Option<&str>,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let sender = &ctx.sender;
+
+    let target = OwnedUserId::try_from(user.ok_or(Error::MissingParamter("user"))?)?;
+
+    if ctx.room.can_user_ban(sender).await? {
+        let member = ctx
+            .room
+            .get_member(&target)
+            .await?
+            .ok_or(Error::UserNotFound)?;
+        member.unignore().await?;
+        Ok(Some(RoomMessageEventContent::text_plain(format!(
+            "Unignored {} ({})",
+            member.display_name().unwrap_or("(No Name)"),
+            sender
+        ))))
+    } else {
+        Err(Error::RequiresBannable)?
+    }
+}
+
+#[tracing::instrument(skip(client))]
 async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<ImageInfo> {
     let request = MediaRequest {
         source: MediaSource::Plain(avatar_url.into()),
@@ -353,77 +436,4 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
     info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
     Ok(info)
-}
-
-async fn divergence_command(
-    ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
-    let event_id_hash = match &ctx.ev.content.relates_to {
-        Some(Relation::Reply { in_reply_to }) => {
-            let event_id = &in_reply_to.event_id;
-            Some(crc32fast::hash(event_id.as_bytes()))
-        }
-        _ => None,
-    };
-    let hash = {
-        let seed = room_hash + event_id_hash.unwrap_or(0);
-        let mut rng = fastrand::Rng::with_seed(seed.into());
-        rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
-    };
-    Ok(Some(RoomMessageEventContent::text_plain(format!(
-        "{hash:.6}%"
-    ))))
-}
-
-async fn ignore_command(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let sender = &ctx.sender;
-
-    let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
-        return Err(Error::RequiresReply)?;
-    };
-
-    if ctx.room.can_user_ban(sender).await? {
-        let member = ctx
-            .room
-            .get_member(&target)
-            .await?
-            .ok_or(Error::ShouldAvaliable)?;
-        member.ignore().await?;
-        Ok(Some(RoomMessageEventContent::text_plain(format!(
-            "Ignored {} ({})",
-            member.display_name().unwrap_or("(No Name)"),
-            sender
-        ))))
-    } else {
-        Err(Error::RequiresBannable)?
-    }
-}
-
-async fn unignore_command(
-    ctx: &HandlerContext,
-    user: Option<&str>,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let sender = &ctx.sender;
-
-    let target = match user {
-        Some(user) => OwnedUserId::try_from(user)?,
-        None => return Err(Error::MissingParamter("user"))?,
-    };
-
-    if ctx.room.can_user_ban(sender).await? {
-        let member = ctx
-            .room
-            .get_member(&target)
-            .await?
-            .ok_or(Error::UserNotFound)?;
-        member.unignore().await?;
-        Ok(Some(RoomMessageEventContent::text_plain(format!(
-            "Unignored {} ({})",
-            member.display_name().unwrap_or("(No Name)"),
-            sender
-        ))))
-    } else {
-        Err(Error::RequiresBannable)?
-    }
 }

@@ -12,6 +12,7 @@ use matrix_sdk::{Client as MatrixClient, RoomState};
 use std::sync::Arc;
 
 /// Called when a message is sent.
+#[tracing::instrument(skip_all)]
 pub async fn on_sync_message(
     ev: OriginalSyncRoomMessageEvent,
     room: Room,
@@ -57,6 +58,7 @@ pub async fn on_sync_message(
 }
 
 /// Called when a member event is from an invited room.
+#[tracing::instrument(skip_all)]
 pub async fn on_stripped_member(ev: StrippedRoomMemberEvent, room: Room, client: MatrixClient) {
     let Some(user_id) = client.user_id() else {
         tracing::error!("INTERNAL ERROR: When sync happens, the client should have known our user ID but it doesn't ?!");
