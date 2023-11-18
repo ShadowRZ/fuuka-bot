@@ -3,8 +3,6 @@
 use file_format::FileFormat;
 use futures_util::pin_mut;
 use futures_util::StreamExt;
-use image::io::Reader as ImageReader;
-use image::GenericImageView;
 use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
@@ -23,7 +21,6 @@ use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
-use std::io::Cursor;
 use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
 use time::Duration;
@@ -415,23 +412,24 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
         format: MediaFormat::File,
     };
     let data = client.media().get_media_content(&request, false).await?;
-    let image = ImageReader::new(Cursor::new(&data))
-        .with_guessed_format()?
-        .decode()?;
-    let (width, height) = image.dimensions();
+    let dimensions = imagesize::blob_size(&data)?;
+    let (width, height) = (dimensions.width, dimensions.height);
     let format = FileFormat::from_bytes(&data);
     let mimetype = format.media_type();
     let size = data.len();
     let mut thumb = ThumbnailInfo::new();
-    thumb.width = UInt::new(width.into());
-    thumb.height = UInt::new(height.into());
+    let width = UInt::try_from(width)?;
+    let height = UInt::try_from(height)?;
+    let size = UInt::try_from(size)?;
+    thumb.width = Some(width);
+    thumb.height = Some(height);
     thumb.mimetype = Some(mimetype.to_string());
-    thumb.size = UInt::new(size.try_into().unwrap_or(u64::MAX));
+    thumb.size = Some(size);
     let mut info = ImageInfo::new();
-    info.width = UInt::new(width.into());
-    info.height = UInt::new(height.into());
+    info.width = Some(width);
+    info.height = Some(height);
     info.mimetype = Some(mimetype.to_string());
-    info.size = UInt::new(size.try_into().unwrap_or(u64::MAX));
+    info.size = Some(size);
     info.thumbnail_info = Some(Box::new(thumb));
     info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
