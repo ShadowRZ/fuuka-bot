@@ -39,6 +39,7 @@ pub trait MxcUriExt {
 }
 
 impl MxcUriExt for MxcUri {
+    #[tracing::instrument(err)]
     fn http_url(&self, homeserver: &Url) -> Result<Url> {
         let (server_name, media_id) = self.parts()?;
         Ok(homeserver

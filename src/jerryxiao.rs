@@ -8,7 +8,7 @@ use time::macros::format_description;
 use time::OffsetDateTime;
 
 /// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room, two senders and text.
-#[tracing::instrument(skip(room), fields(room_id = %room.room_id()))]
+#[tracing::instrument(skip(room), fields(room_id = %room.room_id()), err)]
 pub async fn make_jerryxiao_event_content(
     room: &Room,
     from_sender: &UserId,
@@ -116,7 +116,7 @@ pub async fn make_jerryxiao_event_content(
 }
 
 /// Constructs the [RoomMessageEventContent] result of randomdraw from the given room, sender and text.
-#[tracing::instrument(skip(room), fields(room_id = %room.room_id()))]
+#[tracing::instrument(skip(room), fields(room_id = %room.room_id()), err)]
 pub async fn make_randomdraw_event_content(
     room: &Room,
     user_id: &UserId,

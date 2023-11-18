@@ -64,7 +64,7 @@ pub async fn dispatch(ctx: &HandlerContext, command: &str) -> anyhow::Result<()>
     Ok(())
 }
 
-#[tracing::instrument(skip(_ctx))]
+#[tracing::instrument(skip(_ctx), err)]
 async fn _unknown(
     _ctx: &HandlerContext,
     command: &str,
@@ -74,10 +74,14 @@ async fn _unknown(
     ))))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn help(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let client = ctx.room.client();
-    let user_id = client.user_id().unwrap();
+    let Some(user_id) = client.user_id() else {
+        tracing::error!("INTERNAL ERROR: When sync happens, the client should have known our user ID but it doesn't ?!");
+        return Ok(None);
+    };
+
 
     Ok(Some(RoomMessageEventContent::text_html(
         format!("Fuuka Bot - User ID: {user_id}\nCommand reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
@@ -85,7 +89,7 @@ async fn help(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCon
     )))
 }
 
-#[tracing::instrument(skip(_ctx))]
+#[tracing::instrument(skip(_ctx), err)]
 async fn crazy_thursday(
     _ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -111,7 +115,7 @@ async fn crazy_thursday(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let now = MilliSecondsSinceUnixEpoch::now().0;
     let event_ts = ctx.ev.origin_server_ts.0;
@@ -122,21 +126,21 @@ async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCon
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn room_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     Ok(Some(RoomMessageEventContent::text_plain(
         ctx.room.room_id(),
     )))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
 
     Ok(Some(RoomMessageEventContent::text_plain(user_id.as_str())))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn name_changes(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -214,7 +218,7 @@ async fn name_changes(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn avatar_changes(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -306,7 +310,7 @@ async fn avatar_changes(
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn send_avatar(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -315,7 +319,7 @@ async fn send_avatar(
         .room
         .get_member(&target)
         .await?
-        .ok_or(Error::RequiresReply)?;
+        .ok_or(Error::ShouldAvaliable)?;
 
     match member.avatar_url() {
         Some(avatar_url) => {
@@ -332,7 +336,7 @@ async fn send_avatar(
     }
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn divergence(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
@@ -354,7 +358,7 @@ async fn divergence(
     ))))
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let sender = &ctx.sender;
 
@@ -379,7 +383,7 @@ async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventC
     }
 }
 
-#[tracing::instrument(skip(ctx))]
+#[tracing::instrument(skip(ctx), err)]
 async fn unignore(
     ctx: &HandlerContext,
     user: Option<&str>,
@@ -405,7 +409,7 @@ async fn unignore(
     }
 }
 
-#[tracing::instrument(skip(client))]
+#[tracing::instrument(skip(client), err)]
 async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<ImageInfo> {
     let request = MediaRequest {
         source: MediaSource::Plain(avatar_url.into()),
