@@ -82,7 +82,6 @@ async fn help(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCon
         return Ok(None);
     };
 
-
     Ok(Some(RoomMessageEventContent::text_html(
         format!("Fuuka Bot - User ID: {user_id}\nCommand reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
         format!("Fuuka Bot - User ID: {user_id}<br/>Command reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
@@ -90,9 +89,7 @@ async fn help(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCon
 }
 
 #[tracing::instrument(skip(_ctx), err)]
-async fn crazy_thursday(
-    _ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn crazy_thursday(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
     let body = if now.weekday() != Weekday::Thursday {
         let date = now.date().next_occurrence(time::Weekday::Thursday);
@@ -141,9 +138,7 @@ async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEvent
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn name_changes(
-    ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
         .room
@@ -219,9 +214,7 @@ async fn name_changes(
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn avatar_changes(
-    ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn avatar_changes(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let homeserver = &ctx.homeserver;
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
@@ -311,9 +304,7 @@ async fn avatar_changes(
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn send_avatar(
-    ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let target = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
         .room
@@ -337,9 +328,7 @@ async fn send_avatar(
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn divergence(
-    ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
     let event_id_hash = match &ctx.ev.content.relates_to {
         Some(Relation::Reply { in_reply_to }) => {
