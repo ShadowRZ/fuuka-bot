@@ -84,13 +84,16 @@ impl FuukaBot {
 
     /// Run this bot.
     pub async fn run(self) -> anyhow::Result<()> {
+        self.client.add_event_handler_context(self.context.clone());
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {
-                    while let Err(e) = self.sync().await {
+                    let mut initial = true;
+                    while let Err(e) = self.sync(initial).await {
                         use tokio::time::{sleep, Duration};
                         tracing::error!("Unexpected error happened, retrying in 10s: {e:?}");
                         sleep(Duration::from_secs(10)).await;
+                        initial = false;
                     }
                 } => {},
                 _ = self.cts.cancelled() => {},
@@ -100,19 +103,26 @@ impl FuukaBot {
         Ok(task.await?)
     }
 
-    async fn sync(&self) -> anyhow::Result<()> {
-        self.client.add_event_handler_context(self.context.clone());
+    async fn sync(&self, initial: bool) -> anyhow::Result<()> {
+        let next_batch = self.initial_sync(initial).await?;
+        let settings = SyncSettings::default().token(next_batch);
+        self.client.sync(settings).await?;
+        Ok(())
+    }
+
+    async fn initial_sync(&self, register_handler: bool) -> anyhow::Result<String> {
         tracing::info!("Initial sync beginning...");
         let response = self.client.sync_once(SyncSettings::default()).await?;
         tracing::info!("Initial sync completed.");
-        self.client
-            .add_event_handler(crate::handler::on_sync_message);
-        self.client
-            .add_event_handler(crate::handler::on_stripped_member);
-        let settings = SyncSettings::default().token(response.next_batch);
-        self.client.sync(settings).await?;
 
-        Ok(())
+        if register_handler {
+            self.client
+            .add_event_handler(crate::handler::on_sync_message);
+            self.client
+                .add_event_handler(crate::handler::on_stripped_member);
+        }
+
+        Ok(response.next_batch)
     }
 
     /// Registers the graceful shutdown handler.
