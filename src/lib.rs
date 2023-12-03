@@ -117,7 +117,7 @@ impl FuukaBot {
 
         if register_handler {
             self.client
-            .add_event_handler(crate::handler::on_sync_message);
+                .add_event_handler(crate::handler::on_sync_message);
             self.client
                 .add_event_handler(crate::handler::on_stripped_member);
         }

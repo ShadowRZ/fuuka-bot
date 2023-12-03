@@ -4,6 +4,7 @@ use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
+use matrix_sdk::ruma::events::Mentions;
 use matrix_sdk::ruma::{OwnedRoomId, UserId};
 
 use crate::dicer::DiceCandidate;
@@ -42,7 +43,9 @@ pub async fn dispatch(
             return Ok(());
         };
 
-        _dispatch_jerryxiao(&ctx.room, &ctx.body, from_sender, &to_sender).await?
+        _dispatch_jerryxiao(&ctx.room, &ctx.body, from_sender, &to_sender)
+            .await?
+            .map(|c| c.add_mentions(Mentions::with_user_ids([to_sender])))
     } else if ["@@", "@%"].iter().any(|p| ctx.body.starts_with(*p)) {
         if !features
             .get(ctx.room.room_id())
