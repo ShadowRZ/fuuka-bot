@@ -17,7 +17,7 @@ file-format = "*"
 tokio-util = "*"
 tracing = "*"
 tracing-subscriber = { version = "*", features = ["env-filter"] }
-reqwest = "*"
+reqwest = { version = "*", features = ["gzip", "brotli", "deflate", "json"] }
 rpassword = "*"
 toml = "*"
 time = { version = "*", features = ["macros", "formatting"] }

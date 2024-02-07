@@ -3,5 +3,10 @@ command_prefix = "%%"
 # Homeserver URL.
 homeserver_url = "https://matrix.example.com"
 
+# Service URLs.
+[services]
+# Hitokoto API.
+hitokoto = "https://v1.hitokoto.cn"
+
 [features."!XXXXXXXXXXX:example.org"]
 jerryxiao = true

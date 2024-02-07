@@ -37,7 +37,7 @@ pub async fn on_sync_message(
         let info = HandlerContext::new(ev, room, client.homeserver());
 
         let res = if let Some(commands) = &info.body.strip_prefix(&ctx.config.command_prefix) {
-            crate::command::dispatch(&info, commands).await
+            crate::command::dispatch(&ctx, &info, commands).await
         } else {
             crate::message::dispatch(&info, &ctx.config.features).await
         };

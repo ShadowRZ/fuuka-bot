@@ -31,11 +31,17 @@ use crate::get_reply_target;
 use crate::get_reply_target_fallback;
 use crate::stream::StreamFactory;
 use crate::traits::MxcUriExt;
+use crate::types::HitokotoResult;
+use crate::BotContext;
 use crate::Error;
 use crate::HandlerContext;
 
 /// Dispatches the command and send the command outout.
-pub async fn dispatch(ctx: &HandlerContext, command: &str) -> anyhow::Result<()> {
+pub async fn dispatch(
+    bot_ctx: &BotContext,
+    ctx: &HandlerContext,
+    command: &str,
+) -> anyhow::Result<()> {
     let args: Vec<&str> = command.split_ascii_whitespace().collect();
     let Some(command) = args.first() else {
         return Ok(());
@@ -52,6 +58,7 @@ pub async fn dispatch(ctx: &HandlerContext, command: &str) -> anyhow::Result<()>
         "avatar_changes" => avatar_changes(ctx).await?,
         "divergence" => divergence(ctx).await?,
         "ignore" => ignore(ctx).await?,
+        "hitokoto" => hitokoto(bot_ctx, ctx).await?,
         "unignore" => unignore(ctx, args.get(1).copied()).await?,
         _ => _unknown(ctx, command).await?,
     }) else {
@@ -427,4 +434,28 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
     info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
     Ok(info)
+}
+
+#[tracing::instrument(skip(bot_ctx, _ctx), err)]
+async fn hitokoto(
+    bot_ctx: &BotContext,
+    _ctx: &HandlerContext,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let raw_resp = bot_ctx
+        .http_client
+        .get(&bot_ctx.config.services.hitokoto)
+        .send()
+        .await?;
+    let resp: HitokotoResult = raw_resp.json().await?;
+
+    Ok(Some(RoomMessageEventContent::text_html(
+        format!(
+            "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
+            resp.hitokoto, resp.from_who, resp.from, resp.uuid
+        ),
+        format!(
+            "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
+            resp.hitokoto, resp.from_who, resp.from, resp.uuid
+        ),
+    )))
 }

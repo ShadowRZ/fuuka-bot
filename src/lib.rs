@@ -10,19 +10,20 @@ pub mod jerryxiao;
 pub mod message;
 pub mod stream;
 pub mod traits;
+pub mod types;
 
 pub use crate::stream::StreamFactory;
 pub use crate::traits::{IntoEventContent, MxcUriExt, RoomMemberExt};
 
 use matrix_sdk::matrix_auth::MatrixSession;
+use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
+use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId};
 use matrix_sdk::Room;
 use matrix_sdk::{config::SyncSettings, Client};
 use reqwest::Url;
-use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
-use matrix_sdk::ruma::events::room::message::Relation;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -40,6 +41,8 @@ pub struct Config {
     /// Optional room features.
     #[serde(default)]
     pub features: HashMap<OwnedRoomId, RoomFeatures>,
+    /// HTTP Services configuration.
+    pub services: ServiceBackends,
 }
 
 /// What message features are avaliable.
@@ -53,10 +56,20 @@ pub struct RoomFeatures {
     pub randomdraw: bool,
 }
 
+/// Configure various backend APIs
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ServiceBackends {
+    /// Hitokoto API endpoint.
+    /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
+    pub hitokoto: String,
+}
+
 /// Global context data for handlers.
 pub struct BotContext {
     /// The config of Fuuka bot.
     config: Config,
+    /// HTTP client used for HTTP APIs.
+    http_client: reqwest::Client,
 }
 
 /// The bot itself.
@@ -74,7 +87,11 @@ impl FuukaBot {
             .sqlite_store("store", None);
         let client = builder.build().await?;
         client.restore_session(session).await?;
-        let context = BotContext { config };
+        let http_client = reqwest::Client::builder().build()?;
+        let context = BotContext {
+            config,
+            http_client,
+        };
         Ok(FuukaBot {
             client,
             context: context.into(),
