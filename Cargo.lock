@@ -1013,7 +1013,7 @@ dependencies = [
 
 [[package]]
 name = "fuuka-bot"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -1033,7 +1033,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-util",
- "toml 0.8.2",
+ "toml 0.5.11",
  "tracing",
  "tracing-subscriber",
 ]
