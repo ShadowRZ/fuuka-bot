@@ -81,17 +81,11 @@ async fn _unknown(
     ))))
 }
 
-#[tracing::instrument(skip(ctx), err)]
-async fn help(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let client = ctx.room.client();
-    let Some(user_id) = client.user_id() else {
-        tracing::error!("INTERNAL ERROR: When sync happens, the client should have known our user ID but it doesn't ?!");
-        return Ok(None);
-    };
-
+#[tracing::instrument(skip(_ctx), err)]
+async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     Ok(Some(RoomMessageEventContent::text_html(
-        format!("Fuuka Bot - User ID: {user_id}\nCommand reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
-        format!("Fuuka Bot - User ID: {user_id}<br/>Command reference: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md"),
+        format!("Fuuka Bot\n\nSource: https://github.com/ShadowRZ/fuuka-bot\nCommands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md\nSend a feature request: https://github.com/ShadowRZ/fuuka-bot/issues"),
+        format!("<p>Fuuka Bot</p><p>Source: https://github.com/ShadowRZ/fuuka-bot<br/>Commands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md<br/>Send a feature request: https://github.com/ShadowRZ/fuuka-bot/issues</p>"),
     )))
 }
 
@@ -121,8 +115,8 @@ async fn crazy_thursday(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMess
 
 #[tracing::instrument(skip(ctx), err)]
 async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let now = MilliSecondsSinceUnixEpoch::now().0;
-    let event_ts = ctx.ev.origin_server_ts.0;
+    let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
+    let MilliSecondsSinceUnixEpoch(event_ts) = ctx.ev.origin_server_ts;
     let delta: i64 = (now - event_ts).into();
     let duration = Duration::milliseconds(delta);
     let body = format!("Pong after {duration:.8}");
