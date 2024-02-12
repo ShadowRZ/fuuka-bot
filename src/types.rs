@@ -9,5 +9,5 @@ pub struct HitokotoResult {
     pub uuid: String,
     pub hitokoto: String,
     pub from: String,
-    pub from_who: String,
+    pub from_who: Option<String>,
 }
