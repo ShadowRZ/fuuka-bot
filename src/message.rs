@@ -42,7 +42,7 @@ pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Res
             return Ok(());
         };
 
-        if let Err(e) = ctx.room.typing_notice(false).await {
+        if let Err(e) = ctx.room.typing_notice(true).await {
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
         _dispatch_jerryxiao(&ctx.room, &ctx.body, from_sender, &to_sender)
@@ -56,17 +56,17 @@ pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Res
         {
             return Ok(());
         }
-        if let Err(e) = ctx.room.typing_notice(false).await {
+        if let Err(e) = ctx.room.typing_notice(true).await {
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
         _dispatch_randomdraw(&ctx.ev, &ctx.room, &ctx.body).await?
     } else if ctx.body.starts_with("@=") {
-        if let Err(e) = ctx.room.typing_notice(false).await {
+        if let Err(e) = ctx.room.typing_notice(true).await {
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
         _dispatch_dicer(&ctx.body).await?
     } else if ctx.body.starts_with("@Nahida") {
-        if let Err(e) = ctx.room.typing_notice(false).await {
+        if let Err(e) = ctx.room.typing_notice(true).await {
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
         _dispatch_nahida(bot_ctx, &ctx.body).await?
