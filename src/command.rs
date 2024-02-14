@@ -452,7 +452,7 @@ async fn hitokoto(
         .send()
         .await?;
     let resp: HitokotoResult = raw_resp.json().await?;
-    
+
     let from_who = resp.from_who.unwrap_or_default();
 
     Ok(Some(RoomMessageEventContent::text_html(

@@ -39,7 +39,7 @@ pub async fn on_sync_message(
         let res = if let Some(commands) = &info.body.strip_prefix(&ctx.config.command_prefix) {
             crate::command::dispatch(&ctx, &info, commands).await
         } else {
-            crate::message::dispatch(&info, &ctx.config.features).await
+            crate::message::dispatch(&ctx, &info).await
         };
 
         let Err(e) = res else {

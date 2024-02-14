@@ -62,7 +62,7 @@ impl IntoEventContent for anyhow::Error {
 
     fn event_content(self) -> Self::Output {
         match self.downcast_ref::<Error>() {
-            Some(Error::MissingParamter(_)) => {
+            Some(Error::MissingParamter(_) | Error::InvaildUrl(_)) => {
                 RoomMessageEventContent::text_plain(format!("Invaild input: {self:#}"))
             }
             Some(Error::RequiresBannable | Error::RequiresReply) => {
@@ -73,6 +73,7 @@ impl IntoEventContent for anyhow::Error {
             Some(Error::UserNotFound) => {
                 RoomMessageEventContent::text_plain(format!("Runtime error: {self:#}"))
             }
+            Some(Error::NoInfomation) => RoomMessageEventContent::text_plain(format!("{self:#}")),
             Some(Error::ShouldAvaliable) => RoomMessageEventContent::text_plain(format!(
                 "⁉️ The bot fired an internal error: {self:#}"
             )),

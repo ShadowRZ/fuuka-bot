@@ -5,22 +5,21 @@ use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
 use matrix_sdk::ruma::events::Mentions;
-use matrix_sdk::ruma::{OwnedRoomId, UserId};
+use matrix_sdk::ruma::UserId;
+use url::Url;
 
 use crate::dicer::DiceCandidate;
 use crate::dicer::ParseError;
 use crate::jerryxiao::make_randomdraw_event_content;
 use crate::traits::IntoEventContent;
+use crate::BotContext;
+use crate::Error;
 use crate::HandlerContext;
-use crate::RoomFeatures;
 use crate::{get_reply_target, jerryxiao::make_jerryxiao_event_content};
-use std::collections::HashMap;
 
 /// Dispatch the messages that are not commands but otherwise actionable.
-pub async fn dispatch(
-    ctx: &HandlerContext,
-    features: &HashMap<OwnedRoomId, RoomFeatures>,
-) -> anyhow::Result<()> {
+pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Result<()> {
+    let features = &bot_ctx.config.features;
     let content = if ["/", "!!", "\\", "¡¡"]
         .iter()
         .any(|p| ctx.body.starts_with(*p))
@@ -66,6 +65,11 @@ pub async fn dispatch(
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
         _dispatch_dicer(&ctx.body).await?
+    } else if ctx.body.starts_with("@Nahida") {
+        if let Err(e) = ctx.room.typing_notice(false).await {
+            tracing::warn!("Error while updating typing notice: {e:?}");
+        };
+        _dispatch_nahida(bot_ctx, &ctx.body).await?
     } else {
         None
     };
@@ -171,6 +175,18 @@ async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventCo
                     .unwrap_or("".to_string())
             ),
         )))
+    } else {
+        Ok(None)
+    }
+}
+
+async fn _dispatch_nahida(
+    bot_ctx: &BotContext,
+    body: &str,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    if let Some(url) = body.strip_prefix("@Nahida") {
+        let url = Url::parse(url.trim()).map_err(Error::InvaildUrl)?;
+        crate::nahida::dispatch(&url, &bot_ctx.http_client).await
     } else {
         Ok(None)
     }

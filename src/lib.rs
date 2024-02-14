@@ -8,6 +8,7 @@ pub mod dicer;
 pub mod handler;
 pub mod jerryxiao;
 pub mod message;
+pub mod nahida;
 pub mod stream;
 pub mod traits;
 pub mod types;
@@ -199,6 +200,12 @@ pub enum Error {
     /// Divide by zero happened.
     #[error("Divisioned by zero.")]
     DivByZero,
+    /// Invaild URL given.
+    #[error("Invaild URL given: {0}.")]
+    InvaildUrl(#[from] url::ParseError),
+    /// No vaild infomation can be extracted.
+    #[error("No infomation can be extracted.")]
+    NoInfomation,
     // Internal errors.
     /// The bot encountered an internal error that the user it checked should be avaliable but didn't.
     #[error("This user should be avaliable.")]
