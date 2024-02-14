@@ -66,11 +66,13 @@ async fn _crates_io(
         .crate_info
         .documentation
         .map(|s| format!("\nDocs: {s}"))
-        .unwrap_or_else(|| format!("https://docs.rs/{crate_name}/{version}"));
+        .unwrap_or_else(|| format!("\nDocs: https://docs.rs/{crate_name}/{version}"));
     let version_info = resp.versions.iter().find(|i| i.num == version);
 
     let msrv_str = version_info
-        .map(|info| format!("\nMSRV: {0}", info.rust_version))
+        .map(|info| info.rust_version.as_ref())
+        .flatten()
+        .map(|msrv| format!("\nMSRV: {msrv}",))
         .unwrap_or_default();
 
     Ok(Some(RoomMessageEventContent::text_html(

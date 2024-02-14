@@ -35,8 +35,8 @@ pub struct CrateInfo {
 #[derive(Deserialize, Debug, Clone)]
 #[allow(missing_docs)]
 pub struct CrateVersion {
-    pub license: String,
+    pub license: Option<String>,
     pub num: String,
-    pub rust_version: String,
+    pub rust_version: Option<String>,
     pub yanked: bool,
 }
