@@ -37,7 +37,7 @@ pub struct Config {
     /// Command prefix.
     pub command_prefix: String,
     /// The homeserver URL to connect to.
-    pub homeserver_url: String,
+    pub homeserver_url: Url,
     /// Optional room features.
     #[serde(default)]
     pub features: HashMap<OwnedRoomId, RoomFeatures>,
@@ -61,7 +61,7 @@ pub struct RoomFeatures {
 pub struct ServiceBackends {
     /// Hitokoto API endpoint.
     /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
-    pub hitokoto: String,
+    pub hitokoto: Url,
 }
 
 /// Global context data for handlers.

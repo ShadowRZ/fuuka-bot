@@ -105,7 +105,7 @@ impl Expr {
                     //Ok((fastrand::u32(1..=sides) * count) as i32)
                     Ok((0..count)
                         .fold(0, |acc, _| acc + fastrand::u32(1..=sides))
-                        .try_into()?)
+                        .into())
                 }
                 DiceOrInt::Int(num) => Ok(num.into()),
             },

@@ -137,7 +137,7 @@ async fn _dispatch_dicer(body: &str) -> anyhow::Result<Option<RoomMessageEventCo
         };
         let string = match cand.target {
             Some(target) => {
-                if result < (target.try_into()?) {
+                if result < (target.into()) {
                     Some("Success")
                 } else {
                     Some("Failed")

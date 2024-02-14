@@ -84,8 +84,8 @@ async fn _unknown(
 #[tracing::instrument(skip(_ctx), err)]
 async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     Ok(Some(RoomMessageEventContent::text_html(
-        format!("Fuuka Bot\n\nSource: https://github.com/ShadowRZ/fuuka-bot\nCommands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md\nSend a feature request: https://github.com/ShadowRZ/fuuka-bot/issues"),
-        format!("<p>Fuuka Bot</p><p>Source: https://github.com/ShadowRZ/fuuka-bot<br/>Commands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md<br/>Send a feature request: https://github.com/ShadowRZ/fuuka-bot/issues</p>"),
+        "Fuuka Bot\n\nSource: https://github.com/ShadowRZ/fuuka-bot\nCommands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md\nSend a feature request: https://github.com/ShadowRZ/fuuka-bot/issues",
+        "<p>Fuuka Bot</p><p>Source: https://github.com/ShadowRZ/fuuka-bot<br/>Commands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md<br/>Send a feature request: https://github.com/ShadowRZ/fuuka-bot/issues</p>",
     )))
 }
 
@@ -437,7 +437,7 @@ async fn hitokoto(
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let raw_resp = bot_ctx
         .http_client
-        .get(&bot_ctx.config.services.hitokoto)
+        .get(bot_ctx.config.services.hitokoto.clone())
         .send()
         .await?;
     let resp: HitokotoResult = raw_resp.json().await?;

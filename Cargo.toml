@@ -27,6 +27,7 @@ crc32fast = "*"
 fastrand = "*"
 thiserror = "*"
 nom = "*"
+url = { version = "*", features = ["serde"] }
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]

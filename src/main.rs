@@ -81,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
             print!("Enter password: ");
             io::stdout().flush()?;
             let password = read_password()?;
-            save_login_session(&config.homeserver_url, username, &password).await?;
+            save_login_session(config.homeserver_url.as_str(), username, &password).await?;
             println!("Session stored, you can run the bot now.");
             return Ok(());
         }
