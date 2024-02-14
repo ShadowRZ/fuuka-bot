@@ -47,25 +47,36 @@ pub async fn dispatch(
         return Ok(());
     };
 
-    let Some(content) = (match *command {
-        "help" => help(ctx).await?,
-        "send_avatar" => send_avatar(ctx).await?,
-        "crazy_thursday" => crazy_thursday(ctx).await?,
-        "ping" => ping(ctx).await?,
-        "room_id" => room_id(ctx).await?,
-        "user_id" => user_id(ctx).await?,
-        "name_changes" => name_changes(ctx).await?,
-        "avatar_changes" => avatar_changes(ctx).await?,
-        "divergence" => divergence(ctx).await?,
-        "ignore" => ignore(ctx).await?,
-        "hitokoto" => hitokoto(bot_ctx, ctx).await?,
-        "unignore" => unignore(ctx, args.get(1).copied()).await?,
-        _ => _unknown(ctx, command).await?,
+    let Some(content) = ({
+        if let Err(e) = ctx.room.typing_notice(true).await {
+            tracing::warn!("Error while updating typing notice: {e:?}");
+        };
+        match *command {
+            "help" => help(ctx).await?,
+            "send_avatar" => send_avatar(ctx).await?,
+            "crazy_thursday" => crazy_thursday(ctx).await?,
+            "ping" => ping(ctx).await?,
+            "room_id" => room_id(ctx).await?,
+            "user_id" => user_id(ctx).await?,
+            "name_changes" => name_changes(ctx).await?,
+            "avatar_changes" => avatar_changes(ctx).await?,
+            "divergence" => divergence(ctx).await?,
+            "ignore" => ignore(ctx).await?,
+            "hitokoto" => hitokoto(bot_ctx, ctx).await?,
+            "unignore" => unignore(ctx, args.get(1).copied()).await?,
+            _ => _unknown(ctx, command).await?,
+        }
     }) else {
+        if let Err(e) = ctx.room.typing_notice(false).await {
+            tracing::warn!("Error while updating typing notice: {e:?}");
+        };
         return Ok(());
     };
 
     let content = content.make_reply_to(&ctx.ev, ForwardThread::Yes, AddMentions::Yes);
+    if let Err(e) = ctx.room.typing_notice(false).await {
+        tracing::warn!("Error while updating typing notice: {e:?}");
+    };
     ctx.room.send(content).await?;
 
     Ok(())

@@ -43,6 +43,9 @@ pub async fn dispatch(
             return Ok(());
         };
 
+        if let Err(e) = ctx.room.typing_notice(false).await {
+            tracing::warn!("Error while updating typing notice: {e:?}");
+        };
         _dispatch_jerryxiao(&ctx.room, &ctx.body, from_sender, &to_sender)
             .await?
             .map(|c| c.add_mentions(Mentions::with_user_ids([to_sender])))
@@ -54,13 +57,22 @@ pub async fn dispatch(
         {
             return Ok(());
         }
+        if let Err(e) = ctx.room.typing_notice(false).await {
+            tracing::warn!("Error while updating typing notice: {e:?}");
+        };
         _dispatch_randomdraw(&ctx.ev, &ctx.room, &ctx.body).await?
     } else if ctx.body.starts_with("@=") {
+        if let Err(e) = ctx.room.typing_notice(false).await {
+            tracing::warn!("Error while updating typing notice: {e:?}");
+        };
         _dispatch_dicer(&ctx.body).await?
     } else {
         None
     };
 
+    if let Err(e) = ctx.room.typing_notice(false).await {
+        tracing::warn!("Error while updating typing notice: {e:?}");
+    };
     let Some(content) = content else {
         return Ok(());
     };
