@@ -92,11 +92,30 @@ async fn _unknown(
     ))))
 }
 
+static HELP_TEXT: &str = concat!(
+    "Fuuka Bot\n\nSource: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "\nCommands: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "/blob/master/COMMANDS.md\nSend a feature request: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "/issues",
+);
+
+static HELP_HTML: &str = concat!(
+    "<p>Fuuka Bot</p><p>Source: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "<br/>Commands: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "/blob/master/COMMANDS.md<br/>Send a feature request: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "/issues</p>",
+);
+
 #[tracing::instrument(skip(_ctx), err)]
 async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
     Ok(Some(RoomMessageEventContent::text_html(
-        "Fuuka Bot\n\nSource: https://github.com/ShadowRZ/fuuka-bot\nCommands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md\nSend a feature request: https://github.com/ShadowRZ/fuuka-bot/issues",
-        "<p>Fuuka Bot</p><p>Source: https://github.com/ShadowRZ/fuuka-bot<br/>Commands: https://github.com/ShadowRZ/fuuka-bot/blob/master/COMMANDS.md<br/>Send a feature request: https://github.com/ShadowRZ/fuuka-bot/issues</p>",
+        HELP_TEXT, HELP_HTML,
     )))
 }
 

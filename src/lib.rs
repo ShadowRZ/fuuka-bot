@@ -1,6 +1,16 @@
 //! Fuuka Bot Internals for interested.
 //!
 //! **WARNING: External crate links are broken in the build documentation on GitHub Pages, sorry.**
+//! 
+//! ## User Agent
+//! 
+//! The bot consistently uses the following user agent template:
+//! 
+//! ```text
+//! fuuka-bot/<version> (https://github.com/ShadowRZ/fuuka-bot)
+//! ```
+//! 
+//! Where `<version>` is the running version of the bot.
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 pub mod command;
@@ -31,6 +41,15 @@ use std::sync::Arc;
 use tokio::signal;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
+
+static APP_USER_AGENT: &str = concat!(
+    env!("CARGO_PKG_NAME"),
+    "/",
+    env!("CARGO_PKG_VERSION"),
+    " (",
+    env!("CARGO_PKG_REPOSITORY"),
+    ")"
+);
 
 /// The config of Fuuka bot.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -88,7 +107,9 @@ impl FuukaBot {
             .sqlite_store("store", None);
         let client = builder.build().await?;
         client.restore_session(session).await?;
-        let http_client = reqwest::Client::builder().build()?;
+        let http_client = reqwest::Client::builder()
+            .user_agent(APP_USER_AGENT)
+            .build()?;
         let context = BotContext {
             config,
             http_client,
