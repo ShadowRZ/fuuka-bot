@@ -1,15 +1,15 @@
 //! Fuuka Bot Internals for interested.
 //!
 //! **WARNING: External crate links are broken in the build documentation on GitHub Pages, sorry.**
-//! 
+//!
 //! ## User Agent
-//! 
+//!
 //! The bot consistently uses the following user agent template:
-//! 
+//!
 //! ```text
 //! fuuka-bot/<version> (https://github.com/ShadowRZ/fuuka-bot)
 //! ```
-//! 
+//!
 //! Where `<version>` is the running version of the bot.
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
@@ -31,6 +31,7 @@ use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallba
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
+use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId};
 use matrix_sdk::Room;
 use matrix_sdk::{config::SyncSettings, Client};
@@ -49,6 +50,13 @@ static APP_USER_AGENT: &str = concat!(
     " (",
     env!("CARGO_PKG_REPOSITORY"),
     ")"
+);
+
+static APP_PRESENCE_TEXT: &str = concat!(
+    "Fuuka Bot (v",
+    env!("CARGO_PKG_VERSION"),
+    ") | ",
+    env!("CARGO_PKG_REPOSITORY")
 );
 
 /// The config of Fuuka bot.
@@ -144,14 +152,27 @@ impl FuukaBot {
 
     async fn sync(&self, initial: bool) -> anyhow::Result<()> {
         let next_batch = self.initial_sync(initial).await?;
-        let settings = SyncSettings::default().token(next_batch);
+        let settings = SyncSettings::default()
+            .token(next_batch)
+            .set_presence(PresenceState::Online);
+        use matrix_sdk::ruma::api::client::presence::set_presence::v3::Request;
+        if let Some(user_id) = self.client.user_id() {
+            let mut presence = Request::new(user_id.into(), PresenceState::Online);
+            presence.status_msg = Some(APP_PRESENCE_TEXT.to_string());
+            if let Err(e) = self.client.send(presence, None).await {
+                tracing::warn!("Failed to set presence: {e:#}");
+            }
+        }
         self.client.sync(settings).await?;
         Ok(())
     }
 
     async fn initial_sync(&self, register_handler: bool) -> anyhow::Result<String> {
         tracing::info!("Initial sync beginning...");
-        let response = self.client.sync_once(SyncSettings::default()).await?;
+        let response = self
+            .client
+            .sync_once(SyncSettings::default().set_presence(PresenceState::Online))
+            .await?;
         tracing::info!("Initial sync completed.");
 
         if register_handler {
