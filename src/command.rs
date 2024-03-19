@@ -4,6 +4,7 @@ use file_format::FileFormat;
 use futures_util::pin_mut;
 use futures_util::StreamExt;
 use matrix_sdk::deserialized_responses::MemberEvent;
+use matrix_sdk::event_handler::EventHandlerHandle;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
 use matrix_sdk::ruma::events::room::member::MembershipChange;
@@ -11,16 +12,19 @@ use matrix_sdk::ruma::events::room::message::AddMentions;
 use matrix_sdk::ruma::events::room::message::ForwardThread;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
 use matrix_sdk::ruma::events::room::message::MessageType;
+use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::ThumbnailInfo;
+use matrix_sdk::ruma::events::Mentions;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
+use matrix_sdk::Room;
 use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
 use time::Duration;
@@ -35,6 +39,7 @@ use crate::types::HitokotoResult;
 use crate::BotContext;
 use crate::Error;
 use crate::HandlerContext;
+use crate::RoomMemberExt;
 
 /// Dispatches the command and send the command outout.
 pub async fn dispatch(
@@ -64,6 +69,7 @@ pub async fn dispatch(
             "ignore" => ignore(ctx).await?,
             "hitokoto" => hitokoto(bot_ctx, ctx).await?,
             "unignore" => unignore(ctx, args.get(1).copied()).await?,
+            "remind" => remind(ctx).await?,
             _ => _unknown(ctx, command).await?,
         }
     }) else {
@@ -483,5 +489,50 @@ async fn hitokoto(
             "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
             resp.hitokoto, from_who, resp.from, resp.uuid
         ),
+    )))
+}
+
+#[tracing::instrument(skip(ctx), err)]
+async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
+        return Err(Error::RequiresReply)?;
+    };
+
+    let sender = ctx.sender.clone();
+
+    let room = &ctx.room;
+    let member = room
+        .get_member(&sender)
+        .await?
+        .ok_or(Error::ShouldAvaliable)?;
+
+    room.add_event_handler(
+        |ev: OriginalSyncRoomMessageEvent,
+         client: Client,
+         room: Room,
+         handle: EventHandlerHandle| async move {
+            let ev = ev.into_full_event(room.room_id().into());
+            if ev.sender == target {
+                let pill = member.make_pill();
+                let content = RoomMessageEventContent::text_html(
+                    format!(
+                        "Cc {} You can ask now.",
+                        member.display_name().unwrap_or(sender.as_str())
+                    ),
+                    format!("Cc {} You can ask now.", pill),
+                )
+                .make_reply_to(&ev, ForwardThread::No, AddMentions::Yes)
+                .add_mentions(Mentions::with_user_ids([target]));
+                match room.send(content).await {
+                    Ok(_) => (),
+                    Err(e) => tracing::error!("Unexpected error happened: {e:?}"),
+                }
+                client.remove_event_handler(handle);
+            };
+        },
+    );
+
+    Ok(Some(RoomMessageEventContent::text_plain(
+        "You'll be reminded when the target speaks.",
     )))
 }
