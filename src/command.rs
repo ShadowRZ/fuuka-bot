@@ -154,8 +154,12 @@ async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCon
     let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
     let MilliSecondsSinceUnixEpoch(event_ts) = ctx.ev.origin_server_ts;
     let delta: i64 = (now - event_ts).into();
-    let duration = Duration::milliseconds(delta);
-    let body = format!("Pong after {duration:.8}");
+    let body = if delta >= 2000 {
+        let duration = Duration::milliseconds(delta);
+        format!("Pong after {duration:.3}")
+    } else {
+        format!("Pong after {}ms", delta)
+    };
 
     Ok(Some(RoomMessageEventContent::text_plain(body)))
 }
