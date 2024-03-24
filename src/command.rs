@@ -112,7 +112,7 @@ static HELP_HTML: &str = concat!(
     "<p>Fuuka Bot</p><p>Source: ",
     env!("CARGO_PKG_REPOSITORY"),
     "<br/>Commands: https://shadowrz.github.io/fuuka-bot/commands.html",
-    "/blob/master/COMMANDS.md<br/>Send a feature request: ",
+    "<br/>Send a feature request: ",
     env!("CARGO_PKG_REPOSITORY"),
     "/issues</p>",
 );
