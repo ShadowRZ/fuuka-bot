@@ -101,9 +101,8 @@ async fn _unknown(
 static HELP_TEXT: &str = concat!(
     "Fuuka Bot\n\nSource: ",
     env!("CARGO_PKG_REPOSITORY"),
-    "\nCommands: ",
-    env!("CARGO_PKG_REPOSITORY"),
-    "/blob/master/COMMANDS.md\nSend a feature request: ",
+    "\nCommands: https://shadowrz.github.io/fuuka-bot/commands.html",
+    "\nSend a feature request: ",
     env!("CARGO_PKG_REPOSITORY"),
     "/issues",
 );
