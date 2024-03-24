@@ -70,8 +70,7 @@ async fn _crates_io(
     let version_info = resp.versions.iter().find(|i| i.num == version);
 
     let msrv_str = version_info
-        .map(|info| info.rust_version.as_ref())
-        .flatten()
+        .and_then(|info| info.rust_version.as_ref())
         .map(|msrv| format!("\nMSRV: {msrv}",))
         .unwrap_or_default();
 
