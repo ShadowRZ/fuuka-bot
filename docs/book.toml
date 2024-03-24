@@ -1,0 +1,12 @@
+[book]
+authors = ["夜坂雅"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Fuuka Bot"
+
+[output.html]
+no-section-label = true
+git-repository-url = "https://github.com/ShadowRZ/fuuka-bot"
+edit-url-template = "https://github.com/ShadowRZ/fuuka-bot/edit/master/docs/{path}"
+site-url = "/fuuka-bot/"

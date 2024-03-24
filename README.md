@@ -1,5 +1,7 @@
 # Fuuka Bot
 
+A Rust Matrix bot.
+
 ## User Agent
 
 The bot consistently uses the following user agent template:
@@ -17,8 +19,7 @@ Copy `fuuka-bot.sample.toml` to `fuuka-bot.toml` and edit this file to your need
 Then:
 
 ```
-# Login to the homeserver and writes a credential.json file.
-cargo run -- login
 # Run the bot.
+# If a credential file wasn't found, you can generate one.
 cargo run
 ```
