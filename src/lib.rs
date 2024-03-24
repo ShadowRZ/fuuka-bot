@@ -19,6 +19,8 @@ pub mod handler;
 pub mod jerryxiao;
 pub mod message;
 pub mod nahida;
+#[doc(hidden)]
+pub mod session;
 pub mod stream;
 pub mod traits;
 pub mod types;
