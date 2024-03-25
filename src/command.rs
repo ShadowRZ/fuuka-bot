@@ -21,6 +21,7 @@ use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::ThumbnailInfo;
 use matrix_sdk::ruma::events::sticker::StickerEventContent;
 use matrix_sdk::ruma::events::AnyMessageLikeEvent;
+use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::events::Mentions;
 use matrix_sdk::ruma::events::MessageLikeEvent;
@@ -86,7 +87,12 @@ pub async fn dispatch(
         return Ok(());
     };
 
-    let content = content.make_reply_to(&ctx.ev, ForwardThread::Yes, AddMentions::Yes);
+    let content = match content {
+        AnyMessageLikeEventContent::RoomMessage(msg) => AnyMessageLikeEventContent::RoomMessage(
+            msg.make_reply_to(&ctx.ev, ForwardThread::Yes, AddMentions::Yes),
+        ),
+        _ => content,
+    };
     if let Err(e) = ctx.room.typing_notice(false).await {
         tracing::warn!("Error while updating typing notice: {e:?}");
     };
@@ -99,10 +105,10 @@ pub async fn dispatch(
 async fn _unknown(
     _ctx: &HandlerContext,
     command: &str,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    Ok(Some(RoomMessageEventContent::text_plain(format!(
-        "Unknown command {command}."
-    ))))
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(format!("Unknown command {command}.")),
+    )))
 }
 
 static HELP_TEXT: &str = concat!(
@@ -124,14 +130,16 @@ static HELP_HTML: &str = concat!(
 );
 
 #[tracing::instrument(skip(_ctx), err)]
-async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    Ok(Some(RoomMessageEventContent::text_html(
-        HELP_TEXT, HELP_HTML,
+async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML),
     )))
 }
 
 #[tracing::instrument(skip(_ctx), err)]
-async fn crazy_thursday(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn crazy_thursday(
+    _ctx: &HandlerContext,
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
     let body = if now.weekday() != Weekday::Thursday {
         let date = now.date().next_occurrence(time::Weekday::Thursday);
@@ -151,11 +159,13 @@ async fn crazy_thursday(_ctx: &HandlerContext) -> anyhow::Result<Option<RoomMess
         "Crazy Thursday!".to_string()
     };
 
-    Ok(Some(RoomMessageEventContent::text_plain(body)))
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(body),
+    )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
     let MilliSecondsSinceUnixEpoch(event_ts) = ctx.ev.origin_server_ts;
     let delta: i64 = (now - event_ts).into();
@@ -166,25 +176,29 @@ async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCon
         format!("Pong after {}ms", delta)
     };
 
-    Ok(Some(RoomMessageEventContent::text_plain(body)))
-}
-
-#[tracing::instrument(skip(ctx), err)]
-async fn room_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    Ok(Some(RoomMessageEventContent::text_plain(
-        ctx.room.room_id(),
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(body),
     )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
-
-    Ok(Some(RoomMessageEventContent::text_plain(user_id.as_str())))
+async fn room_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(ctx.room.room_id()),
+    )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
+
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(user_id.as_str()),
+    )))
+}
+
+#[tracing::instrument(skip(ctx), err)]
+async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
         .room
@@ -256,11 +270,15 @@ async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessage
         ),
     }
 
-    Ok(Some(RoomMessageEventContent::text_plain(body)))
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(body),
+    )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn avatar_changes(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn avatar_changes(
+    ctx: &HandlerContext,
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let homeserver = &ctx.homeserver;
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
@@ -346,11 +364,13 @@ async fn avatar_changes(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessa
         ),
     }
 
-    Ok(Some(RoomMessageEventContent::text_plain(body)))
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(body),
+    )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let target = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
         .room
@@ -362,19 +382,24 @@ async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageE
         Some(avatar_url) => {
             let name = member.display_name().unwrap_or(target.as_str());
             let info = get_image_info(avatar_url, &ctx.room.client()).await?;
-            Ok(Some(RoomMessageEventContent::new(MessageType::Image(
-                ImageMessageEventContent::plain(format!("[Avatar of {name}]"), avatar_url.into())
+            Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                RoomMessageEventContent::new(MessageType::Image(
+                    ImageMessageEventContent::plain(
+                        format!("[Avatar of {name}]"),
+                        avatar_url.into(),
+                    )
                     .info(Some(Box::new(info))),
-            ))))
+                )),
+            )))
         }
-        None => Ok(Some(RoomMessageEventContent::text_plain(
-            "The user has no avatar.",
+        None => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain("The user has no avatar."),
         ))),
     }
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
     let event_id_hash = match &ctx.ev.content.relates_to {
         Some(Relation::Reply { in_reply_to }) => {
@@ -388,13 +413,13 @@ async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEv
         let mut rng = fastrand::Rng::with_seed(seed.into());
         rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
     };
-    Ok(Some(RoomMessageEventContent::text_plain(format!(
-        "{hash:.6}%"
-    ))))
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain(format!("{hash:.6}%")),
+    )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let sender = &ctx.sender;
 
     let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
@@ -408,11 +433,13 @@ async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventC
             .await?
             .ok_or(Error::ShouldAvaliable)?;
         member.ignore().await?;
-        Ok(Some(RoomMessageEventContent::text_plain(format!(
-            "Ignored {} ({})",
-            member.display_name().unwrap_or("(No Name)"),
-            sender
-        ))))
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(format!(
+                "Ignored {} ({})",
+                member.display_name().unwrap_or("(No Name)"),
+                sender
+            )),
+        )))
     } else {
         Err(Error::RequiresBannable)?
     }
@@ -422,7 +449,7 @@ async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventC
 async fn unignore(
     ctx: &HandlerContext,
     user: Option<String>,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let sender = &ctx.sender;
 
     let target = OwnedUserId::try_from(user.ok_or(Error::MissingParamter("user"))?)?;
@@ -434,11 +461,13 @@ async fn unignore(
             .await?
             .ok_or(Error::UserNotFound)?;
         member.unignore().await?;
-        Ok(Some(RoomMessageEventContent::text_plain(format!(
-            "Unignored {} ({})",
-            member.display_name().unwrap_or("(No Name)"),
-            sender
-        ))))
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(format!(
+                "Unignored {} ({})",
+                member.display_name().unwrap_or("(No Name)"),
+                sender
+            )),
+        )))
     } else {
         Err(Error::RequiresBannable)?
     }
@@ -479,7 +508,7 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
 async fn hitokoto(
     bot_ctx: &BotContext,
     _ctx: &HandlerContext,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let raw_resp = bot_ctx
         .http_client
         .get(bot_ctx.config.services.hitokoto.clone())
@@ -489,20 +518,22 @@ async fn hitokoto(
 
     let from_who = resp.from_who.unwrap_or_default();
 
-    Ok(Some(RoomMessageEventContent::text_html(
-        format!(
-            "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
-            resp.hitokoto, from_who, resp.from, resp.uuid
-        ),
-        format!(
-            "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
-            resp.hitokoto, from_who, resp.from, resp.uuid
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_html(
+            format!(
+                "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
+                resp.hitokoto, from_who, resp.from, resp.uuid
+            ),
+            format!(
+                "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
+                resp.hitokoto, from_who, resp.from, resp.uuid
+            ),
         ),
     )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
         return Err(Error::RequiresReply)?;
     };
@@ -541,13 +572,13 @@ async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventC
         },
     );
 
-    Ok(Some(RoomMessageEventContent::text_plain(
-        "You'll be reminded when the target speaks.",
+    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+        RoomMessageEventContent::text_plain("You'll be reminded when the target speaks."),
     )))
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let room_id = &ctx.ev.room_id;
     let ev = crate::get_reply_event(&ctx.ev, &ctx.room)
         .await?
@@ -613,12 +644,21 @@ async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventCo
                     let info = get_image_info(&resp.content_uri, client).await?;
                     let send_content =
                         StickerEventContent::new("[Quote]".to_string(), info, resp.content_uri);
-                    ctx.room.send(send_content).await?;
-                    Ok(None)
+                    Ok(Some(AnyMessageLikeEventContent::Sticker(send_content)))
                 }
-                _ => Ok(None),
+                _ => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                    RoomMessageEventContent::text_plain(format!(
+                        "Unsupported event type, event type in Rust: {}",
+                        std::any::type_name_of_val(&content.msgtype)
+                    )),
+                ))),
             }
         }
-        _ => Ok(None),
+        _ => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(format!(
+                "Unsupported event type, event type in Rust: {}",
+                std::any::type_name_of_val(&ev)
+            )),
+        ))),
     }
 }
