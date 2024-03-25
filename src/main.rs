@@ -48,6 +48,8 @@ async fn main() -> anyhow::Result<()> {
     FuukaBot::new(config, session)
         .await?
         .with_shutdown()
+        .disable_recovery()
+        .await?
         .run()
         .await
 }

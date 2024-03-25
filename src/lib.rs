@@ -189,6 +189,12 @@ impl FuukaBot {
         Ok(response.next_batch)
     }
 
+    /// Disable encrypted message recovery.
+    pub async fn disable_recovery(self) -> anyhow::Result<Self> {
+        self.client.encryption().recovery().disable().await?;
+        Ok(self)
+    }
+
     /// Registers the graceful shutdown handler.
     pub fn with_shutdown(self) -> Self {
         let cts = self.cts.clone();
