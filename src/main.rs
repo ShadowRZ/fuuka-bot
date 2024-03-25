@@ -26,7 +26,8 @@ fn get_config() -> anyhow::Result<Config> {
 async fn main() -> anyhow::Result<()> {
     let filter = EnvFilter::from_default_env()
         .add_directive(LevelFilter::WARN.into())
-        .add_directive("fuuka_bot=debug".parse()?);
+        .add_directive("fuuka_bot=debug".parse()?)
+        .add_directive("matrix_sdk_crypto::backups=error".parse()?);
     tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_level(true)
