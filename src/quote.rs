@@ -75,6 +75,14 @@ pub fn html2pango(input: &str) -> anyhow::Result<String> {
             }
             Ok(())
         }),
+        element!("br", |el| {
+            el.remove();
+            Ok(())
+        }),
+        element!("hr", |el| {
+            el.remove();
+            Ok(())
+        })
     ];
     let result = rewrite_str(
         input,
