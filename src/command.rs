@@ -8,6 +8,7 @@ use matrix_sdk::event_handler::EventHandlerHandle;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
 use matrix_sdk::ruma::events::room::member::MembershipChange;
+use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::AddMentions;
 use matrix_sdk::ruma::events::room::message::ForwardThread;
 use matrix_sdk::ruma::events::room::message::ImageMessageEventContent;
@@ -18,13 +19,18 @@ use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::MediaSource;
 use matrix_sdk::ruma::events::room::ThumbnailInfo;
+use matrix_sdk::ruma::events::sticker::StickerEventContent;
+use matrix_sdk::ruma::events::AnyMessageLikeEvent;
+use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::events::Mentions;
+use matrix_sdk::ruma::events::MessageLikeEvent;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
 use matrix_sdk::Room;
+use ruma::html::remove_html_reply_fallback;
 use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
 use time::Duration;
@@ -70,6 +76,7 @@ pub async fn dispatch(
             "hitokoto" => hitokoto(bot_ctx, ctx).await?,
             "unignore" => unignore(ctx, args.get(1).copied()).await?,
             "remind" => remind(ctx).await?,
+            "quote" => quote(ctx).await?,
             _ => _unknown(ctx, command).await?,
         }
     }) else {
@@ -537,4 +544,81 @@ async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventC
     Ok(Some(RoomMessageEventContent::text_plain(
         "You'll be reminded when the target speaks.",
     )))
+}
+
+#[tracing::instrument(skip(ctx), err)]
+async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    let room_id = &ctx.ev.room_id;
+    let ev = crate::get_reply_event(&ctx.ev, &ctx.room)
+        .await?
+        .ok_or(Error::RequiresReply)?;
+    let sender = ev.sender().to_owned();
+    let member = ctx
+        .room
+        .get_member(&sender)
+        .await?
+        .ok_or(Error::ShouldAvaliable)?;
+    match ev {
+        AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
+            MessageLikeEvent::Original(ev),
+        )) => {
+            let ev = ev
+                .unsigned
+                .relations
+                .replace
+                .clone()
+                .map(|ev| ev.into_full_event(room_id.clone()))
+                .unwrap_or(ev);
+            let content = ev.content;
+            let replace_content = content
+                .relates_to
+                .clone()
+                .and_then(|rel| match rel {
+                    Relation::Replacement(content) => Some(content),
+                    _ => None,
+                })
+                .map(|replacement| replacement.new_content);
+            let content = replace_content.unwrap_or(content.into());
+            match content.msgtype {
+                MessageType::Text(content) => {
+                    let string =
+                        format!(
+                            "<span size=\"larger\" foreground=\"#1f4788\">{}</span>\n{}",
+                            member.name_or_id(),
+                            content
+                                .formatted
+                                .map(|formatted| crate::quote::html2pango(
+                                    &remove_html_reply_fallback(&formatted.body)
+                                ))
+                                .transpose()?
+                                .unwrap_or(
+                                    html_escape::encode_text(remove_plain_reply_fallback(
+                                        &content.body
+                                    ))
+                                    .to_string()
+                                )
+                        );
+                    let data = crate::quote::quote(
+                        member
+                            .avatar_url()
+                            .map(|url| url.http_url(&ctx.homeserver))
+                            .transpose()?
+                            .map(|s| s.to_string()),
+                        &string,
+                    )
+                    .await?;
+                    let mime: mime::Mime = "image/webp".parse()?;
+                    let resp = ctx.room.client().media().upload(&mime, data).await?;
+                    let client = &ctx.room.client();
+                    let info = get_image_info(&resp.content_uri, client).await?;
+                    let send_content =
+                        StickerEventContent::new("[Quote]".to_string(), info, resp.content_uri);
+                    ctx.room.send(send_content).await?;
+                    Ok(None)
+                }
+                _ => Ok(None),
+            }
+        }
+        _ => Ok(None),
+    }
 }

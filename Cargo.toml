@@ -30,6 +30,9 @@ fastrand = "*"
 thiserror = "*"
 nom = "*"
 url = { version = "*", features = ["serde"] }
+lol_html = "*"
+html-escape = "*"
+mime = "*"
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]

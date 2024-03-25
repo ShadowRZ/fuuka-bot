@@ -19,6 +19,7 @@ pub mod handler;
 pub mod jerryxiao;
 pub mod message;
 pub mod nahida;
+pub mod quote;
 #[doc(hidden)]
 pub mod session;
 pub mod stream;
@@ -33,6 +34,7 @@ use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallba
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
+use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId};
 use matrix_sdk::Room;
@@ -298,6 +300,21 @@ pub(crate) async fn get_reply_target(
             let event = room.event(event_id).await?.event.deserialize()?;
             let ret = event.sender();
             Ok(Some(ret.into()))
+        }
+        _ => Ok(None),
+    }
+}
+
+/// Given a [OriginalRoomMessageEvent], returns the event being replied to.
+pub(crate) async fn get_reply_event(
+    ev: &OriginalRoomMessageEvent,
+    room: &Room,
+) -> anyhow::Result<Option<AnyTimelineEvent>> {
+    match &ev.content.relates_to {
+        Some(Relation::Reply { in_reply_to }) => {
+            let event_id = &in_reply_to.event_id;
+            let event = room.event(event_id).await?.event.deserialize()?;
+            Ok(Some(event))
         }
         _ => Ok(None),
     }
