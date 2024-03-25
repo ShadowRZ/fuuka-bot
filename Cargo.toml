@@ -33,6 +33,7 @@ url = { version = "*", features = ["serde"] }
 lol_html = "*"
 html-escape = "*"
 mime = "*"
+shell-words = "*"
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]

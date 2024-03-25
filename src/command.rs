@@ -53,7 +53,7 @@ pub async fn dispatch(
     ctx: &HandlerContext,
     command: &str,
 ) -> anyhow::Result<()> {
-    let args: Vec<&str> = command.split_ascii_whitespace().collect();
+    let args: Vec<String> = shell_words::split(command)?;
     let Some(command) = args.first() else {
         return Ok(());
     };
@@ -62,7 +62,7 @@ pub async fn dispatch(
         if let Err(e) = ctx.room.typing_notice(true).await {
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
-        match *command {
+        match command.as_str() {
             "help" => help(ctx).await?,
             "send_avatar" => send_avatar(ctx).await?,
             "crazy_thursday" => crazy_thursday(ctx).await?,
@@ -74,7 +74,7 @@ pub async fn dispatch(
             "divergence" => divergence(ctx).await?,
             "ignore" => ignore(ctx).await?,
             "hitokoto" => hitokoto(bot_ctx, ctx).await?,
-            "unignore" => unignore(ctx, args.get(1).copied()).await?,
+            "unignore" => unignore(ctx, args.get(1).cloned()).await?,
             "remind" => remind(ctx).await?,
             "quote" => quote(ctx).await?,
             _ => _unknown(ctx, command).await?,
@@ -421,7 +421,7 @@ async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<RoomMessageEventC
 #[tracing::instrument(skip(ctx), err)]
 async fn unignore(
     ctx: &HandlerContext,
-    user: Option<&str>,
+    user: Option<String>,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let sender = &ctx.sender;
 
