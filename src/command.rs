@@ -69,8 +69,8 @@ pub async fn dispatch(
     ctx: &HandlerContext,
     command: &str,
 ) -> anyhow::Result<()> {
-    let args: Vec<String> = shell_words::split(command)?;
-    let Some(command) = args.first() else {
+    let mut args = shell_words::split(command)?.into_iter();
+    let Some(command) = args.next() else {
         return Ok(());
     };
 
@@ -90,17 +90,14 @@ pub async fn dispatch(
             "divergence" => divergence(ctx).await?,
             "ignore" => ignore(ctx).await?,
             "hitokoto" => hitokoto(bot_ctx, ctx).await?,
-            "unignore" => unignore(ctx, args.get(1).cloned()).await?,
-            "remind" => remind(ctx).await?,
+            "unignore" => unignore(ctx, args.next()).await?,
+            "remind" => remind(ctx, args.next()).await?,
             "quote" => quote(ctx).await?,
             "upload_sticker" => {
-                let pack_name = args
-                    .get(1)
-                    .cloned()
-                    .ok_or(anyhow::anyhow!("Missing pack name."))?;
+                let pack_name = args.next().ok_or(anyhow::anyhow!("Missing pack name."))?;
                 upload_sticker(bot_ctx, ctx, pack_name).await?
             }
-            _ => _unknown(ctx, command).await?,
+            _ => _unknown(ctx, &command).await?,
         }
     }) else {
         if let Err(e) = ctx.room.typing_notice(false).await {
@@ -555,7 +552,10 @@ async fn hitokoto(
 }
 
 #[tracing::instrument(skip(ctx), err)]
-async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+async fn remind(
+    ctx: &HandlerContext,
+    content: Option<String>,
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
         return Err(Error::RequiresReply)?;
     };
@@ -576,12 +576,14 @@ async fn remind(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEve
             let ev = ev.into_full_event(room.room_id().into());
             if ev.sender == target {
                 let pill = member.make_pill();
+                let reminder = content.unwrap_or("You can ask now.".to_string());
                 let content = RoomMessageEventContent::text_html(
                     format!(
-                        "Cc {} You can ask now.",
-                        member.display_name().unwrap_or(sender.as_str())
+                        "Cc {} {}",
+                        member.display_name().unwrap_or(sender.as_str()),
+                        &reminder
                     ),
-                    format!("Cc {} You can ask now.", pill),
+                    format!("Cc {} {}", pill, &reminder),
                 )
                 .make_reply_to(&ev, ForwardThread::No, AddMentions::Yes)
                 .add_mentions(Mentions::with_user_ids([target]));
