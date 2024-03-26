@@ -736,7 +736,9 @@ async fn upload_sticker(
                     sticker_room
                         .send_state_event_for_key(&name, content)
                         .await?;
-                    Ok(None)
+                    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                        RoomMessageEventContent::text_plain("Done."),
+                    )))
                 }
                 _ => Ok(None),
             }
