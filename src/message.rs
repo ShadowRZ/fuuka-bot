@@ -20,7 +20,7 @@ use crate::{get_reply_target, jerryxiao::make_jerryxiao_event_content};
 /// Dispatch the messages that are not commands but otherwise actionable.
 pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Result<()> {
     let features = &bot_ctx.config.features;
-    let content = if ["/", "!!", "\\", "¡¡"]
+    let content = if ["/", "!!", "\\", "¡¡", "//"]
         .iter()
         .any(|p| ctx.body.starts_with(*p))
     {
@@ -31,11 +31,14 @@ pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Res
         {
             return Ok(());
         }
-        let mut splited = ctx.body.split_whitespace();
-        // If the first part of the message is pure ASCII, skip it
-        if splited.next().map(str::is_ascii).unwrap_or(true) {
-            return Ok(());
-        };
+
+        if !ctx.body.starts_with("//") {
+            let mut splited = ctx.body.split_whitespace();
+            // If the first part of the message is pure ASCII, skip it
+            if splited.next().map(str::is_ascii).unwrap_or(true) {
+                return Ok(());
+            };
+        }
 
         let from_sender = &ctx.sender;
         let Some(to_sender) = get_reply_target(&ctx.ev, &ctx.room).await? else {
@@ -93,21 +96,30 @@ async fn _dispatch_jerryxiao(
     from_sender: &UserId,
     to_sender: &UserId,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    if let Some(remaining) = body.strip_prefix('/') {
+    if let Some(remaining) = body.strip_prefix("//") {
         Ok(Some(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false).await?,
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, true)
+                .await?,
+        ))
+    } else if let Some(remaining) = body.strip_prefix('/') {
+        Ok(Some(
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, false)
+                .await?,
         ))
     } else if let Some(remaining) = body.strip_prefix("!!") {
         Ok(Some(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false).await?,
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, false)
+                .await?,
         ))
     } else if let Some(remaining) = body.strip_prefix('\\') {
         Ok(Some(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true).await?,
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true, false)
+                .await?,
         ))
     } else if let Some(remaining) = body.strip_prefix("¡¡") {
         Ok(Some(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true).await?,
+            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true, false)
+                .await?,
         ))
     } else {
         Ok(None)

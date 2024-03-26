@@ -1,5 +1,7 @@
 //! Implments various Jerry Xiao like functions.
 
+use std::collections::HashMap;
+
 use crate::traits::RoomMemberExt;
 use crate::Error;
 use matrix_sdk::room::Room;
@@ -15,6 +17,7 @@ pub async fn make_jerryxiao_event_content(
     to_sender: &UserId,
     text: &str,
     reversed: bool,
+    formatted: bool,
 ) -> anyhow::Result<RoomMessageEventContent> {
     let from_member = room
         .get_member(if reversed { to_sender } else { from_sender })
@@ -30,7 +33,25 @@ pub async fn make_jerryxiao_event_content(
 
     let chars: Vec<char> = text.chars().collect();
 
-    if chars.len() == 2 && chars[0] == chars[1] {
+    if formatted {
+        if text.contains("${from}") && text.contains("${to}") {
+            let text = text.trim();
+            let mut text_context = HashMap::new();
+            text_context.insert("from".to_string(), format!("@{}", from_member.name_or_id()));
+            text_context.insert("to".to_string(), format!("@{}", to_member.name_or_id()));
+            let mut html_context = HashMap::new();
+            html_context.insert("from".to_string(), from_pill);
+            html_context.insert("to".to_string(), to_pill);
+            Ok(RoomMessageEventContent::text_html(
+                envsubst::substitute(text, &text_context)?,
+                envsubst::substitute(text, &html_context)?,
+            ))
+        } else {
+            Ok(RoomMessageEventContent::text_plain(
+                "No format slot ${from} ${to} found!",
+            ))
+        }
+    } else if chars.len() == 2 && chars[0] == chars[1] {
         Ok(RoomMessageEventContent::text_html(
             format!(
                 "@{} {}了{} @{}",

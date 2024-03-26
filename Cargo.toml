@@ -35,6 +35,7 @@ mime = "*"
 shell-words = "*"
 ruma-html = "*"
 zip = "*"
+envsubst = "*"
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
