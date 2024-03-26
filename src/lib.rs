@@ -311,15 +311,10 @@ pub(crate) async fn get_reply_target(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
 ) -> anyhow::Result<Option<OwnedUserId>> {
-    match &ev.content.relates_to {
-        Some(Relation::Reply { in_reply_to }) => {
-            let event_id = &in_reply_to.event_id;
-            let event = room.event(event_id).await?.event.deserialize()?;
-            let ret = event.sender();
-            Ok(Some(ret.into()))
-        }
-        _ => Ok(None),
-    }
+
+    get_reply_event(ev, room)
+        .await
+        .and_then(|ev| Ok(ev.map(|ev| ev.sender().to_owned())))
 }
 
 /// Given a [OriginalRoomMessageEvent], returns the event being replied to.
