@@ -534,11 +534,7 @@ async fn hitokoto(
     let Some(ref hitokoto) = services.hitokoto else {
         return Ok(None);
     };
-    let raw_resp = bot_ctx
-        .http_client
-        .get(hitokoto.to_owned())
-        .send()
-        .await?;
+    let raw_resp = bot_ctx.http_client.get(hitokoto.to_owned()).send().await?;
     let resp: HitokotoResult = raw_resp.json().await?;
 
     let from_who = resp.from_who.unwrap_or_default();
@@ -706,11 +702,7 @@ async fn upload_sticker(
     let Some(ref stickers_config) = bot_ctx.config.stickers else {
         return Ok(None);
     };
-    let Some(sticker_room) = ctx
-        .room
-        .client()
-        .get_room(&stickers_config.sticker_room)
-    else {
+    let Some(sticker_room) = ctx.room.client().get_room(&stickers_config.sticker_room) else {
         return Ok(None);
     };
     let power_level = sticker_room.get_user_power_level(sender).await?;

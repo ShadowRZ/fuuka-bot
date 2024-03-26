@@ -107,12 +107,12 @@ pub async fn on_room_replace(ev: OriginalSyncRoomTombstoneEvent, room: Room, cli
                 break;
             }
         }
-        client.get_room(room.room_id()).map(|room| {
+        if let Some(room) = client.get_room(room.room_id()) {
             tokio::spawn(async move {
                 if let Err(e) = room.leave().await {
                     tracing::error!("Can't leave the original room {} ({e:?})", room.room_id());
                 }
             });
-        });
+        }
     });
 }
