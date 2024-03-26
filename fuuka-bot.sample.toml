@@ -10,3 +10,6 @@ hitokoto = "https://v1.hitokoto.cn"
 
 [features."!XXXXXXXXXXX:example.org"]
 jerryxiao = true
+
+[stickers]
+sticker_room = "!XXXXXXXXXXX:example.org"

@@ -1,6 +1,14 @@
 //! Bot commands handler.
 #![warn(missing_docs)]
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::io::Cursor;
+use std::io::Read;
+use std::path::Path;
+use std::sync::Arc;
+
 use file_format::FileFormat;
+use file_format::Kind;
 use futures_util::pin_mut;
 use futures_util::StreamExt;
 use matrix_sdk::deserialized_responses::MemberEvent;
@@ -30,14 +38,21 @@ use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::UInt;
 use matrix_sdk::Client;
+use matrix_sdk::Media;
 use matrix_sdk::Room;
-use ruma::html::remove_html_reply_fallback;
+use mime::Mime;
+use ruma_html::remove_html_reply_fallback;
 use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
 use time::Duration;
 use time::OffsetDateTime;
 use time::Weekday;
+use tokio::task::JoinSet;
+use zip::ZipArchive;
 
+use crate::events::sticker::RoomStickerEventContent;
+use crate::events::sticker::StickerData;
+use crate::events::sticker::StickerPack;
 use crate::get_reply_target;
 use crate::get_reply_target_fallback;
 use crate::stream::StreamFactory;
@@ -78,6 +93,13 @@ pub async fn dispatch(
             "unignore" => unignore(ctx, args.get(1).cloned()).await?,
             "remind" => remind(ctx).await?,
             "quote" => quote(ctx).await?,
+            "upload_sticker" => {
+                let pack_name = args
+                    .get(1)
+                    .cloned()
+                    .ok_or(anyhow::anyhow!("Missing pack name."))?;
+                upload_sticker(bot_ctx, ctx, pack_name).await?
+            }
             _ => _unknown(ctx, command).await?,
         }
     }) else {
@@ -661,4 +683,140 @@ async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEven
             )),
         ))),
     }
+}
+
+#[tracing::instrument(skip(bot_ctx, ctx), err)]
+async fn upload_sticker(
+    bot_ctx: &BotContext,
+    ctx: &HandlerContext,
+    pack_name: String,
+) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    let ev = crate::get_reply_event(&ctx.ev, &ctx.room)
+        .await?
+        .ok_or(Error::RequiresReply)?;
+    let sender = &ctx.sender;
+    let Some(sticker_room) = ctx
+        .room
+        .client()
+        .get_room(&bot_ctx.config.stickers.sticker_room)
+    else {
+        return Ok(None);
+    };
+    let power_level = sticker_room.get_user_power_level(sender).await?;
+    if power_level < 1 {
+        return Ok(None);
+    }
+
+    match ev {
+        AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
+            MessageLikeEvent::Original(ev),
+        )) => {
+            let content = ev.content;
+            match content.msgtype {
+                MessageType::File(event_content) => {
+                    let name = event_content
+                        .filename
+                        .clone()
+                        .unwrap_or(format!("{}", ev.origin_server_ts.0));
+                    let data = ctx
+                        .room
+                        .client()
+                        .media()
+                        .get_file(&event_content, false)
+                        .await?
+                        .ok_or(anyhow::anyhow!("File has no data!"))?;
+                    let format = FileFormat::from_bytes(&data);
+                    let mimetype = format.media_type();
+                    if mimetype != "application/zip" {
+                        anyhow::bail!("File is not a ZIP file!");
+                    }
+                    let content =
+                        prepare_sticker_upload_event_content(&ctx.room.client(), data, pack_name)
+                            .await?;
+                    sticker_room
+                        .send_state_event_for_key(&name, content)
+                        .await?;
+                    Ok(None)
+                }
+                _ => Ok(None),
+            }
+        }
+        _ => Ok(None),
+    }
+}
+
+async fn prepare_sticker_upload_event_content(
+    client: &Client,
+    data: Vec<u8>,
+    display_name: String,
+) -> anyhow::Result<RoomStickerEventContent> {
+    let media: Arc<Media> = Arc::new(client.media());
+    let mut set = JoinSet::new();
+    let data = Cursor::new(data);
+    let mut archive = ZipArchive::new(data)?;
+
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i)?;
+        if !entry.is_file() {
+            continue;
+        }
+        let path = Path::new(entry.name()).to_owned();
+        let Some(name) = path
+            .file_name()
+            .and_then(|data| data.to_str())
+            .map(ToString::to_string)
+        else {
+            continue;
+        };
+        let mut data = Vec::new();
+        entry.read_to_end(&mut data)?;
+        let format = FileFormat::from_bytes(&data);
+        if format.kind() != Kind::Image {
+            continue;
+        }
+        let mimetype = format.media_type();
+        let mime = mimetype.parse::<Mime>()?;
+        let dimensions = imagesize::blob_size(&data)?;
+        let (width, height) = (dimensions.width, dimensions.height);
+        let mut info = ImageInfo::new();
+        let width = UInt::try_from(width)?;
+        let height = UInt::try_from(height)?;
+        let size = data.len();
+        let size = UInt::try_from(size)?;
+        info.width = Some(width);
+        info.height = Some(height);
+        info.mimetype = Some(mimetype.to_string());
+        info.size = Some(size);
+
+        let media = media.clone();
+        set.spawn(async move {
+            match media.upload(&mime, data).await {
+                Ok(resp) => Some((name, resp.content_uri, info)),
+                Err(e) => {
+                    tracing::error!("Unexpected error while uploading '{name}': {e:?}");
+                    None
+                }
+            }
+        });
+    }
+
+    let mut images = HashMap::new();
+    while let Some(res) = set.join_next().await {
+        if let Some((name, url, info)) = res? {
+            images.insert(name, StickerData { url, info });
+        }
+    }
+    let avatar_url = images
+        .values()
+        .next()
+        .map(|data| data.url.clone())
+        .ok_or(anyhow::anyhow!("No image was uploaded!"))?;
+    Ok(RoomStickerEventContent {
+        images,
+        pack: StickerPack {
+            avatar_url,
+            display_name,
+            usage: HashSet::from(["sticker".to_string()]),
+        },
+    })
 }

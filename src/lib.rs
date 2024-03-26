@@ -15,6 +15,7 @@
 #![warn(rustdoc::missing_crate_level_docs)]
 pub mod command;
 pub mod dicer;
+pub mod events;
 pub mod handler;
 pub mod jerryxiao;
 pub mod message;
@@ -75,8 +76,16 @@ pub struct Config {
     pub features: HashMap<OwnedRoomId, RoomFeatures>,
     /// HTTP Services configuration.
     pub services: ServiceBackends,
+    /// Stickers feature related configuration.
+    pub stickers: StickerConfig,
 }
 
+/// Sticker feature config.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct StickerConfig {
+    /// Room for storing stickers.
+    pub sticker_room: OwnedRoomId,
+}
 /// What message features are avaliable.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RoomFeatures {
