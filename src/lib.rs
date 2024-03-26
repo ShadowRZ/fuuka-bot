@@ -75,9 +75,9 @@ pub struct Config {
     #[serde(default)]
     pub features: HashMap<OwnedRoomId, RoomFeatures>,
     /// HTTP Services configuration.
-    pub services: ServiceBackends,
+    pub services: Option<ServiceBackends>,
     /// Stickers feature related configuration.
-    pub stickers: StickerConfig,
+    pub stickers: Option<StickerConfig>,
 }
 
 /// Sticker feature config.
@@ -102,7 +102,7 @@ pub struct RoomFeatures {
 pub struct ServiceBackends {
     /// Hitokoto API endpoint.
     /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
-    pub hitokoto: Url,
+    pub hitokoto: Option<Url>,
 }
 
 /// Global context data for handlers.

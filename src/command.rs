@@ -528,9 +528,15 @@ async fn hitokoto(
     bot_ctx: &BotContext,
     _ctx: &HandlerContext,
 ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    let Some(ref services) = bot_ctx.config.services else {
+        return Ok(None);
+    };
+    let Some(ref hitokoto) = services.hitokoto else {
+        return Ok(None);
+    };
     let raw_resp = bot_ctx
         .http_client
-        .get(bot_ctx.config.services.hitokoto.clone())
+        .get(hitokoto.to_owned())
         .send()
         .await?;
     let resp: HitokotoResult = raw_resp.json().await?;
@@ -697,10 +703,13 @@ async fn upload_sticker(
         .await?
         .ok_or(Error::RequiresReply)?;
     let sender = &ctx.sender;
+    let Some(ref stickers_config) = bot_ctx.config.stickers else {
+        return Ok(None);
+    };
     let Some(sticker_room) = ctx
         .room
         .client()
-        .get_room(&bot_ctx.config.stickers.sticker_room)
+        .get_room(&stickers_config.sticker_room)
     else {
         return Ok(None);
     };
