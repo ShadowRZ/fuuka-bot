@@ -193,6 +193,8 @@ impl FuukaBot {
                 .add_event_handler(crate::handler::on_sync_message);
             self.client
                 .add_event_handler(crate::handler::on_stripped_member);
+            self.client
+                .add_event_handler(crate::handler::on_room_replace);
         }
 
         Ok(response.next_batch)

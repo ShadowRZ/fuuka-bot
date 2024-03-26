@@ -8,6 +8,7 @@ use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, OriginalSyncRoomMessageEvent,
 };
+use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::{Client as MatrixClient, RoomState};
 use std::sync::Arc;
 
@@ -85,5 +86,33 @@ pub async fn on_stripped_member(ev: StrippedRoomMemberEvent, room: Room, client:
                 break;
             }
         }
+    });
+}
+
+/// Called when we have a tombstone event.
+#[tracing::instrument(skip_all)]
+pub async fn on_room_replace(ev: OriginalSyncRoomTombstoneEvent, room: Room, client: MatrixClient) {
+    tokio::spawn(async move {
+        let room_id = ev.content.replacement_room;
+        tracing::info!("Room replaced, Autojoining new room {}", room_id);
+        let mut delay = 2;
+        while let Err(e) = client.join_room_by_id(&room_id).await {
+            use tokio::time::{sleep, Duration};
+            tracing::warn!("Failed to join room {room_id} ({e:?}), retrying in {delay}s");
+            sleep(Duration::from_secs(delay)).await;
+            delay *= 2;
+
+            if delay > 3600 {
+                tracing::error!("Can't join room {room_id} ({e:?})");
+                break;
+            }
+        }
+        client.get_room(room.room_id()).map(|room| {
+            tokio::spawn(async move {
+                if let Err(e) = room.leave().await {
+                    tracing::error!("Can't leave the original room {} ({e:?})", room.room_id());
+                }
+            });
+        });
     });
 }
