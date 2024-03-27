@@ -120,7 +120,7 @@ pub async fn dispatch(
     Ok(())
 }
 
-#[tracing::instrument(skip(_ctx), err)]
+#[tracing::instrument(skip(_ctx), err(level = "trace"))]
 async fn _unknown(
     _ctx: &HandlerContext,
     command: &str,
@@ -148,14 +148,14 @@ static HELP_HTML: &str = concat!(
     "/issues</p>",
 );
 
-#[tracing::instrument(skip(_ctx), err)]
+#[tracing::instrument(skip(_ctx), err(level = "trace"))]
 async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     Ok(Some(AnyMessageLikeEventContent::RoomMessage(
         RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML),
     )))
 }
 
-#[tracing::instrument(skip(_ctx), err)]
+#[tracing::instrument(skip(_ctx), err(level = "trace"))]
 async fn crazy_thursday(
     _ctx: &HandlerContext,
 ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
@@ -183,7 +183,7 @@ async fn crazy_thursday(
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
     let MilliSecondsSinceUnixEpoch(event_ts) = ctx.ev.origin_server_ts;
@@ -200,14 +200,14 @@ async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEvent
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn room_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     Ok(Some(AnyMessageLikeEventContent::RoomMessage(
         RoomMessageEventContent::text_plain(ctx.room.room_id()),
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
 
@@ -216,7 +216,7 @@ async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEv
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
@@ -294,7 +294,7 @@ async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageL
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn avatar_changes(
     ctx: &HandlerContext,
 ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
@@ -388,7 +388,7 @@ async fn avatar_changes(
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let target = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
     let member = ctx
@@ -417,7 +417,7 @@ async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLi
     }
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
     let event_id_hash = match &ctx.ev.content.relates_to {
@@ -437,7 +437,7 @@ async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLik
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let sender = &ctx.sender;
 
@@ -464,7 +464,7 @@ async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEve
     }
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn unignore(
     ctx: &HandlerContext,
     user: Option<String>,
@@ -492,7 +492,7 @@ async fn unignore(
     }
 }
 
-#[tracing::instrument(skip(client), err)]
+#[tracing::instrument(skip(client), err(level = "trace"))]
 async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<ImageInfo> {
     let request = MediaRequest {
         source: MediaSource::Plain(avatar_url.into()),
@@ -523,7 +523,7 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
     Ok(info)
 }
 
-#[tracing::instrument(skip(bot_ctx, _ctx), err)]
+#[tracing::instrument(skip(bot_ctx, _ctx), err(level = "trace"))]
 async fn hitokoto(
     bot_ctx: &BotContext,
     _ctx: &HandlerContext,
@@ -553,7 +553,7 @@ async fn hitokoto(
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn remind(
     ctx: &HandlerContext,
     content: Option<String>,
@@ -603,7 +603,7 @@ async fn remind(
     )))
 }
 
-#[tracing::instrument(skip(ctx), err)]
+#[tracing::instrument(skip(ctx), err(level = "trace"))]
 async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
     let room_id = &ctx.ev.room_id;
     let ev = crate::get_reply_event(&ctx.ev, &ctx.room)
@@ -689,7 +689,7 @@ async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEven
     }
 }
 
-#[tracing::instrument(skip(bot_ctx, ctx), err)]
+#[tracing::instrument(skip(bot_ctx, ctx), err(level = "trace"))]
 async fn upload_sticker(
     bot_ctx: &BotContext,
     ctx: &HandlerContext,
