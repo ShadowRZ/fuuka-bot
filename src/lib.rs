@@ -104,18 +104,10 @@ pub struct ServiceBackends {
     pub hitokoto: Option<Url>,
 }
 
-/// Global context data for handlers.
-pub struct BotContext {
-    /// The config of Fuuka bot.
-    config: Config,
-    /// HTTP client used for HTTP APIs.
-    http_client: reqwest::Client,
-}
-
 /// The bot itself.
 pub struct FuukaBot {
     client: matrix_sdk::Client,
-    context: Arc<BotContext>,
+    config: Arc<Config>,
     cts: CancellationToken,
 }
 
@@ -127,23 +119,22 @@ impl FuukaBot {
             .sqlite_store("store", None);
         let client = builder.build().await?;
         client.restore_session(session).await?;
-        let http_client = reqwest::Client::builder()
-            .user_agent(APP_USER_AGENT)
-            .build()?;
-        let context = BotContext {
-            config,
-            http_client,
-        };
+        let config = config.into();
+        let cts = CancellationToken::new();
         Ok(FuukaBot {
             client,
-            context: context.into(),
-            cts: CancellationToken::new(),
+            cts,
+            config,
         })
     }
 
     /// Run this bot.
     pub async fn run(self) -> anyhow::Result<()> {
-        self.client.add_event_handler_context(self.context.clone());
+        let http = reqwest::Client::builder()
+            .user_agent(APP_USER_AGENT)
+            .build()?;
+        self.client.add_event_handler_context(http.clone());
+        self.client.add_event_handler_context(self.config.clone());
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {

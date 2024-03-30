@@ -1,7 +1,7 @@
 //! Generic Matrix event callback handler.
 #![warn(missing_docs)]
 use crate::traits::IntoEventContent;
-use crate::{BotContext, HandlerContext};
+use crate::{Config, HandlerContext};
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
@@ -10,7 +10,6 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::{Client as MatrixClient, RoomState};
-use std::sync::Arc;
 
 /// Called when a message is sent.
 #[tracing::instrument(skip_all)]
@@ -18,29 +17,26 @@ pub async fn on_sync_message(
     ev: OriginalSyncRoomMessageEvent,
     room: Room,
     client: MatrixClient,
-    ctx: Ctx<Arc<BotContext>>,
+    config: Ctx<Config>,
+    http: Ctx<reqwest::Client>,
 ) {
     // It should be a joined room.
     if room.state() != RoomState::Joined {
         return;
     }
 
-    let Some(user_id) = client.user_id() else {
-        tracing::error!("INTERNAL ERROR: When sync happens, the client should have known our user ID but it doesn't ?!");
-        return;
-    };
     // Ignore messages from ourselves.
-    if ev.sender == user_id {
+    if ev.sender == client.user_id().unwrap() {
         return;
     }
 
     tokio::spawn(async move {
         let info = HandlerContext::new(ev, room, client.homeserver());
 
-        let res = if let Some(commands) = &info.body.strip_prefix(&ctx.config.command_prefix) {
-            crate::command::dispatch(&ctx, &info, commands).await
+        let res = if let Some(commands) = &info.body.strip_prefix(&config.command_prefix) {
+            crate::command::dispatch(&http, &config, &info, commands).await
         } else {
-            crate::message::dispatch(&ctx, &info).await
+            crate::message::dispatch(&http, &config, &info).await
         };
 
         let Err(e) = res else {
@@ -61,13 +57,8 @@ pub async fn on_sync_message(
 /// Called when a member event is from an invited room.
 #[tracing::instrument(skip_all)]
 pub async fn on_stripped_member(ev: StrippedRoomMemberEvent, room: Room, client: MatrixClient) {
-    let Some(user_id) = client.user_id() else {
-        tracing::error!("INTERNAL ERROR: When sync happens, the client should have known our user ID but it doesn't ?!");
-        return;
-    };
-
     // Ignore state events not for ourselves.
-    if ev.state_key != user_id {
+    if ev.state_key != client.user_id().unwrap() {
         return;
     }
 

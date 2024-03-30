@@ -9,14 +9,18 @@ use matrix_sdk::ruma::UserId;
 use url::Url;
 
 use crate::jerryxiao::make_randomdraw_event_content;
-use crate::BotContext;
+use crate::Config;
 use crate::Error;
 use crate::HandlerContext;
 use crate::{get_reply_target, jerryxiao::make_jerryxiao_event_content};
 
 /// Dispatch the messages that are not commands but otherwise actionable.
-pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Result<()> {
-    let features = &bot_ctx.config.features;
+pub async fn dispatch(
+    http: &reqwest::Client,
+    config: &Config,
+    ctx: &HandlerContext,
+) -> anyhow::Result<()> {
+    let features = &config.features;
     let content = if ["/", "!!", "\\", "¡¡", "//"]
         .iter()
         .any(|p| ctx.body.starts_with(*p))
@@ -64,7 +68,7 @@ pub async fn dispatch(bot_ctx: &BotContext, ctx: &HandlerContext) -> anyhow::Res
         if let Err(e) = ctx.room.typing_notice(true).await {
             tracing::warn!("Error while updating typing notice: {e:?}");
         };
-        _dispatch_nahida(bot_ctx, &ctx.body).await?
+        _dispatch_nahida(http, &ctx.body).await?
     } else {
         None
     };
@@ -138,12 +142,12 @@ async fn _dispatch_randomdraw(
 }
 
 async fn _dispatch_nahida(
-    bot_ctx: &BotContext,
+    http: &reqwest::Client,
     body: &str,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     if let Some(url) = body.strip_prefix("@Nahida") {
         let url = Url::parse(url.trim()).map_err(Error::InvaildUrl)?;
-        crate::nahida::dispatch(&url, &bot_ctx.http_client).await
+        crate::nahida::dispatch(&url, http).await
     } else {
         Ok(None)
     }
