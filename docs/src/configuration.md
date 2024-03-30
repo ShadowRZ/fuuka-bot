@@ -7,6 +7,8 @@ The following content should be edited and saved to `fuuka-bot.toml` as you want
 command_prefix = "%%"
 # Homeserver URL.
 homeserver_url = "https://matrix.example.com"
+# Admin user. (Optional)
+#admin_user = "@example:example.org"
 
 # Service URLs. (Optional)
 [services]

@@ -134,6 +134,15 @@ impl FuukaBot {
             .sync_once(SyncSettings::default().set_presence(PresenceState::Online))
             .await?;
         tracing::info!(user_id = ?user_id, homeserver = %homeserver, "Initial sync completed.");
+        if let Some(admin_user) = self.config.admin_user.as_ref() {
+            if let Some(admin_room) = self.client.get_dm_room(admin_user) {
+                tracing::debug!(
+                    room_id = %admin_room.room_id(),
+                    user_id = %admin_user,
+                    "Found a DM room with admin."
+                );
+            }
+        }
 
         if register_handler {
             self.client

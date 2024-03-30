@@ -1,6 +1,6 @@
 //! Fuuka Bot configuration.
 
-use matrix_sdk::ruma::OwnedRoomId;
+use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,6 +11,8 @@ pub struct Config {
     pub command_prefix: String,
     /// The homeserver URL to connect to.
     pub homeserver_url: Url,
+    /// Admin user ID.
+    pub admin_user: Option<OwnedUserId>,
     /// Optional room features.
     #[serde(default)]
     pub features: HashMap<OwnedRoomId, RoomFeatures>,
@@ -27,7 +29,7 @@ pub struct StickerConfig {
     pub sticker_room: OwnedRoomId,
 }
 /// What message features are avaliable.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct RoomFeatures {
     /// Enable Jerry Xiao like functions.
     #[serde(default)]
