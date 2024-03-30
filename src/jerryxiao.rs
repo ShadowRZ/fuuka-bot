@@ -18,7 +18,7 @@ pub async fn make_jerryxiao_event_content(
     text: &str,
     reversed: bool,
     formatted: bool,
-) -> anyhow::Result<RoomMessageEventContent> {
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let from_member = room
         .get_member(if reversed { to_sender } else { from_sender })
         .await?
@@ -31,8 +31,6 @@ pub async fn make_jerryxiao_event_content(
     let from_pill = from_member.make_pill();
     let to_pill = to_member.make_pill();
 
-    let chars: Vec<char> = text.chars().collect();
-
     if formatted {
         if text.contains("${from}") && text.contains("${to}") {
             let text = text.trim();
@@ -42,97 +40,71 @@ pub async fn make_jerryxiao_event_content(
             let mut html_context = HashMap::new();
             html_context.insert("from".to_string(), from_pill);
             html_context.insert("to".to_string(), to_pill);
-            Ok(RoomMessageEventContent::text_html(
+            Ok(Some(RoomMessageEventContent::text_html(
                 envsubst::substitute(text, &text_context)?,
                 envsubst::substitute(text, &html_context)?,
-            ))
+            )))
         } else {
-            Ok(RoomMessageEventContent::text_plain(
+            Ok(Some(RoomMessageEventContent::text_plain(
                 "No format slot ${from} ${to} found!",
-            ))
+            )))
         }
-    } else if chars.len() == 2 && chars[0] == chars[1] {
-        Ok(RoomMessageEventContent::text_html(
-            format!(
-                "@{} {}了{} @{}",
-                from_member.name(),
-                chars[0],
-                chars[1],
-                to_member.name(),
-            ),
-            format!("{} {}了{} {}", from_pill, chars[0], chars[1], to_pill),
-        ))
-    } else if let Some(remaining) = text.strip_prefix('把') {
-        Ok(RoomMessageEventContent::text_html(
-            format!(
-                "@{} {} @{} {}",
-                from_member.name(),
-                '把',
-                to_member.name(),
-                remaining,
-            ),
-            format!("{} {} {} {}", from_pill, '把', to_pill, remaining),
-        ))
-    } else if let Some(remaining) = text.strip_prefix('被') {
-        Ok(RoomMessageEventContent::text_html(
-            format!(
-                "@{} {} @{} {}",
-                from_member.name(),
-                '被',
-                to_member.name(),
-                remaining,
-            ),
-            format!("{} {} {} {}", from_pill, '被', to_pill, remaining),
-        ))
-    } else if chars.len() == 3 && chars[1] == '一' {
-        Ok(RoomMessageEventContent::text_html(
-            format!(
-                "@{} {}了{} @{}",
-                from_member.name(),
-                chars[0],
-                String::from_iter(&chars[1..]),
-                to_member.name(),
-            ),
-            format!(
-                "{} {}了{} {}",
-                from_pill,
-                chars[0],
-                String::from_iter(&chars[1..]),
-                to_pill,
-            ),
-        ))
-    } else if let Some(remaining) = text.strip_prefix("发动") {
-        let remaining = remaining.strip_suffix('了').unwrap_or(remaining);
-        Ok(RoomMessageEventContent::text_html(
-            format!(
-                "@{} 向 @{} 发动了{}！",
-                from_member.name(),
-                to_member.name(),
-                remaining,
-            ),
-            format!("{} 向 {} 发动了{}！", from_pill, to_pill, remaining),
-        ))
     } else {
-        let splited: Vec<&str> = text.split_whitespace().collect();
-        if splited.len() == 2 {
-            let action = splited[0].strip_suffix('了').unwrap_or(splited[0]);
-            let target = splited[1].strip_prefix('的').unwrap_or(splited[1]);
-            Ok(RoomMessageEventContent::text_html(
-                format!(
-                    "@{} {}了 @{} 的{}",
-                    from_member.name(),
-                    action,
-                    to_member.name(),
-                    target,
-                ),
-                format!("{} {}了 {} 的{}", from_pill, action, to_pill, target),
-            ))
+        let mut splited = text.split_whitespace();
+        if let Some(arg0) = splited.next() {
+            if ["把", "拿", "被", "将", "令", "使", "让", "给", "替"]
+                .into_iter()
+                .any(|p| arg0.starts_with(p))
+            {
+                let arg1 = splited.next().unwrap_or_default();
+                let arg1 = arg1.strip_suffix("了").unwrap_or(arg1);
+                let arg2 = splited.next().unwrap_or_default();
+                let arg2 = arg2.strip_suffix("了").unwrap_or(arg2);
+                Ok(Some(RoomMessageEventContent::text_html(
+                    format!(
+                        "@{from} {arg0} @{to} {arg1}了{arg2}",
+                        from = from_member.name(),
+                        to = to_member.name(),
+                    ),
+                    format!(
+                        "{from} {arg0} {to} {arg1}了{arg2}",
+                        from = from_pill,
+                        to = to_pill,
+                    ),
+                )))
+            } else {
+                let arg1 = splited.next();
+                let arg1 = arg1
+                    .map(|arg1| " 的".to_owned() + arg1.strip_prefix("了").unwrap_or(arg1))
+                    .unwrap_or_default();
+                let chars: Vec<char> = arg0.chars().collect();
+                if (chars.len() == 2 && chars[0] == chars[1])
+                    || (chars.len() == 3 && chars[1] == '了' && chars[0] == chars[2])
+                {
+                    Ok(Some(RoomMessageEventContent::text_html(
+                        format!(
+                            "@{} {}了{} @{}{arg1}",
+                            from_member.name(),
+                            chars[0],
+                            chars[0],
+                            to_member.name(),
+                        ),
+                        format!("{} {}了{} {}{arg1}", from_pill, chars[0], chars[0], to_pill),
+                    )))
+                } else {
+                    let arg0 = arg0.strip_suffix("了").unwrap_or(arg0);
+                    Ok(Some(RoomMessageEventContent::text_html(
+                        format!(
+                            "@{} {arg0}了 @{}{arg1}",
+                            from_member.name(),
+                            to_member.name(),
+                        ),
+                        format!("{} {arg0}了 {}{arg1}", from_pill, to_pill),
+                    )))
+                }
+            }
         } else {
-            let text = text.strip_suffix('了').unwrap_or(text);
-            Ok(RoomMessageEventContent::text_html(
-                format!("@{} {}了 @{}", from_member.name(), text, to_member.name()),
-                format!("{} {}了 {}", from_pill, text, to_pill),
-            ))
+            Ok(None)
         }
     }
 }

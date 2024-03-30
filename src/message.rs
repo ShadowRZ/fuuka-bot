@@ -97,30 +97,30 @@ async fn _dispatch_jerryxiao(
     to_sender: &UserId,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     if let Some(remaining) = body.strip_prefix("//") {
-        Ok(Some(
+        Ok(
             make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, true)
                 .await?,
-        ))
+        )
     } else if let Some(remaining) = body.strip_prefix('/') {
-        Ok(Some(
+        Ok(
             make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, false)
                 .await?,
-        ))
+        )
     } else if let Some(remaining) = body.strip_prefix("!!") {
-        Ok(Some(
+        Ok(
             make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, false)
                 .await?,
-        ))
+        )
     } else if let Some(remaining) = body.strip_prefix('\\') {
-        Ok(Some(
+        Ok(
             make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true, false)
                 .await?,
-        ))
+        )
     } else if let Some(remaining) = body.strip_prefix("¡¡") {
-        Ok(Some(
+        Ok(
             make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true, false)
                 .await?,
-        ))
+        )
     } else {
         Ok(None)
     }
