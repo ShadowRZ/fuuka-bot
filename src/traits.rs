@@ -6,7 +6,6 @@ use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::MxcUri;
 
-use crate::dicer::ParseError;
 use crate::Error;
 
 /// Extensions to [RoomMember].
@@ -84,51 +83,5 @@ impl IntoEventContent for anyhow::Error {
                 "⁉️ An unexpected error occoured: {self:#}"
             )),
         }
-    }
-}
-
-impl IntoEventContent for ParseError {
-    type Output = RoomMessageEventContent;
-
-    fn event_content(self) -> Self::Output {
-        let input = self.input;
-        let e = self.err;
-
-        let offset = input.rfind(e.input.as_str()).unwrap_or(e.input.len());
-        let (prefix, suffix) = input.split_at(offset);
-        let prefix_parts = prefix.split('\n').collect::<Vec<_>>();
-        let line_number = prefix_parts.len();
-        let column_number = prefix_parts.last().map(|s| s.len() + 1).unwrap_or(0);
-        let suffix_parts = suffix.split('\n').collect::<Vec<_>>();
-        let line = Option::zip(prefix_parts.last(), suffix_parts.first())
-            .map(|(a, b)| format!("{a}{b}"))
-            .unwrap_or("".to_string());
-
-        RoomMessageEventContent::text_html(
-            format!(
-                "Ln {line_number}, Col {column_number}: Expected {expect:?}, Got {got}\n\
-                 {line}\n{caret:>column_number$}",
-                caret = "^",
-                expect = e.code,
-                got = e
-                    .input
-                    .chars()
-                    .next()
-                    .map(|c| c.to_string())
-                    .unwrap_or("(EOF)".to_string())
-            ),
-            format!(
-                "Ln {line_number}, Col {column_number}: Expected {expect:?}, Got {got}<br/>\
-                 <pre><code>{line}\n{caret:>column_number$}</code></pre>",
-                caret = "^",
-                expect = e.code,
-                got = e
-                    .input
-                    .chars()
-                    .next()
-                    .map(|c| c.to_string())
-                    .unwrap_or("(EOF)".to_string())
-            ),
-        )
     }
 }

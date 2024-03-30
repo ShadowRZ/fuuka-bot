@@ -14,7 +14,6 @@
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 pub mod command;
-pub mod dicer;
 pub mod events;
 pub mod handler;
 pub mod jerryxiao;
