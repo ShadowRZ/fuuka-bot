@@ -1,154 +1,32 @@
 //! Responses to messages that are not commands.
 #![warn(missing_docs)]
-use matrix_sdk::room::Room;
-use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
-use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
-use matrix_sdk::ruma::events::Mentions;
-use matrix_sdk::ruma::UserId;
-use url::Url;
+use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 
-use crate::jerryxiao::make_randomdraw_event_content;
-use crate::Config;
-use crate::Error;
-use crate::HandlerContext;
-use crate::{get_reply_target, jerryxiao::make_jerryxiao_event_content};
+use crate::handler::Message;
+use crate::jerryxiao::fortune;
+use crate::jerryxiao::jerryxiao;
+use crate::jerryxiao::jerryxiao_formatted;
+use crate::Context;
 
-/// Dispatch the messages that are not commands but otherwise actionable.
-pub async fn dispatch(
-    http: &reqwest::Client,
-    config: &Config,
-    ctx: &HandlerContext,
-) -> anyhow::Result<()> {
-    let features = &config.features;
-    let content = if ["/", "!!", "\\", "¡¡", "//"]
-        .iter()
-        .any(|p| ctx.body.starts_with(*p))
-    {
-        if !features
-            .get(ctx.room.room_id())
-            .map(|f| f.jerryxiao)
-            .unwrap_or_default()
-        {
-            return Ok(());
+impl Context {
+    /// Dispatchs a message.
+    pub async fn dispatch_message(
+        &self,
+        message: Message,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        match message {
+            Message::Slash { from, to, text } => jerryxiao(&from, &to, &text)
+                .await
+                .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
+            Message::SlashFormatted { from, to, text } => jerryxiao_formatted(&from, &to, &text)
+                .await
+                .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
+            Message::Nahida(url) => crate::nahida::dispatch(&url, &self.http)
+                .await
+                .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
+            Message::Fortune { member, text, prob } => fortune(&member, &text, prob)
+                .await
+                .map(|e| Some(AnyMessageLikeEventContent::RoomMessage(e))),
         }
-
-        if !ctx.body.starts_with("//") {
-            let mut splited = ctx.body.split_whitespace();
-            // If the first part of the message is pure ASCII, skip it
-            if splited.next().map(str::is_ascii).unwrap_or(true) {
-                return Ok(());
-            };
-        }
-
-        let from_sender = &ctx.sender;
-        let Some(to_sender) = get_reply_target(&ctx.ev, &ctx.room).await? else {
-            return Ok(());
-        };
-
-        if let Err(e) = ctx.room.typing_notice(true).await {
-            tracing::warn!("Error while updating typing notice: {e:?}");
-        };
-        _dispatch_jerryxiao(&ctx.room, &ctx.body, from_sender, &to_sender)
-            .await?
-            .map(|c| c.add_mentions(Mentions::with_user_ids([to_sender])))
-    } else if ["@@", "@%"].iter().any(|p| ctx.body.starts_with(*p)) {
-        if !features
-            .get(ctx.room.room_id())
-            .map(|f| f.randomdraw)
-            .unwrap_or_default()
-        {
-            return Ok(());
-        }
-        if let Err(e) = ctx.room.typing_notice(true).await {
-            tracing::warn!("Error while updating typing notice: {e:?}");
-        };
-        _dispatch_randomdraw(&ctx.ev, &ctx.room, &ctx.body).await?
-    } else if ctx.body.starts_with("@Nahida") {
-        if let Err(e) = ctx.room.typing_notice(true).await {
-            tracing::warn!("Error while updating typing notice: {e:?}");
-        };
-        _dispatch_nahida(http, &ctx.body).await?
-    } else {
-        None
-    };
-
-    if let Err(e) = ctx.room.typing_notice(false).await {
-        tracing::warn!("Error while updating typing notice: {e:?}");
-    };
-    let Some(content) = content else {
-        return Ok(());
-    };
-
-    let content = content.make_reply_to(&ctx.ev, ForwardThread::Yes, AddMentions::Yes);
-    ctx.room.send(content).await?;
-
-    Ok(())
-}
-
-async fn _dispatch_jerryxiao(
-    room: &Room,
-    body: &str,
-    from_sender: &UserId,
-    to_sender: &UserId,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    if let Some(remaining) = body.strip_prefix("//") {
-        Ok(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, true)
-                .await?,
-        )
-    } else if let Some(remaining) = body.strip_prefix('/') {
-        Ok(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, false)
-                .await?,
-        )
-    } else if let Some(remaining) = body.strip_prefix("!!") {
-        Ok(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, false, false)
-                .await?,
-        )
-    } else if let Some(remaining) = body.strip_prefix('\\') {
-        Ok(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true, false)
-                .await?,
-        )
-    } else if let Some(remaining) = body.strip_prefix("¡¡") {
-        Ok(
-            make_jerryxiao_event_content(room, from_sender, to_sender, remaining, true, false)
-                .await?,
-        )
-    } else {
-        Ok(None)
-    }
-}
-
-async fn _dispatch_randomdraw(
-    ev: &OriginalRoomMessageEvent,
-    room: &Room,
-    body: &str,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let user_id = &ev.sender;
-    if let Some(remaining) = body.strip_prefix("@@") {
-        Ok(Some(
-            make_randomdraw_event_content(room, user_id, remaining, false).await?,
-        ))
-    } else if let Some(remaining) = body.strip_prefix("@%") {
-        Ok(Some(
-            make_randomdraw_event_content(room, user_id, remaining, true).await?,
-        ))
-    } else {
-        Ok(None)
-    }
-}
-
-async fn _dispatch_nahida(
-    http: &reqwest::Client,
-    body: &str,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    if let Some(url) = body.strip_prefix("@Nahida") {
-        let url = Url::parse(url.trim()).map_err(Error::InvaildUrl)?;
-        crate::nahida::dispatch(&url, http).await
-    } else {
-        Ok(None)
     }
 }

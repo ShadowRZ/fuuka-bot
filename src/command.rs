@@ -15,6 +15,7 @@ use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::event_handler::EventHandlerHandle;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
+use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::AddMentions;
@@ -53,83 +54,12 @@ use zip::ZipArchive;
 use crate::events::sticker::RoomStickerEventContent;
 use crate::events::sticker::StickerData;
 use crate::events::sticker::StickerPack;
-use crate::get_reply_target;
-use crate::get_reply_target_fallback;
+use crate::handler::Command;
 use crate::stream::StreamFactory;
-use crate::traits::MxcUriExt;
 use crate::types::HitokotoResult;
-use crate::Config;
-use crate::Error;
-use crate::HandlerContext;
+use crate::Context;
+use crate::MxcUriExt;
 use crate::RoomMemberExt;
-
-/// Dispatches the command and send the command outout.
-pub async fn dispatch(
-    http: &reqwest::Client,
-    config: &Config,
-    ctx: &HandlerContext,
-    command: &str,
-) -> anyhow::Result<()> {
-    let mut args = shell_words::split(command)?.into_iter();
-    let Some(command) = args.next() else {
-        return Ok(());
-    };
-
-    let Some(content) = ({
-        if let Err(e) = ctx.room.typing_notice(true).await {
-            tracing::warn!("Error while updating typing notice: {e:?}");
-        };
-        match command.as_str() {
-            "help" => help(ctx).await?,
-            "send_avatar" => send_avatar(ctx).await?,
-            "crazy_thursday" => crazy_thursday(ctx).await?,
-            "ping" => ping(ctx).await?,
-            "room_id" => room_id(ctx).await?,
-            "user_id" => user_id(ctx).await?,
-            "name_changes" => name_changes(ctx).await?,
-            "avatar_changes" => avatar_changes(ctx).await?,
-            "divergence" => divergence(ctx).await?,
-            "ignore" => ignore(ctx).await?,
-            "hitokoto" => hitokoto(config, http, ctx).await?,
-            "unignore" => unignore(ctx, args.next()).await?,
-            "remind" => remind(ctx, args.next()).await?,
-            "quote" => quote(ctx).await?,
-            "upload_sticker" => {
-                let pack_name = args.next().ok_or(anyhow::anyhow!("Missing pack name."))?;
-                upload_sticker(config, ctx, pack_name).await?
-            }
-            _ => _unknown(ctx, &command).await?,
-        }
-    }) else {
-        if let Err(e) = ctx.room.typing_notice(false).await {
-            tracing::warn!("Error while updating typing notice: {e:?}");
-        };
-        return Ok(());
-    };
-
-    let content = match content {
-        AnyMessageLikeEventContent::RoomMessage(msg) => AnyMessageLikeEventContent::RoomMessage(
-            msg.make_reply_to(&ctx.ev, ForwardThread::Yes, AddMentions::Yes),
-        ),
-        _ => content,
-    };
-    if let Err(e) = ctx.room.typing_notice(false).await {
-        tracing::warn!("Error while updating typing notice: {e:?}");
-    };
-    ctx.room.send(content).await?;
-
-    Ok(())
-}
-
-#[tracing::instrument(skip(_ctx))]
-async fn _unknown(
-    _ctx: &HandlerContext,
-    command: &str,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(format!("Unknown command {command}.")),
-    )))
-}
 
 static HELP_TEXT: &str = concat!(
     "Fuuka Bot\n\nSource: ",
@@ -149,351 +79,582 @@ static HELP_HTML: &str = concat!(
     "/issues</p>",
 );
 
-#[tracing::instrument(skip(_ctx))]
-async fn help(_ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML),
-    )))
-}
-
-#[tracing::instrument(skip(_ctx))]
-async fn crazy_thursday(
-    _ctx: &HandlerContext,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
-    let body = if now.weekday() != Weekday::Thursday {
-        let date = now.date().next_occurrence(time::Weekday::Thursday);
-        let target = date.with_hms(0, 0, 0)?.assume_offset(offset!(+8));
-        let dur = target - now;
-        {
-            let whole_seconds = dur.whole_seconds().unsigned_abs();
-            let seconds = whole_seconds % 60;
-            let whole_minutes = dur.whole_minutes().unsigned_abs();
-            let minutes = whole_minutes % 60;
-            let whole_hours = dur.whole_hours().unsigned_abs();
-            let hours = whole_hours % 24;
-            let days = dur.whole_days();
-            format!("Time until next thursday ({date}): {days} days, {hours:0>2}:{minutes:0>2}:{seconds:0>2}")
+impl Context {
+    /// Dispatchs a command.
+    pub async fn dispatch_command(
+        &self,
+        command: Command,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        match command {
+            Command::Help => self._help().await,
+            Command::SendAvatar(member) => self._send_avatar(member).await,
+            Command::CrazyThursday => self._crazy_thursday().await,
+            Command::Ping => self._ping().await,
+            Command::RoomId => self._room_id().await,
+            Command::UserId(user_id) => self._user_id(user_id).await,
+            Command::NameChanges(member) => self._name_changes(member).await,
+            Command::AvatarChanges(member) => self._avatar_changes(member).await,
+            Command::Divergence => self._divergence().await,
+            Command::Hitokoto => self._hitokoto().await,
+            Command::Remind {
+                target,
+                sender,
+                content,
+            } => self._remind(target, sender, content).await,
+            Command::Quote { ev, member } => self._quote(ev, member).await,
+            Command::UploadSticker { ev, pack_name } => self._upload_sticker(ev, pack_name).await,
         }
-    } else {
-        "Crazy Thursday!".to_string()
-    };
-
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(body),
-    )))
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn ping(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
-    let MilliSecondsSinceUnixEpoch(event_ts) = ctx.ev.origin_server_ts;
-    let delta: i64 = (now - event_ts).into();
-    let body = if delta >= 2000 {
-        let duration = Duration::milliseconds(delta);
-        format!("Pong after {duration:.3}")
-    } else {
-        format!("Pong after {}ms", delta)
-    };
-
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(body),
-    )))
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn room_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(ctx.room.room_id()),
-    )))
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn user_id(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
-
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(user_id.as_str()),
-    )))
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn name_changes(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
-    let member = ctx
-        .room
-        .get_member(&user_id)
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
-
-    let mut body = String::new();
-    let current_name = member.display_name().unwrap_or("(None)");
-    let result = format!("Current Name: {current_name}\n");
-    body.push_str(&result);
-    let mut count: i32 = 0;
-
-    let event: &MemberEvent = member.event();
-    match event {
-        MemberEvent::Sync(event) => {
-            let stream = StreamFactory::member_state_stream(&ctx.room, event.clone()).peekable();
-            pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                if count <= -5 {
-                    break;
-                }
-
-                let prev_event = stream.as_mut().peek().await;
-                let detail = prev_event.map(|e| e.content.details());
-                let change =
-                    event
-                        .content
-                        .membership_change(detail, &event.sender, &event.state_key);
-                match change {
-                    MembershipChange::ProfileChanged {
-                        displayname_change,
-                        avatar_url_change: _,
-                    } => {
-                        let Some(displayname_change) = displayname_change else {
-                            continue;
-                        };
-                        match displayname_change.new {
-                            Some(displayname) => {
-                                count -= 1;
-                                let nanos: i128 =
-                                    <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
-                                let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
-                                    .format(&Rfc3339)?;
-                                let result =
-                                    format!("{count}: Changed to {displayname} ({timestamp})\n");
-                                body.push_str(&result);
-                            }
-                            None => {
-                                let result = format!("{count}: Removed display name.\n");
-                                body.push_str(&result);
-                            }
-                        }
-                    }
-                    MembershipChange::Joined => {
-                        count -= 1;
-                        let result = format!(
-                            "{count}: Joined with display name {}\n",
-                            event.content.displayname.unwrap_or("(No name)".to_string())
-                        );
-                        body.push_str(&result);
-                    }
-                    _ => {}
-                };
-            }
-        }
-        _ => tracing::warn!(
-            "INTERNAL ERROR: A member event in a joined room should not be stripped."
-        ),
     }
 
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(body),
-    )))
-}
+    async fn _help(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML),
+        )))
+    }
 
-#[tracing::instrument(skip(ctx))]
-async fn avatar_changes(
-    ctx: &HandlerContext,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let homeserver = &ctx.homeserver;
-    let user_id = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
-    let member = ctx
-        .room
-        .get_member(&user_id)
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _crazy_thursday(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let now = OffsetDateTime::now_utc().to_offset(offset!(+8));
+        let body = if now.weekday() != Weekday::Thursday {
+            let date = now.date().next_occurrence(time::Weekday::Thursday);
+            let target = date.with_hms(0, 0, 0)?.assume_offset(offset!(+8));
+            let dur = target - now;
+            {
+                let whole_seconds = dur.whole_seconds().unsigned_abs();
+                let seconds = whole_seconds % 60;
+                let whole_minutes = dur.whole_minutes().unsigned_abs();
+                let minutes = whole_minutes % 60;
+                let whole_hours = dur.whole_hours().unsigned_abs();
+                let hours = whole_hours % 24;
+                let days = dur.whole_days();
+                format!("Time until next thursday ({date}): {days} days, {hours:0>2}:{minutes:0>2}:{seconds:0>2}")
+            }
+        } else {
+            "Crazy Thursday!".to_string()
+        };
 
-    let mut body = String::new();
-    let current_avatar = member
-        .avatar_url()
-        .map(|url| url.http_url(homeserver))
-        .transpose()?
-        .map(|result| result.to_string())
-        .unwrap_or("(None)".to_string());
-    let result = format!("Current Avatar: {current_avatar}\n");
-    body.push_str(&result);
-    let mut count: i32 = 0;
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(body),
+        )))
+    }
 
-    let event: &MemberEvent = member.event();
-    match event {
-        MemberEvent::Sync(event) => {
-            let stream = StreamFactory::member_state_stream(&ctx.room, event.clone()).peekable();
-            pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                if count <= -5 {
-                    break;
-                }
+    async fn _ping(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
+        let MilliSecondsSinceUnixEpoch(event_ts) = self.ev.origin_server_ts;
+        let delta: i64 = (now - event_ts).into();
+        let body = if delta >= 2000 {
+            let duration = Duration::milliseconds(delta);
+            format!("Pong after {duration:.3}")
+        } else {
+            format!("Pong after {}ms", delta)
+        };
 
-                let prev_event = stream.as_mut().peek().await;
-                let detail = prev_event.map(|e| e.content.details());
-                let change =
-                    event
-                        .content
-                        .membership_change(detail, &event.sender, &event.state_key);
-                match change {
-                    MembershipChange::ProfileChanged {
-                        displayname_change: _,
-                        avatar_url_change,
-                    } => {
-                        let Some(avatar_url_change) = avatar_url_change else {
-                            continue;
-                        };
-                        match avatar_url_change.new {
-                            Some(avatar_url) => {
-                                count -= 1;
-                                let nanos: i128 =
-                                    <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
-                                let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
-                                    .format(&Rfc3339)?;
-                                let avatar_link = avatar_url.http_url(homeserver)?;
-                                let result =
-                                    format!("{count}: Changed to {avatar_link} ({timestamp})\n");
-                                body.push_str(&result);
-                            }
-                            None => {
-                                let result = format!("{count}: Removed avatar.\n");
-                                body.push_str(&result);
-                            }
-                        }
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(body),
+        )))
+    }
+
+    async fn _room_id(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(self.room.room_id()),
+        )))
+    }
+
+    async fn _user_id(
+        &self,
+        user_id: OwnedUserId,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(user_id.as_str()),
+        )))
+    }
+
+    #[tracing::instrument(
+        skip(self, member),
+        fields(
+            user_id = %member.user_id(),
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _name_changes(
+        &self,
+        member: RoomMember,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let mut body = String::new();
+        let current_name = member.display_name().unwrap_or("(None)");
+        let result = format!("Current Name: {current_name}\n");
+        body.push_str(&result);
+        let mut count: i32 = 0;
+
+        let event: &MemberEvent = member.event();
+        match event {
+            MemberEvent::Sync(event) => {
+                let stream =
+                    StreamFactory::member_state_stream(&self.room, event.clone()).peekable();
+                pin_mut!(stream);
+                while let Some(event) = stream.next().await {
+                    if count <= -5 {
+                        break;
                     }
-                    MembershipChange::Joined => {
-                        count -= 1;
-                        let avatar_link = event
+
+                    let prev_event = stream.as_mut().peek().await;
+                    let detail = prev_event.map(|e| e.content.details());
+                    let change =
+                        event
                             .content
-                            .avatar_url
-                            .map(|uri| uri.http_url(homeserver))
-                            .transpose()?;
-                        let result = format!(
-                            "{count}: Joined with avatar {}\n",
-                            avatar_link
-                                .map(|link| link.to_string())
-                                .unwrap_or("(No avatar)".to_string())
-                        );
-                        body.push_str(&result);
-                    }
-                    _ => {}
-                };
+                            .membership_change(detail, &event.sender, &event.state_key);
+                    match change {
+                        MembershipChange::ProfileChanged {
+                            displayname_change,
+                            avatar_url_change: _,
+                        } => {
+                            let Some(displayname_change) = displayname_change else {
+                                continue;
+                            };
+                            match displayname_change.new {
+                                Some(displayname) => {
+                                    count -= 1;
+                                    let nanos: i128 =
+                                        <UInt as Into<i128>>::into(event.origin_server_ts.0)
+                                            * 1000000;
+                                    let timestamp =
+                                        OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                            .format(&Rfc3339)?;
+                                    let result = format!(
+                                        "{count}: Changed to {displayname} ({timestamp})\n"
+                                    );
+                                    body.push_str(&result);
+                                }
+                                None => {
+                                    let result = format!("{count}: Removed display name.\n");
+                                    body.push_str(&result);
+                                }
+                            }
+                        }
+                        MembershipChange::Joined => {
+                            count -= 1;
+                            let result = format!(
+                                "{count}: Joined with display name {}\n",
+                                event.content.displayname.unwrap_or("(No name)".to_string())
+                            );
+                            body.push_str(&result);
+                        }
+                        _ => {}
+                    };
+                }
             }
+            _ => tracing::warn!(
+                "INTERNAL ERROR: A member event in a joined room should not be stripped."
+            ),
         }
-        _ => tracing::warn!(
-            "INTERNAL ERROR: A member event in a joined room should not be stripped."
+
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(body),
+        )))
+    }
+
+    #[tracing::instrument(
+        skip(self, member),
+        fields(
+            user_id = %member.user_id(),
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
         ),
+        err
+    )]
+    async fn _avatar_changes(
+        &self,
+        member: RoomMember,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let homeserver = &self.homeserver;
+        let mut body = String::new();
+        let current_avatar = member
+            .avatar_url()
+            .map(|url| url.http_url(homeserver))
+            .transpose()?
+            .map(|result| result.to_string())
+            .unwrap_or("(None)".to_string());
+        let result = format!("Current Avatar: {current_avatar}\n");
+        body.push_str(&result);
+        let mut count: i32 = 0;
+
+        let event: &MemberEvent = member.event();
+        match event {
+            MemberEvent::Sync(event) => {
+                let stream =
+                    StreamFactory::member_state_stream(&self.room, event.clone()).peekable();
+                pin_mut!(stream);
+                while let Some(event) = stream.next().await {
+                    if count <= -5 {
+                        break;
+                    }
+
+                    let prev_event = stream.as_mut().peek().await;
+                    let detail = prev_event.map(|e| e.content.details());
+                    let change =
+                        event
+                            .content
+                            .membership_change(detail, &event.sender, &event.state_key);
+                    match change {
+                        MembershipChange::ProfileChanged {
+                            displayname_change: _,
+                            avatar_url_change,
+                        } => {
+                            let Some(avatar_url_change) = avatar_url_change else {
+                                continue;
+                            };
+                            match avatar_url_change.new {
+                                Some(avatar_url) => {
+                                    count -= 1;
+                                    let nanos: i128 =
+                                        <UInt as Into<i128>>::into(event.origin_server_ts.0)
+                                            * 1000000;
+                                    let timestamp =
+                                        OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                            .format(&Rfc3339)?;
+                                    let avatar_link = avatar_url.http_url(homeserver)?;
+                                    let result = format!(
+                                        "{count}: Changed to {avatar_link} ({timestamp})\n"
+                                    );
+                                    body.push_str(&result);
+                                }
+                                None => {
+                                    let result = format!("{count}: Removed avatar.\n");
+                                    body.push_str(&result);
+                                }
+                            }
+                        }
+                        MembershipChange::Joined => {
+                            count -= 1;
+                            let avatar_link = event
+                                .content
+                                .avatar_url
+                                .map(|uri| uri.http_url(homeserver))
+                                .transpose()?;
+                            let result = format!(
+                                "{count}: Joined with avatar {}\n",
+                                avatar_link
+                                    .map(|link| link.to_string())
+                                    .unwrap_or("(No avatar)".to_string())
+                            );
+                            body.push_str(&result);
+                        }
+                        _ => {}
+                    };
+                }
+            }
+            _ => tracing::warn!(
+                "INTERNAL ERROR: A member event in a joined room should not be stripped."
+            ),
+        }
+
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(body),
+        )))
     }
 
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(body),
-    )))
-}
+    #[tracing::instrument(
+        skip(self, member),
+        fields(
+            user_id = %member.user_id(),
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _send_avatar(
+        &self,
+        member: RoomMember,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        match member.avatar_url() {
+            Some(avatar_url) => {
+                let name = member.name_or_id();
+                let info = get_image_info(avatar_url, &self.room.client()).await?;
+                Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                    RoomMessageEventContent::new(MessageType::Image(
+                        ImageMessageEventContent::plain(
+                            format!("[Avatar of {name}]"),
+                            avatar_url.into(),
+                        )
+                        .info(Some(Box::new(info))),
+                    )),
+                )))
+            }
+            None => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                RoomMessageEventContent::text_plain("The user has no avatar."),
+            ))),
+        }
+    }
 
-#[tracing::instrument(skip(ctx))]
-async fn send_avatar(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let target = get_reply_target_fallback(&ctx.ev, &ctx.room).await?;
-    let member = ctx
-        .room
-        .get_member(&target)
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
+    async fn _divergence(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let room_hash = crc32fast::hash(self.room.room_id().as_bytes());
+        let event_id_hash = match &self.ev.content.relates_to {
+            Some(Relation::Reply { in_reply_to }) => {
+                let event_id = &in_reply_to.event_id;
+                Some(crc32fast::hash(event_id.as_bytes()))
+            }
+            _ => None,
+        };
+        let hash = {
+            let seed = room_hash + event_id_hash.unwrap_or(0);
+            let mut rng = fastrand::Rng::with_seed(seed.into());
+            rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
+        };
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(format!("{hash:.6}%")),
+        )))
+    }
 
-    match member.avatar_url() {
-        Some(avatar_url) => {
-            let name = member.display_name().unwrap_or(target.as_str());
-            let info = get_image_info(avatar_url, &ctx.room.client()).await?;
-            Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-                RoomMessageEventContent::new(MessageType::Image(
-                    ImageMessageEventContent::plain(
-                        format!("[Avatar of {name}]"),
-                        avatar_url.into(),
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _hitokoto(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let Some(ref services) = self.config.services else {
+            return Ok(None);
+        };
+        let Some(ref hitokoto) = services.hitokoto else {
+            return Ok(None);
+        };
+        let raw_resp = self
+            .http
+            .get(hitokoto.to_owned())
+            .send()
+            .await?
+            .error_for_status()?;
+        let resp: HitokotoResult = raw_resp.json().await?;
+
+        let from_who = resp.from_who.unwrap_or_default();
+
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_html(
+                format!(
+                    "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
+                    resp.hitokoto, from_who, resp.from, resp.uuid
+                ),
+                format!(
+                "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
+                resp.hitokoto, from_who, resp.from, resp.uuid
+            ),
+            ),
+        )))
+    }
+
+    #[tracing::instrument(
+        skip(self, sender),
+        fields(
+            sender = %sender.user_id(),
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _remind(
+        &self,
+        target: OwnedUserId,
+        sender: RoomMember,
+        content: Option<String>,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        self.room.add_event_handler(
+            |ev: OriginalSyncRoomMessageEvent,
+             client: Client,
+             room: Room,
+             handle: EventHandlerHandle| async move {
+                let ev = ev.into_full_event(room.room_id().into());
+                if ev.sender == target {
+                    let pill = sender.make_pill();
+                    let reminder = content.unwrap_or("You can ask now.".to_string());
+                    let content = RoomMessageEventContent::text_html(
+                        format!("Cc {} {}", sender.name_or_id(), &reminder),
+                        format!("Cc {} {}", pill, &reminder),
                     )
-                    .info(Some(Box::new(info))),
+                    .make_reply_to(&ev, ForwardThread::No, AddMentions::Yes)
+                    .add_mentions(Mentions::with_user_ids([target]));
+                    match room.send(content).await {
+                        Ok(_) => (),
+                        Err(e) => tracing::error!("Unexpected error happened: {e:?}"),
+                    }
+                    client.remove_event_handler(handle);
+                };
+            },
+        );
+
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain("You'll be reminded when the target speaks."),
+        )))
+    }
+
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _quote(
+        &self,
+        ev: AnyTimelineEvent,
+        member: RoomMember,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let room_id = &self.ev.room_id;
+        match ev {
+            AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
+                MessageLikeEvent::Original(ev),
+            )) => {
+                let ev = ev
+                    .unsigned
+                    .relations
+                    .replace
+                    .clone()
+                    .map(|ev| ev.into_full_event(room_id.clone()))
+                    .unwrap_or(ev);
+                let content = ev.content;
+                let replace_content = content
+                    .relates_to
+                    .clone()
+                    .and_then(|rel| match rel {
+                        Relation::Replacement(content) => Some(content),
+                        _ => None,
+                    })
+                    .map(|replacement| replacement.new_content);
+                let content = replace_content.unwrap_or(content.into());
+                match content.msgtype {
+                    MessageType::Text(content) => {
+                        let string = format!(
+                            "<span size=\"larger\" foreground=\"#1f4788\">{}</span>\n{}",
+                            member.name_or_id(),
+                            content
+                                .formatted
+                                .map(|formatted| crate::quote::html2pango(
+                                    &remove_html_reply_fallback(&formatted.body)
+                                ))
+                                .transpose()?
+                                .unwrap_or(
+                                    html_escape::encode_text(remove_plain_reply_fallback(
+                                        &content.body
+                                    ))
+                                    .to_string()
+                                )
+                        );
+                        let data = crate::quote::quote(
+                            member
+                                .avatar_url()
+                                .map(|url| url.http_url(&self.homeserver))
+                                .transpose()?
+                                .map(|s| s.to_string()),
+                            &string,
+                        )
+                        .await?;
+                        let mime: mime::Mime = "image/webp".parse()?;
+                        let resp = self.room.client().media().upload(&mime, data).await?;
+                        let client = &self.room.client();
+                        let info = get_image_info(&resp.content_uri, client).await?;
+                        let send_content =
+                            StickerEventContent::new("[Quote]".to_string(), info, resp.content_uri);
+                        Ok(Some(AnyMessageLikeEventContent::Sticker(send_content)))
+                    }
+                    _ => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                        RoomMessageEventContent::text_plain(format!(
+                            "Unsupported event type, event type in Rust: {}",
+                            std::any::type_name_of_val(&content.msgtype)
+                        )),
+                    ))),
+                }
+            }
+            _ => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                RoomMessageEventContent::text_plain(format!(
+                    "Unsupported event type, event type in Rust: {}",
+                    std::any::type_name_of_val(&ev)
                 )),
-            )))
+            ))),
         }
-        None => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-            RoomMessageEventContent::text_plain("The user has no avatar."),
-        ))),
     }
-}
 
-#[tracing::instrument(skip(ctx))]
-async fn divergence(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let room_hash = crc32fast::hash(ctx.room.room_id().as_bytes());
-    let event_id_hash = match &ctx.ev.content.relates_to {
-        Some(Relation::Reply { in_reply_to }) => {
-            let event_id = &in_reply_to.event_id;
-            Some(crc32fast::hash(event_id.as_bytes()))
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _upload_sticker(
+        &self,
+        ev: AnyTimelineEvent,
+        pack_name: String,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let config = &self.config;
+        let sender = &self.ev.sender;
+        let Some(ref stickers_config) = config.stickers else {
+            return Ok(None);
+        };
+        let Some(sticker_room) = self.room.client().get_room(&stickers_config.sticker_room) else {
+            return Ok(None);
+        };
+        let power_level = sticker_room.get_user_power_level(sender).await?;
+        if power_level < 1 {
+            return Ok(None);
         }
-        _ => None,
-    };
-    let hash = {
-        let seed = room_hash + event_id_hash.unwrap_or(0);
-        let mut rng = fastrand::Rng::with_seed(seed.into());
-        rng.f32() + if rng.bool() { 1.0 } else { 0.0 }
-    };
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain(format!("{hash:.6}%")),
-    )))
-}
 
-#[tracing::instrument(skip(ctx))]
-async fn ignore(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let sender = &ctx.sender;
-
-    let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
-        return Err(Error::RequiresReply)?;
-    };
-
-    if ctx.room.can_user_ban(sender).await? {
-        let member = ctx
-            .room
-            .get_member(&target)
-            .await?
-            .ok_or(Error::ShouldAvaliable)?;
-        member.ignore().await?;
-        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-            RoomMessageEventContent::text_plain(format!(
-                "Ignored {} ({})",
-                member.display_name().unwrap_or("(No Name)"),
-                sender
-            )),
-        )))
-    } else {
-        Err(Error::RequiresBannable)?
+        match ev {
+            AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
+                MessageLikeEvent::Original(ev),
+            )) => {
+                let content = ev.content;
+                match content.msgtype {
+                    MessageType::File(event_content) => {
+                        let name = event_content
+                            .filename
+                            .clone()
+                            .unwrap_or(format!("{}", ev.origin_server_ts.0));
+                        let data = self
+                            .room
+                            .client()
+                            .media()
+                            .get_file(&event_content, false)
+                            .await?
+                            .ok_or(anyhow::anyhow!("File has no data!"))?;
+                        let format = FileFormat::from_bytes(&data);
+                        let mimetype = format.media_type();
+                        if mimetype != "application/zip" {
+                            anyhow::bail!("File is not a ZIP file!");
+                        }
+                        let content = prepare_sticker_upload_event_content(
+                            &self.room.client(),
+                            data,
+                            pack_name,
+                        )
+                        .await?;
+                        sticker_room
+                            .send_state_event_for_key(&name, content)
+                            .await?;
+                        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                            RoomMessageEventContent::text_plain("Done."),
+                        )))
+                    }
+                    _ => Ok(None),
+                }
+            }
+            _ => Ok(None),
+        }
     }
 }
 
-#[tracing::instrument(skip(ctx))]
-async fn unignore(
-    ctx: &HandlerContext,
-    user: Option<String>,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let sender = &ctx.sender;
-
-    let target = OwnedUserId::try_from(user.ok_or(Error::MissingParamter("user"))?)?;
-
-    if ctx.room.can_user_ban(sender).await? {
-        let member = ctx
-            .room
-            .get_member(&target)
-            .await?
-            .ok_or(Error::UserNotFound)?;
-        member.unignore().await?;
-        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-            RoomMessageEventContent::text_plain(format!(
-                "Unignored {} ({})",
-                member.display_name().unwrap_or("(No Name)"),
-                sender
-            )),
-        )))
-    } else {
-        Err(Error::RequiresBannable)?
-    }
-}
-
-#[tracing::instrument(skip(client))]
+#[tracing::instrument(skip(client), err)]
 async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<ImageInfo> {
     let request = MediaRequest {
         source: MediaSource::Plain(avatar_url.into()),
@@ -524,234 +685,7 @@ async fn get_image_info(avatar_url: &MxcUri, client: &Client) -> anyhow::Result<
     Ok(info)
 }
 
-#[tracing::instrument(skip(http, _ctx))]
-async fn hitokoto(
-    config: &Config,
-    http: &reqwest::Client,
-    _ctx: &HandlerContext,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let Some(ref services) = config.services else {
-        return Ok(None);
-    };
-    let Some(ref hitokoto) = services.hitokoto else {
-        return Ok(None);
-    };
-    let raw_resp = http.get(hitokoto.to_owned()).send().await?.error_for_status()?;
-    let resp: HitokotoResult = raw_resp.json().await?;
-
-    let from_who = resp.from_who.unwrap_or_default();
-
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_html(
-            format!(
-                "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
-                resp.hitokoto, from_who, resp.from, resp.uuid
-            ),
-            format!(
-                "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
-                resp.hitokoto, from_who, resp.from, resp.uuid
-            ),
-        ),
-    )))
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn remind(
-    ctx: &HandlerContext,
-    content: Option<String>,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let Some(target) = get_reply_target(&ctx.ev, &ctx.room).await? else {
-        return Err(Error::RequiresReply)?;
-    };
-
-    let sender = ctx.sender.clone();
-
-    let room = &ctx.room;
-    let member = room
-        .get_member(&sender)
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
-
-    room.add_event_handler(
-        |ev: OriginalSyncRoomMessageEvent,
-         client: Client,
-         room: Room,
-         handle: EventHandlerHandle| async move {
-            let ev = ev.into_full_event(room.room_id().into());
-            if ev.sender == target {
-                let pill = member.make_pill();
-                let reminder = content.unwrap_or("You can ask now.".to_string());
-                let content = RoomMessageEventContent::text_html(
-                    format!(
-                        "Cc {} {}",
-                        member.display_name().unwrap_or(sender.as_str()),
-                        &reminder
-                    ),
-                    format!("Cc {} {}", pill, &reminder),
-                )
-                .make_reply_to(&ev, ForwardThread::No, AddMentions::Yes)
-                .add_mentions(Mentions::with_user_ids([target]));
-                match room.send(content).await {
-                    Ok(_) => (),
-                    Err(e) => tracing::error!("Unexpected error happened: {e:?}"),
-                }
-                client.remove_event_handler(handle);
-            };
-        },
-    );
-
-    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-        RoomMessageEventContent::text_plain("You'll be reminded when the target speaks."),
-    )))
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn quote(ctx: &HandlerContext) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let room_id = &ctx.ev.room_id;
-    let ev = crate::get_reply_event(&ctx.ev, &ctx.room)
-        .await?
-        .ok_or(Error::RequiresReply)?;
-    let sender = ev.sender().to_owned();
-    let member = ctx
-        .room
-        .get_member(&sender)
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
-    match ev {
-        AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
-            MessageLikeEvent::Original(ev),
-        )) => {
-            let ev = ev
-                .unsigned
-                .relations
-                .replace
-                .clone()
-                .map(|ev| ev.into_full_event(room_id.clone()))
-                .unwrap_or(ev);
-            let content = ev.content;
-            let replace_content = content
-                .relates_to
-                .clone()
-                .and_then(|rel| match rel {
-                    Relation::Replacement(content) => Some(content),
-                    _ => None,
-                })
-                .map(|replacement| replacement.new_content);
-            let content = replace_content.unwrap_or(content.into());
-            match content.msgtype {
-                MessageType::Text(content) => {
-                    let string =
-                        format!(
-                            "<span size=\"larger\" foreground=\"#1f4788\">{}</span>\n{}",
-                            member.name_or_id(),
-                            content
-                                .formatted
-                                .map(|formatted| crate::quote::html2pango(
-                                    &remove_html_reply_fallback(&formatted.body)
-                                ))
-                                .transpose()?
-                                .unwrap_or(
-                                    html_escape::encode_text(remove_plain_reply_fallback(
-                                        &content.body
-                                    ))
-                                    .to_string()
-                                )
-                        );
-                    let data = crate::quote::quote(
-                        member
-                            .avatar_url()
-                            .map(|url| url.http_url(&ctx.homeserver))
-                            .transpose()?
-                            .map(|s| s.to_string()),
-                        &string,
-                    )
-                    .await?;
-                    let mime: mime::Mime = "image/webp".parse()?;
-                    let resp = ctx.room.client().media().upload(&mime, data).await?;
-                    let client = &ctx.room.client();
-                    let info = get_image_info(&resp.content_uri, client).await?;
-                    let send_content =
-                        StickerEventContent::new("[Quote]".to_string(), info, resp.content_uri);
-                    Ok(Some(AnyMessageLikeEventContent::Sticker(send_content)))
-                }
-                _ => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-                    RoomMessageEventContent::text_plain(format!(
-                        "Unsupported event type, event type in Rust: {}",
-                        std::any::type_name_of_val(&content.msgtype)
-                    )),
-                ))),
-            }
-        }
-        _ => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-            RoomMessageEventContent::text_plain(format!(
-                "Unsupported event type, event type in Rust: {}",
-                std::any::type_name_of_val(&ev)
-            )),
-        ))),
-    }
-}
-
-#[tracing::instrument(skip(ctx))]
-async fn upload_sticker(
-    config: &Config,
-    ctx: &HandlerContext,
-    pack_name: String,
-) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-    let ev = crate::get_reply_event(&ctx.ev, &ctx.room)
-        .await?
-        .ok_or(Error::RequiresReply)?;
-    let sender = &ctx.sender;
-    let Some(ref stickers_config) = config.stickers else {
-        return Ok(None);
-    };
-    let Some(sticker_room) = ctx.room.client().get_room(&stickers_config.sticker_room) else {
-        return Ok(None);
-    };
-    let power_level = sticker_room.get_user_power_level(sender).await?;
-    if power_level < 1 {
-        return Ok(None);
-    }
-
-    match ev {
-        AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
-            MessageLikeEvent::Original(ev),
-        )) => {
-            let content = ev.content;
-            match content.msgtype {
-                MessageType::File(event_content) => {
-                    let name = event_content
-                        .filename
-                        .clone()
-                        .unwrap_or(format!("{}", ev.origin_server_ts.0));
-                    let data = ctx
-                        .room
-                        .client()
-                        .media()
-                        .get_file(&event_content, false)
-                        .await?
-                        .ok_or(anyhow::anyhow!("File has no data!"))?;
-                    let format = FileFormat::from_bytes(&data);
-                    let mimetype = format.media_type();
-                    if mimetype != "application/zip" {
-                        anyhow::bail!("File is not a ZIP file!");
-                    }
-                    let content =
-                        prepare_sticker_upload_event_content(&ctx.room.client(), data, pack_name)
-                            .await?;
-                    sticker_room
-                        .send_state_event_for_key(&name, content)
-                        .await?;
-                    Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-                        RoomMessageEventContent::text_plain("Done."),
-                    )))
-                }
-                _ => Ok(None),
-            }
-        }
-        _ => Ok(None),
-    }
-}
-
+#[tracing::instrument(skip(client, data), err)]
 async fn prepare_sticker_upload_event_content(
     client: &Client,
     data: Vec<u8>,

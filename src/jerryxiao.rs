@@ -2,54 +2,29 @@
 
 use std::collections::HashMap;
 
-use crate::traits::RoomMemberExt;
-use crate::Error;
-use matrix_sdk::room::Room;
-use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, UserId};
+use crate::RoomMemberExt;
+use matrix_sdk::room::RoomMember;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use time::macros::format_description;
 use time::OffsetDateTime;
 
 /// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room, two senders and text.
-#[tracing::instrument(skip(room), fields(room_id = %room.room_id()), err)]
-pub async fn make_jerryxiao_event_content(
-    room: &Room,
-    from_sender: &UserId,
-    to_sender: &UserId,
+#[tracing::instrument(
+    skip(from_member, to_member),
+    fields(
+        from_sender = %from_member.user_id(),
+        to_sender = %to_member.user_id(),
+    ),
+    err
+)]
+pub async fn jerryxiao(
+    from_member: &RoomMember,
+    to_member: &RoomMember,
     text: &str,
-    reversed: bool,
-    formatted: bool,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let from_member = room
-        .get_member(if reversed { to_sender } else { from_sender })
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
-    let to_member = room
-        .get_member(if reversed { from_sender } else { to_sender })
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
-
     let from_pill = from_member.make_pill();
     let to_pill = to_member.make_pill();
-
-    if formatted {
-        if text.contains("${from}") && text.contains("${to}") {
-            let text = text.trim();
-            let mut text_context = HashMap::new();
-            text_context.insert("from".to_string(), format!("@{}", from_member.name_or_id()));
-            text_context.insert("to".to_string(), format!("@{}", to_member.name_or_id()));
-            let mut html_context = HashMap::new();
-            html_context.insert("from".to_string(), from_pill);
-            html_context.insert("to".to_string(), to_pill);
-            Ok(Some(RoomMessageEventContent::text_html(
-                envsubst::substitute(text, &text_context)?,
-                envsubst::substitute(text, &html_context)?,
-            )))
-        } else {
-            Ok(Some(RoomMessageEventContent::text_plain(
-                "No format slot ${from} ${to} found!",
-            )))
-        }
-    } else {
+    {
         let mut splited = text.split_whitespace();
         if let Some(arg0) = splited.next() {
             if ["把", "拿", "被", "将", "令", "使", "让", "给", "替"]
@@ -109,18 +84,54 @@ pub async fn make_jerryxiao_event_content(
     }
 }
 
+/// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room,
+/// two senders and formatting text.
+#[tracing::instrument(
+    skip(from_member, to_member),
+    fields(
+        from_sender = %from_member.user_id(),
+        to_sender = %to_member.user_id(),
+    ),
+    err
+)]
+pub async fn jerryxiao_formatted(
+    from_member: &RoomMember,
+    to_member: &RoomMember,
+    text: &str,
+) -> anyhow::Result<Option<RoomMessageEventContent>> {
+    if text.contains("${from}") && text.contains("${to}") {
+        let text = text.trim();
+        let mut text_context = HashMap::new();
+        text_context.insert("from".to_string(), format!("@{}", from_member.name_or_id()));
+        text_context.insert("to".to_string(), format!("@{}", to_member.name_or_id()));
+        let mut html_context = HashMap::new();
+        html_context.insert("from".to_string(), from_member.make_pill());
+        html_context.insert("to".to_string(), to_member.make_pill());
+        Ok(Some(RoomMessageEventContent::text_html(
+            envsubst::substitute(text, &text_context)?,
+            envsubst::substitute(text, &html_context)?,
+        )))
+    } else {
+        Ok(Some(RoomMessageEventContent::text_plain(
+            "No format slot ${from} ${to} found!",
+        )))
+    }
+}
+
 /// Constructs the [RoomMessageEventContent] result of randomdraw from the given room, sender and text.
-#[tracing::instrument(skip(room), fields(room_id = %room.room_id()), err)]
-pub async fn make_randomdraw_event_content(
-    room: &Room,
-    user_id: &UserId,
+#[tracing::instrument(
+    skip(member),
+    fields(
+        user_id = %member.user_id(),
+    ),
+    err
+)]
+pub async fn fortune(
+    member: &RoomMember,
     query: &str,
     prob: bool,
 ) -> anyhow::Result<RoomMessageEventContent> {
-    let member = room
-        .get_member(user_id)
-        .await?
-        .ok_or(Error::ShouldAvaliable)?;
+    let user_id = member.user_id();
     let hash = crc32fast::hash(user_id.as_bytes());
     let date = OffsetDateTime::now_utc();
     let format = format_description!("[year][month][day]");

@@ -24,22 +24,16 @@ pub mod quote;
 #[doc(hidden)]
 pub mod session;
 pub mod stream;
-pub mod traits;
 pub mod types;
 
 pub use crate::config::Config;
+pub use crate::handler::Context;
 pub use crate::stream::StreamFactory;
-pub use crate::traits::{IntoEventContent, MxcUriExt, RoomMemberExt};
 
 use matrix_sdk::matrix_auth::MatrixSession;
-use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
-use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
-use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
-use matrix_sdk::ruma::events::room::message::Relation;
-use matrix_sdk::ruma::events::AnyTimelineEvent;
+use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::presence::PresenceState;
-use matrix_sdk::ruma::OwnedUserId;
-use matrix_sdk::Room;
+use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::{config::SyncSettings, Client};
 use reqwest::Url;
 use std::sync::Arc;
@@ -132,12 +126,14 @@ impl FuukaBot {
     }
 
     async fn initial_sync(&self, register_handler: bool) -> anyhow::Result<String> {
-        tracing::info!("Initial sync beginning...");
+        let user_id = self.client.user_id();
+        let homeserver = self.client.homeserver();
+        tracing::info!(user_id = ?user_id, homeserver = %homeserver, "Initial sync beginning...");
         let response = self
             .client
             .sync_once(SyncSettings::default().set_presence(PresenceState::Online))
             .await?;
-        tracing::info!("Initial sync completed.");
+        tracing::info!(user_id = ?user_id, homeserver = %homeserver, "Initial sync completed.");
 
         if register_handler {
             self.client
@@ -193,102 +189,41 @@ impl FuukaBot {
     }
 }
 
-/// Error types.
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    /// Running this command requires the sending user should be able to ban users (on the Matrix side, if applies).
-    #[error("To run this command, the sending user should be able to ban users (on the Matrix side, if applies).")]
-    RequiresBannable,
-    /// The command should be used on a reply.
-    #[error("This command should be used on a reply.")]
-    RequiresReply,
-    /// Command is missing required paramter.
-    #[error("Command is missing required paramter: {0}.")]
-    MissingParamter(&'static str),
-    /// The specified user does not exist.
-    #[error("The specified user does not exist.")]
-    UserNotFound,
-    /// Math overflow happened.
-    #[error("Math overflow happened.")]
-    MathOverflow,
-    /// Divide by zero happened.
-    #[error("Divisioned by zero.")]
-    DivByZero,
-    /// Invaild URL given.
-    #[error("Invaild URL given: {0}.")]
-    InvaildUrl(#[from] url::ParseError),
-    /// No vaild infomation can be extracted.
-    #[error("No infomation can be extracted.")]
-    NoInfomation,
-    // Internal errors.
-    /// The bot encountered an internal error that the user it checked should be avaliable but didn't.
-    #[error("This user should be avaliable.")]
-    ShouldAvaliable,
+/// Extensions to [RoomMember].
+pub trait RoomMemberExt {
+    /// Returns the display name or the user ID of the specified [RoomMember].
+    fn name_or_id(&self) -> &str;
+    /// Constructs a HTML link of the specified [RoomMember], known as the mention "pill".
+    fn make_pill(&self) -> String;
 }
 
-/// Context for the handler.
-pub struct HandlerContext {
-    /// The event that bot was received.
-    pub ev: OriginalRoomMessageEvent,
-    /// The room where the event was sent from.
-    pub room: Room,
-    /// The sender.
-    pub sender: OwnedUserId,
-    /// The text part of the event content.
-    pub body: String,
-    /// The homeserver URL.
-    pub homeserver: Url,
-}
+impl RoomMemberExt for RoomMember {
+    fn name_or_id(&self) -> &str {
+        self.display_name().unwrap_or(self.user_id().as_str())
+    }
 
-impl HandlerContext {
-    /// Creates a context from the given [OriginalSyncRoomMessageEvent], [Room] and [Url].
-    pub fn new(ev: OriginalSyncRoomMessageEvent, room: Room, homeserver: Url) -> Self {
-        Self {
-            ev: ev.clone().into_full_event(room.room_id().into()),
-            room,
-            sender: ev.sender,
-            body: remove_plain_reply_fallback(ev.content.body())
-                .trim()
-                .to_string(),
-            homeserver,
-        }
+    fn make_pill(&self) -> String {
+        format!(
+            "<a href=\"{}\">@{}</a>",
+            self.user_id().matrix_to_uri(),
+            self.name()
+        )
     }
 }
 
-// The rest are functions that can't be organized clearly.
-
-/// Given a [OriginalRoomMessageEvent], returns the user ID of the reply target.
-pub(crate) async fn get_reply_target(
-    ev: &OriginalRoomMessageEvent,
-    room: &Room,
-) -> anyhow::Result<Option<OwnedUserId>> {
-    get_reply_event(ev, room)
-        .await
-        .map(|ev| ev.map(|ev| ev.sender().to_owned()))
+/// Extensions to [MxcUri].
+pub trait MxcUriExt {
+    /// Returns the HTTP URL of the given [MxcUri], with the specified homeserver
+    /// using the [Client-Server API](https://spec.matrix.org/latest/client-server-api/#get_matrixmediav3downloadservernamemediaid).
+    fn http_url(&self, homeserver: &Url) -> anyhow::Result<Url>;
 }
 
-/// Given a [OriginalRoomMessageEvent], returns the event being replied to.
-pub(crate) async fn get_reply_event(
-    ev: &OriginalRoomMessageEvent,
-    room: &Room,
-) -> anyhow::Result<Option<AnyTimelineEvent>> {
-    match &ev.content.relates_to {
-        Some(Relation::Reply { in_reply_to }) => {
-            let event_id = &in_reply_to.event_id;
-            let event = room.event(event_id).await?.event.deserialize()?;
-            Ok(Some(event))
-        }
-        _ => Ok(None),
+impl MxcUriExt for MxcUri {
+    #[tracing::instrument(err)]
+    fn http_url(&self, homeserver: &Url) -> anyhow::Result<Url> {
+        let (server_name, media_id) = self.parts()?;
+        Ok(homeserver
+            .join("/_matrix/media/r0/download/")?
+            .join(format!("{}/{}", server_name, media_id).as_str())?)
     }
-}
-
-/// Given a [OriginalRoomMessageEvent], returns the user ID of the reply target,
-/// it that doesn't exist, returns the user ID of the sender.
-pub(crate) async fn get_reply_target_fallback(
-    ev: &OriginalRoomMessageEvent,
-    room: &Room,
-) -> anyhow::Result<OwnedUserId> {
-    get_reply_target(ev, room)
-        .await
-        .map(|r| r.unwrap_or(ev.sender.clone()))
 }
