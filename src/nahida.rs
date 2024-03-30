@@ -45,6 +45,7 @@ async fn _crates_io(
         .get(format!("https://crates.io/api/v1/crates/{crate_name}"))
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?;
     let version = paths

@@ -57,9 +57,9 @@ pub async fn make_jerryxiao_event_content(
                 .any(|p| arg0.starts_with(p))
             {
                 let arg1 = splited.next().unwrap_or_default();
-                let arg1 = arg1.strip_suffix("了").unwrap_or(arg1);
+                let arg1 = arg1.strip_suffix('了').unwrap_or(arg1);
                 let arg2 = splited.next().unwrap_or_default();
-                let arg2 = arg2.strip_suffix("了").unwrap_or(arg2);
+                let arg2 = arg2.strip_suffix('了').unwrap_or(arg2);
                 Ok(Some(RoomMessageEventContent::text_html(
                     format!(
                         "@{from} {arg0} @{to} {arg1}了{arg2}",
@@ -75,7 +75,7 @@ pub async fn make_jerryxiao_event_content(
             } else {
                 let arg1 = splited.next();
                 let arg1 = arg1
-                    .map(|arg1| " 的".to_owned() + arg1.strip_prefix("了").unwrap_or(arg1))
+                    .map(|arg1| " 的".to_owned() + arg1.strip_prefix('了').unwrap_or(arg1))
                     .unwrap_or_default();
                 let chars: Vec<char> = arg0.chars().collect();
                 if (chars.len() == 2 && chars[0] == chars[1])
@@ -92,7 +92,7 @@ pub async fn make_jerryxiao_event_content(
                         format!("{} {}了{} {}{arg1}", from_pill, chars[0], chars[0], to_pill),
                     )))
                 } else {
-                    let arg0 = arg0.strip_suffix("了").unwrap_or(arg0);
+                    let arg0 = arg0.strip_suffix('了').unwrap_or(arg0);
                     Ok(Some(RoomMessageEventContent::text_html(
                         format!(
                             "@{} {arg0}了 @{}{arg1}",

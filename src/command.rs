@@ -536,7 +536,7 @@ async fn hitokoto(
     let Some(ref hitokoto) = services.hitokoto else {
         return Ok(None);
     };
-    let raw_resp = http.get(hitokoto.to_owned()).send().await?;
+    let raw_resp = http.get(hitokoto.to_owned()).send().await?.error_for_status()?;
     let resp: HitokotoResult = raw_resp.json().await?;
 
     let from_who = resp.from_who.unwrap_or_default();

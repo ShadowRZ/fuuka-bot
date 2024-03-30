@@ -14,6 +14,7 @@
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 pub mod command;
+pub mod config;
 pub mod events;
 pub mod handler;
 pub mod jerryxiao;
@@ -26,6 +27,7 @@ pub mod stream;
 pub mod traits;
 pub mod types;
 
+pub use crate::config::Config;
 pub use crate::stream::StreamFactory;
 pub use crate::traits::{IntoEventContent, MxcUriExt, RoomMemberExt};
 
@@ -36,12 +38,10 @@ use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::presence::PresenceState;
-use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId};
+use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::Room;
 use matrix_sdk::{config::SyncSettings, Client};
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::signal;
 use tokio::task::JoinHandle;
@@ -62,47 +62,6 @@ static APP_PRESENCE_TEXT: &str = concat!(
     ") | ",
     env!("CARGO_PKG_REPOSITORY")
 );
-
-/// The config of Fuuka bot.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Config {
-    /// Command prefix.
-    pub command_prefix: String,
-    /// The homeserver URL to connect to.
-    pub homeserver_url: Url,
-    /// Optional room features.
-    #[serde(default)]
-    pub features: HashMap<OwnedRoomId, RoomFeatures>,
-    /// HTTP Services configuration.
-    pub services: Option<ServiceBackends>,
-    /// Stickers feature related configuration.
-    pub stickers: Option<StickerConfig>,
-}
-
-/// Sticker feature config.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct StickerConfig {
-    /// Room for storing stickers.
-    pub sticker_room: OwnedRoomId,
-}
-/// What message features are avaliable.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct RoomFeatures {
-    /// Enable Jerry Xiao like functions.
-    #[serde(default)]
-    pub jerryxiao: bool,
-    /// Enable randomdraw.
-    #[serde(default)]
-    pub randomdraw: bool,
-}
-
-/// Configure various backend APIs
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ServiceBackends {
-    /// Hitokoto API endpoint.
-    /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
-    pub hitokoto: Option<Url>,
-}
 
 /// The bot itself.
 pub struct FuukaBot {
@@ -146,7 +105,9 @@ impl FuukaBot {
                         initial = false;
                     }
                 } => {},
-                _ = self.cts.cancelled() => {},
+                _ = self.cts.cancelled() => {
+                    tracing::info!("Bye!");
+                },
             }
         });
 
