@@ -14,12 +14,6 @@ Get the target user's name change history.
 
 _Requires replying to a message._
 
-## `ignore`
-
-*Make the bot ignore the target user.
-
-_Requires replying to a message, and the sender able to ban users._
-
 ## `crazy_thursday`
 
 On Thrusday, print "Crazy Thursday !!". Otherwise print remaining time to next Thursday.
@@ -35,12 +29,6 @@ Print the Matrix user ID of the replied user, or the sender.
 ## `ping`
 
 Ping the bot, print the time elpased to receive the message.
-
-## `unignore <user>`
-
-Make the bot unignore the user specified.
-
-_Requires the sender to be able to ban users_
 
 ## `send_avatar`
 
