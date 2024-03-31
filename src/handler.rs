@@ -152,7 +152,7 @@ impl Context {
     pub async fn dispatch(self) -> anyhow::Result<()> {
         let Some(content) = ({
             if let Err(e) = self.room.typing_notice(true).await {
-                tracing::warn!("Error while updating typing notice: {e:?}");
+                tracing::warn!("Error while updating typing notice: {e:#}");
             };
             match self.action {
                 Action::Command(ref command) => self.dispatch_command(command.to_owned()).await?,
@@ -160,7 +160,7 @@ impl Context {
             }
         }) else {
             if let Err(e) = self.room.typing_notice(false).await {
-                tracing::warn!("Error while updating typing notice: {e:?}");
+                tracing::warn!("Error while updating typing notice: {e:#}");
             };
             return Ok(());
         };
@@ -176,7 +176,7 @@ impl Context {
             _ => content,
         };
         if let Err(e) = self.room.typing_notice(false).await {
-            tracing::warn!("Error while updating typing notice: {e:?}");
+            tracing::warn!("Error while updating typing notice: {e:#}");
         };
         self.room.send(content).await?;
 
@@ -451,18 +451,12 @@ pub async fn on_sync_message(
                 if let Some(info) = info {
                     match info.dispatch().await {
                         Ok(_) => (),
-                        Err(e) => tracing::error!("Unexpected error happened: {e:?}"),
+                        Err(e) => send_error(&room, e).await,
                     }
                 }
             }
             Err(e) => {
-                match room
-                    .send(RoomMessageEventContent::text_plain(format!("{e:#?}")))
-                    .await
-                {
-                    Ok(_) => (),
-                    Err(e) => tracing::error!("Unexpected error happened: {e:?}"),
-                }
+                send_error(&room, e).await;
             }
         }
     });
@@ -482,12 +476,12 @@ pub async fn on_stripped_member(ev: StrippedRoomMemberEvent, room: Room, client:
         let mut delay = 2;
         while let Err(e) = room.join().await {
             use tokio::time::{sleep, Duration};
-            tracing::warn!("Failed to join room {room_id} ({e:?}), retrying in {delay}s");
+            tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
             sleep(Duration::from_secs(delay)).await;
             delay *= 2;
 
             if delay > 3600 {
-                tracing::error!("Can't join room {room_id} ({e:?})");
+                tracing::error!("Can't join room {room_id} ({e:#})");
                 break;
             }
         }
@@ -503,21 +497,35 @@ pub async fn on_room_replace(ev: OriginalSyncRoomTombstoneEvent, room: Room, cli
         let mut delay = 2;
         while let Err(e) = client.join_room_by_id(&room_id).await {
             use tokio::time::{sleep, Duration};
-            tracing::warn!("Failed to join room {room_id} ({e:?}), retrying in {delay}s");
+            tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
             sleep(Duration::from_secs(delay)).await;
             delay *= 2;
 
             if delay > 3600 {
-                tracing::error!("Can't join room {room_id} ({e:?})");
+                tracing::error!("Can't join room {room_id} ({e:#})");
                 break;
             }
         }
         if let Some(room) = client.get_room(room.room_id()) {
             tokio::spawn(async move {
                 if let Err(e) = room.leave().await {
-                    tracing::error!("Can't leave the original room {} ({e:?})", room.room_id());
+                    tracing::error!("Can't leave the original room {} ({e:#})", room.room_id());
                 }
             });
         }
     });
+}
+
+async fn send_error(room: &Room, e: anyhow::Error) {
+    tracing::error!("Handler reported an error: {e:#}");
+    if let Err(e) = room.typing_notice(false).await {
+        tracing::warn!("Error while updating typing notice: {e:#}");
+    };
+    match room
+        .send(RoomMessageEventContent::text_plain(format!("{e:#}")))
+        .await
+    {
+        Ok(_) => (),
+        Err(e) => tracing::error!("Unexpected error happened: {e:#}"),
+    }
 }

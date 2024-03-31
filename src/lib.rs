@@ -94,7 +94,7 @@ impl FuukaBot {
                     let mut initial = true;
                     while let Err(e) = self.sync(initial).await {
                         use tokio::time::{sleep, Duration};
-                        tracing::error!("Unexpected error happened, retrying in 10s: {e:?}");
+                        tracing::error!("Unexpected error happened, retrying in 10s: {e:#}");
                         sleep(Duration::from_secs(10)).await;
                         initial = false;
                     }

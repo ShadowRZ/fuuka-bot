@@ -11,6 +11,7 @@
 //! @Nahida https://crates.io/crates/syn
 //! ```
 
+use anyhow::Context;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use url::{Host, Url};
 
@@ -47,7 +48,8 @@ async fn _crates_io(
         .get(format!("https://crates.io/api/v1/crates/{crate_name}"))
         .send()
         .await?
-        .error_for_status()?
+        .error_for_status()
+        .context("Server reported failure")?
         .json()
         .await?;
     let version = paths

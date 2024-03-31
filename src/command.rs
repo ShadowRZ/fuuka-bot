@@ -485,7 +485,7 @@ impl Context {
                     .add_mentions(Mentions::with_user_ids([target]));
                     match room.send(content).await {
                         Ok(_) => (),
-                        Err(e) => tracing::error!("Unexpected error happened: {e:?}"),
+                        Err(e) => tracing::error!("Unexpected error happened: {e:#}"),
                     }
                     client.remove_event_handler(handle);
                 };
@@ -734,7 +734,7 @@ async fn prepare_sticker_upload_event_content(
             match media.upload(&mime, data).await {
                 Ok(resp) => Some((name, resp.content_uri, info)),
                 Err(e) => {
-                    tracing::error!("Unexpected error while uploading '{name}': {e:?}");
+                    tracing::error!("Unexpected error while uploading '{name}': {e:#}");
                     None
                 }
             }
