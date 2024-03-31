@@ -126,54 +126,84 @@ pub struct Context {
 }
 
 impl Context {
-    /// Creates a context.
-    pub async fn new(
+    /// Dispatch the event content.
+    pub async fn dispatch(
         ev: OriginalSyncRoomMessageEvent,
         room: Room,
         homeserver: Url,
         config: Arc<Config>,
         http: Ctx<reqwest::Client>,
-    ) -> anyhow::Result<Option<Self>> {
+    ) {
         let prefix = &config.command_prefix;
         let ev = ev.into_full_event(room.room_id().into());
-        Ok(Self::match_action(&ev, &room, prefix, &config)
-            .await?
-            .map(|action| Self {
-                ev,
-                room,
-                homeserver,
-                action,
-                http,
-                config,
-            }))
+        let action = Self::match_action(&ev, &room, prefix, &config).await;
+        match action {
+            Ok(Some(action)) => {
+                let ctx = Self {
+                    ev,
+                    room,
+                    homeserver,
+                    action,
+                    http,
+                    config,
+                };
+                if let Err(e) = ctx.dispatch_inner().await {
+                    tracing::error!("Unexpected error happened: {e:#}")
+                }
+            }
+            Err(e) => {
+                match room
+                    .send(
+                        RoomMessageEventContent::text_plain(format!("{e:#}")).make_reply_to(
+                            &ev,
+                            ForwardThread::No,
+                            AddMentions::Yes,
+                        ),
+                    )
+                    .await
+                {
+                    Ok(_) => (),
+                    Err(e) => tracing::error!("Unexpected error happened: {e:#}"),
+                }
+            }
+            Ok(None) => (),
+        }
     }
 
-    /// Dispatch.
-    pub async fn dispatch(self) -> anyhow::Result<()> {
-        let Some(content) = ({
+    async fn dispatch_inner(self) -> anyhow::Result<()> {
+        let content = {
             if let Err(e) = self.room.typing_notice(true).await {
                 tracing::warn!("Error while updating typing notice: {e:#}");
             };
             match self.action {
-                Action::Command(ref command) => self.dispatch_command(command.to_owned()).await?,
-                Action::Message(ref message) => self.dispatch_message(message.to_owned()).await?,
+                Action::Command(ref command) => self.dispatch_command(command.to_owned()).await,
+                Action::Message(ref message) => self.dispatch_message(message.to_owned()).await,
             }
-        }) else {
-            if let Err(e) = self.room.typing_notice(false).await {
-                tracing::warn!("Error while updating typing notice: {e:#}");
-            };
-            return Ok(());
+        };
+
+        if let Err(e) = self.room.typing_notice(false).await {
+            tracing::warn!("Error while updating typing notice: {e:#}");
         };
 
         let content = match content {
-            AnyMessageLikeEventContent::RoomMessage(msg) => {
-                AnyMessageLikeEventContent::RoomMessage(msg.make_reply_to(
+            Ok(Some(content)) => match content {
+                AnyMessageLikeEventContent::RoomMessage(msg) => {
+                    AnyMessageLikeEventContent::RoomMessage(msg.make_reply_to(
+                        &self.ev,
+                        ForwardThread::Yes,
+                        AddMentions::Yes,
+                    ))
+                }
+                _ => content,
+            },
+            Err(e) => AnyMessageLikeEventContent::RoomMessage(
+                RoomMessageEventContent::text_plain(format!("{e:#}")).make_reply_to(
                     &self.ev,
                     ForwardThread::Yes,
                     AddMentions::Yes,
-                ))
-            }
-            _ => content,
+                ),
+            ),
+            Ok(None) => return Ok(()),
         };
         if let Err(e) = self.room.typing_notice(false).await {
             tracing::warn!("Error while updating typing notice: {e:#}");
@@ -444,21 +474,7 @@ pub async fn on_sync_message(
 
     tokio::spawn(async move {
         let Ctx(config) = config;
-        let info = Context::new(ev, room.clone(), client.homeserver(), config, http).await;
-
-        match info {
-            Ok(info) => {
-                if let Some(info) = info {
-                    match info.dispatch().await {
-                        Ok(_) => (),
-                        Err(e) => send_error(&room, e).await,
-                    }
-                }
-            }
-            Err(e) => {
-                send_error(&room, e).await;
-            }
-        }
+        Context::dispatch(ev, room, client.homeserver(), config, http).await;
     });
 }
 
@@ -514,18 +530,4 @@ pub async fn on_room_replace(ev: OriginalSyncRoomTombstoneEvent, room: Room, cli
             });
         }
     });
-}
-
-async fn send_error(room: &Room, e: anyhow::Error) {
-    tracing::error!("Handler reported an error: {e:#}");
-    if let Err(e) = room.typing_notice(false).await {
-        tracing::warn!("Error while updating typing notice: {e:#}");
-    };
-    match room
-        .send(RoomMessageEventContent::text_plain(format!("{e:#}")))
-        .await
-    {
-        Ok(_) => (),
-        Err(e) => tracing::error!("Unexpected error happened: {e:#}"),
-    }
 }
