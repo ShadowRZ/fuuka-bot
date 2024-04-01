@@ -1,7 +1,7 @@
 //! Fuuka Bot configuration.
 
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId};
-use reqwest::Url;
+use url::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 /// The config of Fuuka bot.

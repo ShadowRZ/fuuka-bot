@@ -26,14 +26,13 @@ async-stream = "*"
 futures-util = "*"
 crc32fast = "*"
 fastrand = "*"
-thiserror = "*"
 url = { version = "*", features = ["serde"] }
 lol_html = "*"
 html-escape = "*"
 mime = "*"
 shell-words = "*"
 ruma-html = "*"
-zip = "*"
+zip = { version = "*", default-features = false, features = ["deflate"] }
 envsubst = "*"
 
 [features]

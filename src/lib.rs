@@ -35,7 +35,7 @@ use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::{config::SyncSettings, Client};
-use reqwest::Url;
+use url::Url;
 use std::sync::Arc;
 use tokio::signal;
 use tokio::task::JoinHandle;
