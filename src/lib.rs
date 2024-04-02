@@ -35,11 +35,11 @@ use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::{config::SyncSettings, Client};
-use url::Url;
 use std::sync::Arc;
 use tokio::signal;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
+use url::Url;
 
 static APP_USER_AGENT: &str = concat!(
     env!("CARGO_PKG_NAME"),

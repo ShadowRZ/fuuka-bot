@@ -71,6 +71,8 @@ pub enum Command {
         ev: AnyTimelineEvent,
         /// Pack name.
         pack_name: String,
+        /// Sticker room.
+        sticker_room: Room,
     },
 }
 
@@ -286,9 +288,6 @@ impl Context {
                     Ok(Some(Action::Command(Command::Quote { ev, member })))
                 }
                 "upload_sticker" => {
-                    let ev = Self::reply_event(ev, room).await?.ok_or(anyhow::anyhow!(
-                        "You need to reply to a event for this command to function."
-                    ))?;
                     // Check if we enable the command.
                     let Some(ref stickers_config) = config.stickers else {
                         return Ok(None);
@@ -297,16 +296,20 @@ impl Context {
                     else {
                         return Ok(None);
                     };
-                    let power_level = sticker_room.get_user_power_level(ev.sender()).await?;
+                    let power_level = sticker_room.get_user_power_level(&ev.sender).await?;
                     if power_level < 1 {
                         return Ok(None);
                     }
+                    let ev = Self::reply_event(ev, room).await?.ok_or(anyhow::anyhow!(
+                        "You need to reply to a event for this command to function."
+                    ))?;
                     let pack_name = args
                         .next()
                         .ok_or(anyhow::anyhow!("Missing pack name.").context("Invaild argument"))?;
                     Ok(Some(Action::Command(Command::UploadSticker {
                         ev,
                         pack_name,
+                        sticker_room,
                     })))
                 }
                 _ => anyhow::bail!("Unrecognized command {}", command),

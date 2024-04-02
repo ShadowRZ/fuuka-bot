@@ -102,7 +102,11 @@ impl Context {
                 content,
             } => self._remind(target, sender, content).await,
             Command::Quote { ev, member } => self._quote(ev, member).await,
-            Command::UploadSticker { ev, pack_name } => self._upload_sticker(ev, pack_name).await,
+            Command::UploadSticker {
+                ev,
+                pack_name,
+                sticker_room,
+            } => self._upload_sticker(ev, pack_name, sticker_room).await,
         }
     }
 
@@ -596,20 +600,8 @@ impl Context {
         &self,
         ev: AnyTimelineEvent,
         pack_name: String,
+        sticker_room: Room,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-        let config = &self.config;
-        let sender = &self.ev.sender;
-        let Some(ref stickers_config) = config.stickers else {
-            return Ok(None);
-        };
-        let Some(sticker_room) = self.room.client().get_room(&stickers_config.sticker_room) else {
-            return Ok(None);
-        };
-        let power_level = sticker_room.get_user_power_level(sender).await?;
-        if power_level < 1 {
-            return Ok(None);
-        }
-
         match ev {
             AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
                 MessageLikeEvent::Original(ev),
