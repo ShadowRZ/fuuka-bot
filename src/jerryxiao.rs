@@ -27,6 +27,9 @@ pub async fn jerryxiao(
     {
         let mut splited = text.split_whitespace();
         if let Some(arg0) = splited.next() {
+            if arg0.is_ascii() {
+                return Ok(None);
+            }
             if ["把", "拿", "被", "将", "令", "使", "让", "给", "替"]
                 .into_iter()
                 .any(|p| arg0.starts_with(p))
