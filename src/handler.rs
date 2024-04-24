@@ -13,7 +13,7 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::events::{AnyMessageLikeEventContent, AnyTimelineEvent};
-use matrix_sdk::ruma::OwnedUserId;
+use matrix_sdk::ruma::{OwnedUserId, UserId};
 use matrix_sdk::{Client as MatrixClient, RoomState};
 use url::Url;
 
@@ -74,6 +74,10 @@ pub enum Command {
         /// Sticker room.
         sticker_room: Room,
     },
+    /// `ignore`
+    Ignore(OwnedUserId),
+    /// `unignore`
+    Unignore(OwnedUserId),
 }
 
 /// Actionable message.
@@ -311,6 +315,30 @@ impl Context {
                         pack_name,
                         sticker_room,
                     })))
+                }
+                "ignore" => {
+                    let Some(ref admin_user) = config.admin_user else {
+                        return Ok(None);
+                    };
+                    if ev.sender != *admin_user {
+                        return Ok(None);
+                    }
+                    let ev = Self::reply_event(ev, room).await?.ok_or(anyhow::anyhow!(
+                        "You need to reply to a event for this command to function."
+                    ))?;
+                    Ok(Some(Action::Command(Command::Ignore(
+                        ev.sender().to_owned(),
+                    ))))
+                }
+                "unignore" => {
+                    let user_id = args
+                        .next()
+                        .map(|arg| UserId::parse(arg).ok())
+                        .flatten()
+                        .ok_or(
+                            anyhow::anyhow!("Invaild User ID Given.").context("Invaild argument"),
+                        )?;
+                    Ok(Some(Action::Command(Command::Unignore(user_id))))
                 }
                 _ => anyhow::bail!("Unrecognized command {}", command),
             }

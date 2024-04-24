@@ -107,6 +107,8 @@ impl Context {
                 pack_name,
                 sticker_room,
             } => self._upload_sticker(ev, pack_name, sticker_room).await,
+            Command::Ignore(user_id) => self._ignore(user_id).await,
+            Command::Unignore(user_id) => self._unignore(user_id).await,
         }
     }
 
@@ -643,6 +645,32 @@ impl Context {
             }
             _ => Ok(None),
         }
+    }
+
+    #[tracing::instrument(skip(self), err)]
+    async fn _ignore(
+        &self,
+        user_id: OwnedUserId,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let client = self.room.client();
+        let account = client.account();
+        account.ignore_user(&user_id).await?;
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain("Done."),
+        )))
+    }
+
+    #[tracing::instrument(skip(self), err)]
+    async fn _unignore(
+        &self,
+        user_id: OwnedUserId,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let client = self.room.client();
+        let account = client.account();
+        account.unignore_user(&user_id).await?;
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain("Done."),
+        )))
     }
 }
 
