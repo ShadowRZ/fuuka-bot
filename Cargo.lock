@@ -1046,6 +1046,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shell-words",
+ "thiserror",
  "time",
  "tokio",
  "tokio-util",

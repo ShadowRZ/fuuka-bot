@@ -15,7 +15,7 @@ use anyhow::Context;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use url::{Host, Url};
 
-use crate::types::CrateMetadata;
+use crate::{types::CrateMetadata, Error};
 
 /// Dispatch prefixed messages that starts with `@Nahida`.
 pub async fn dispatch(
@@ -34,16 +34,20 @@ async fn _crates_io(
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let paths: Option<_> = url.path_segments().map(|s| s.collect::<Vec<_>>());
     let Some(paths) = paths else {
-        anyhow::bail!("No infomation can be extracted from URL.");
+        return Result::Err(
+            Error::UnexpectedError("No infomation can be extracted from URL.").into(),
+        );
     };
 
     if paths.first() != Some(&"crates") {
-        anyhow::bail!("No infomation can be extracted from URL.");
+        return Result::Err(
+            Error::UnexpectedError("No infomation can be extracted from URL.").into(),
+        );
     }
 
-    let crate_name = paths
-        .get(1)
-        .ok_or(anyhow::anyhow!("No infomation can be extracted from URL."))?;
+    let crate_name = paths.get(1).ok_or(Error::UnexpectedError(
+        "No infomation can be extracted from URL.",
+    ))?;
     let resp: CrateMetadata = client
         .get(format!("https://crates.io/api/v1/crates/{crate_name}"))
         .send()

@@ -2,7 +2,7 @@
 #![warn(missing_docs)]
 use std::sync::Arc;
 
-use crate::Config;
+use crate::{Config, Error};
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::{Room, RoomMember};
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
@@ -158,18 +158,31 @@ impl Context {
                 }
             }
             Err(e) => {
+                let body = match e.downcast::<crate::Error>() {
+                    Ok(Error::RequiresReply) => {
+                        "Replying to a event is required for this command.".to_string()
+                    }
+                    Ok(Error::InvaildArgument { arg, source }) => {
+                        format!("Invaild argument for {arg}: {source}")
+                    }
+                    Ok(Error::MissingArgument(arg)) => format!("Missing argument: {arg}"),
+                    Ok(Error::UnknownCommand(command)) => format!("Unknown command {command}"),
+                    Ok(Error::UnexpectedError(e)) => e.to_string(),
+                    Err(e) => {
+                        tracing::error!("Unexpected error happened: {e:#}");
+                        format!("Unexpected error happened: {e:#}")
+                    }
+                };
                 match room
-                    .send(
-                        RoomMessageEventContent::text_plain(format!("{e:#}")).make_reply_to(
-                            &ev,
-                            ForwardThread::No,
-                            AddMentions::Yes,
-                        ),
-                    )
+                    .send(RoomMessageEventContent::text_plain(body).make_reply_to(
+                        &ev,
+                        ForwardThread::No,
+                        AddMentions::Yes,
+                    ))
                     .await
                 {
                     Ok(_) => (),
-                    Err(e) => tracing::error!("Unexpected error happened: {e:#}"),
+                    Err(e) => tracing::error!("Unexpected error while sending error: {e:#}"),
                 }
             }
             Ok(None) => (),
@@ -270,9 +283,9 @@ impl Context {
                 "hitokoto" => Ok(Some(Action::Command(Command::Hitokoto))),
                 "remind" => {
                     let text = args.next();
-                    let target = Self::reply_target(ev, room).await?.ok_or(anyhow::anyhow!(
-                        "You need to reply to a event for this command to function."
-                    ))?;
+                    let target = Self::reply_target(ev, room)
+                        .await?
+                        .ok_or(Error::RequiresReply)?;
                     let Some(sender) = room.get_member(&ev.sender).await? else {
                         return Ok(None);
                     };
@@ -283,9 +296,9 @@ impl Context {
                     })))
                 }
                 "quote" => {
-                    let ev = Self::reply_event(ev, room).await?.ok_or(anyhow::anyhow!(
-                        "You need to reply to a event for this command to function."
-                    ))?;
+                    let ev = Self::reply_event(ev, room)
+                        .await?
+                        .ok_or(Error::RequiresReply)?;
                     let Some(member) = room.get_member(ev.sender()).await? else {
                         return Ok(None);
                     };
@@ -304,12 +317,10 @@ impl Context {
                     if power_level < 1 {
                         return Ok(None);
                     }
-                    let ev = Self::reply_event(ev, room).await?.ok_or(anyhow::anyhow!(
-                        "You need to reply to a event for this command to function."
-                    ))?;
-                    let pack_name = args
-                        .next()
-                        .ok_or(anyhow::anyhow!("Missing pack name.").context("Invaild argument"))?;
+                    let ev = Self::reply_event(ev, room)
+                        .await?
+                        .ok_or(Error::RequiresReply)?;
+                    let pack_name = args.next().ok_or(Error::MissingArgument("pack_name"))?;
                     Ok(Some(Action::Command(Command::UploadSticker {
                         ev,
                         pack_name,
@@ -323,24 +334,22 @@ impl Context {
                     if ev.sender != *admin_user {
                         return Ok(None);
                     }
-                    let ev = Self::reply_event(ev, room).await?.ok_or(anyhow::anyhow!(
-                        "You need to reply to a event for this command to function."
-                    ))?;
+                    let ev = Self::reply_event(ev, room)
+                        .await?
+                        .ok_or(Error::RequiresReply)?;
                     Ok(Some(Action::Command(Command::Ignore(
                         ev.sender().to_owned(),
                     ))))
                 }
                 "unignore" => {
-                    let user_id = args
-                        .next()
-                        .map(|arg| UserId::parse(arg).ok())
-                        .flatten()
-                        .ok_or(
-                            anyhow::anyhow!("Invaild User ID Given.").context("Invaild argument"),
-                        )?;
+                    let user_id = args.next().ok_or(Error::MissingArgument("user_id"))?;
+                    let user_id = UserId::parse(user_id).map_err(|e| Error::InvaildArgument {
+                        arg: "User ID",
+                        source: e.into(),
+                    })?;
                     Ok(Some(Action::Command(Command::Unignore(user_id))))
                 }
-                _ => anyhow::bail!("Unrecognized command {}", command),
+                _ => Result::Err(Error::UnknownCommand(command).into()),
             }
         } else if let Some(text) = body.strip_prefix("//") {
             if !features

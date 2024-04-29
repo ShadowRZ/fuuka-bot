@@ -4,6 +4,8 @@ use std::process::Stdio;
 
 use tokio::{io::AsyncWriteExt, process::Command};
 
+use crate::Error;
+
 /// Create a quote image.
 pub async fn quote(avatar: Option<String>, text: &str) -> anyhow::Result<Vec<u8>> {
     let mut cmd = Command::new("bash");
@@ -19,7 +21,7 @@ pub async fn quote(avatar: Option<String>, text: &str) -> anyhow::Result<Vec<u8>
     let mut stdin = child
         .stdin
         .take()
-        .ok_or(anyhow::anyhow!("Failed to get stdin!"))?;
+        .ok_or(Error::UnexpectedError("Failed to get stdin!"))?;
 
     if let Err(e) = stdin.write(include_bytes!("scripts/mkquote.sh")).await {
         child.kill().await?;
@@ -30,7 +32,7 @@ pub async fn quote(avatar: Option<String>, text: &str) -> anyhow::Result<Vec<u8>
 
     let out = child.wait_with_output().await?;
     if !out.status.success() {
-        anyhow::bail!("Command failed!");
+        return Result::Err(Error::UnexpectedError("Command failed!").into());
     }
     Ok(out.stdout)
 }

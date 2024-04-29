@@ -58,6 +58,7 @@ use crate::handler::Command;
 use crate::stream::StreamFactory;
 use crate::types::HitokotoResult;
 use crate::Context;
+use crate::Error;
 use crate::MxcUriExt;
 use crate::RoomMemberExt;
 
@@ -621,11 +622,13 @@ impl Context {
                             .media()
                             .get_file(&event_content, false)
                             .await?
-                            .ok_or(anyhow::anyhow!("File has no data!"))?;
+                            .ok_or(Error::UnexpectedError("File has no data!"))?;
                         let format = FileFormat::from_bytes(&data);
                         let mimetype = format.media_type();
                         if mimetype != "application/zip" {
-                            anyhow::bail!("File is not a ZIP file!");
+                            return Result::Err(
+                                Error::UnexpectedError("File is not a ZIP file!").into(),
+                            );
                         }
                         let content = prepare_sticker_upload_event_content(
                             &self.room.client(),
@@ -771,7 +774,7 @@ async fn prepare_sticker_upload_event_content(
         .values()
         .next()
         .map(|data| data.url.clone())
-        .ok_or(anyhow::anyhow!("No image was uploaded!"))?;
+        .ok_or(Error::UnexpectedError("No image was uploaded!"))?;
     Ok(RoomStickerEventContent {
         images,
         pack: StickerPack {

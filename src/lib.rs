@@ -36,6 +36,7 @@ use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::{config::SyncSettings, Client};
 use std::sync::Arc;
+use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -235,4 +236,30 @@ impl MxcUriExt for MxcUri {
             .join("/_matrix/media/r0/download/")?
             .join(format!("{}/{}", server_name, media_id).as_str())?)
     }
+}
+
+/// Error types.
+#[derive(Error, Debug)]
+pub enum Error {
+    /// This command requires replying to an event.
+    #[error("Replying to a event is required for this command")]
+    RequiresReply,
+    /// This command is missing an argument.
+    #[error("Missing an argument: {0}")]
+    MissingArgument(&'static str),
+    /// Invaild argument passed into an argument.
+    #[error("Invaild argument passed for {arg}: {source}")]
+    InvaildArgument {
+        /// The argument that is invaild.
+        arg: &'static str,
+        #[source]
+        /// The source error that caused it to happen.
+        source: anyhow::Error,
+    },
+    /// An unexpected error happened.
+    #[error("{0}")]
+    UnexpectedError(&'static str),
+    /// An unknown command was passed.
+    #[error("Unrecognized command {0}")]
+    UnknownCommand(String),
 }
