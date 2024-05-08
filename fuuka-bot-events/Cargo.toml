@@ -1,0 +1,10 @@
+[package]
+name = "fuuka-bot-events"
+version = "0.1.0"
+license = "MIT"
+edition = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+matrix-sdk = { workspace = true }
+serde = { workspace = true }
