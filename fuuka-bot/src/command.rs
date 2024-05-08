@@ -11,6 +11,7 @@ use file_format::FileFormat;
 use file_format::Kind;
 use futures_util::pin_mut;
 use futures_util::StreamExt;
+use fuuka_bot_events::sticker::StickerUsage;
 use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::event_handler::EventHandlerHandle;
 use matrix_sdk::media::MediaFormat;
@@ -780,7 +781,7 @@ async fn prepare_sticker_upload_event_content(
         pack: StickerPack {
             avatar_url,
             display_name,
-            usage: HashSet::from(["sticker".to_string()]),
+            usage: HashSet::from([StickerUsage::Sticker]),
         },
     })
 }
