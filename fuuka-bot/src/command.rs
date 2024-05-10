@@ -43,6 +43,7 @@ use matrix_sdk::Client;
 use matrix_sdk::Media;
 use matrix_sdk::Room;
 use mime::Mime;
+use reqwest::header::HeaderValue;
 use ruma_html::remove_html_reply_fallback;
 use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
@@ -81,6 +82,8 @@ static HELP_HTML: &str = concat!(
     env!("CARGO_PKG_REPOSITORY"),
     "/issues</p>",
 );
+
+static USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 impl Context {
     /// Dispatchs a command.
@@ -691,6 +694,10 @@ impl Context {
         let resp = self
             .http
             .get("https://www.pixiv.net/ranking.php?format=json&mode=daily&content=illust")
+            .header(
+                reqwest::header::USER_AGENT,
+                HeaderValue::from_static(USER_AGENT),
+            )
             .send()
             .await?
             .error_for_status()?
