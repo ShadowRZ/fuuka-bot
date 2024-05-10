@@ -1,9 +1,6 @@
 [workspace]
-members = [
-    "fuuka-bot",
-    "fuuka-bot-events"
-]
-default-members = ["fuuka-bot"]
+members = ["crates/*"]
+default-members = ["crates/fuuka-bot"]
 resolver = "2"
 
 [workspace.package]
@@ -17,4 +14,4 @@ tracing = "0.1"
 serde = { version = "1", features = ["derive"] }
 reqwest = { version = "0.12", features = ["gzip", "brotli", "deflate", "json"] }
 # Subprojects
-fuuka-bot-events = { path = "./fuuka-bot-events" }
+fuuka-bot-events = { path = "./crates/fuuka-bot-events" }
