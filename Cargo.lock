@@ -1018,7 +1018,6 @@ dependencies = [
  "fastrand",
  "file-format",
  "futures-util",
- "fuuka-bot-events",
  "html-escape",
  "imagesize",
  "lol_html",
@@ -1040,14 +1039,6 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "zip",
-]
-
-[[package]]
-name = "fuuka-bot-events"
-version = "0.1.0"
-dependencies = [
- "matrix-sdk",
- "serde",
 ]
 
 [[package]]

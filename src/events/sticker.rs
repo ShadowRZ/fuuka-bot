@@ -38,8 +38,9 @@ pub struct StickerPack {
     pub usage: HashSet<StickerUsage>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
+#[allow(missing_docs)]
 pub enum StickerUsage {
     Emoticon,
     Sticker,

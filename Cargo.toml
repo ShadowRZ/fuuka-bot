@@ -1,17 +1,41 @@
-[workspace]
-members = ["crates/*"]
-default-members = ["crates/fuuka-bot"]
-resolver = "2"
-
-[workspace.package]
+[package]
+name = "fuuka-bot"
+version = "0.2.9"
+license = "Apache-2.0"
 edition = "2021"
 repository = "https://github.com/ShadowRZ/fuuka-bot"
 
-[workspace.dependencies]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
 matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", features = ["anyhow"] }
 anyhow = "1"
 tracing = "0.1"
 serde = { version = "1", features = ["derive"] }
 reqwest = { version = "0.12", features = ["gzip", "brotli", "deflate", "json"] }
-# Subprojects
-fuuka-bot-events = { path = "./crates/fuuka-bot-events" }
+serde_json = "1"
+crc32fast = "1"
+thiserror = "1"
+lol_html = "1"
+shell-words = "1"
+fastrand = "2"
+rpassword = "7"
+tokio = { version = "1", features = ["full"] }
+url = { version = "2", features = ["serde"] }
+zip = { version = "1", default-features = false, features = ["deflate"] }
+imagesize = "0.12"
+file-format = "0.25"
+tokio-util = "0.7"
+toml = "0.8"
+async-stream = "0.3"
+futures-util = "0.3"
+html-escape = "0.2"
+mime = "0.3"
+ruma-html = "0.2"
+envsubst = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+time = { version = "0.3", features = ["macros", "formatting"] }
+pixrs = { git = "https://github.com/ShadowRZ/pixrs" }
+
+[features]
+bundled-sqlite = ["matrix-sdk/bundled-sqlite"]

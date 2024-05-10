@@ -7,11 +7,11 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
 
+use crate::events::sticker::StickerUsage;
 use file_format::FileFormat;
 use file_format::Kind;
 use futures_util::pin_mut;
 use futures_util::StreamExt;
-use fuuka_bot_events::sticker::StickerUsage;
 use matrix_sdk::deserialized_responses::MemberEvent;
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::event_handler::EventHandlerHandle;
