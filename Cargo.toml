@@ -7,12 +7,33 @@ repository = "https://github.com/ShadowRZ/fuuka-bot"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[dependencies.matrix-sdk]
+git = "https://github.com/matrix-org/matrix-rust-sdk"
+default-features = false
+features = [
+    "e2e-encryption",
+    "automatic-room-key-forwarding",
+    "sqlite",
+    "anyhow"
+]
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = [
+    "charset",
+    "http2",
+    "macos-system-configuration",
+    "gzip",
+    "brotli",
+    "deflate",
+    "json"
+]
+
 [dependencies]
-matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", features = ["anyhow"] }
 anyhow = "1"
 tracing = "0.1"
 serde = { version = "1", features = ["derive"] }
-reqwest = { version = "0.12", features = ["gzip", "brotli", "deflate", "json"] }
 serde_json = "1"
 crc32fast = "1"
 thiserror = "1"
@@ -35,7 +56,10 @@ ruma-html = "0.2"
 envsubst = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
-pixrs = { git = "https://github.com/ShadowRZ/pixrs" }
+pixrs = { git = "https://github.com/ShadowRZ/pixrs", default-features = false }
 
 [features]
+default = ["native-tls"]
+native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
+rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
