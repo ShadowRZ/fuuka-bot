@@ -17,7 +17,7 @@ pub struct Config {
     #[serde(default)]
     pub features: HashMap<OwnedRoomId, RoomFeatures>,
     /// HTTP Services configuration.
-    pub services: Option<ServiceBackends>,
+    pub services: Option<ServiceConfig>,
     /// Stickers feature related configuration.
     pub stickers: Option<StickerConfig>,
 }
@@ -37,12 +37,18 @@ pub struct RoomFeatures {
     /// Enable randomdraw.
     #[serde(default)]
     pub randomdraw: bool,
+    /// Enable pixiv.
+    #[serde(default)]
+    pub pixiv: bool,
 }
 
 /// Configure various backend APIs
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ServiceBackends {
+pub struct ServiceConfig {
     /// Hitokoto API endpoint.
     /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
     pub hitokoto: Option<Url>,
+    /// Pixiv PHPSESSID.
+    /// See <https://pixivfe.pages.dev/obtaining-pixivfe-token/>
+    pub pixiv_token: Option<String>,
 }

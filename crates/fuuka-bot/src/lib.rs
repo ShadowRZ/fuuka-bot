@@ -35,6 +35,7 @@ use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::{config::SyncSettings, Client};
+use pixrs::PixivClient;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::signal;
@@ -87,8 +88,10 @@ impl FuukaBot {
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
             .build()?;
+        let pixiv = self.pixiv_client().await?;
         self.client.add_event_handler_context(http.clone());
         self.client.add_event_handler_context(self.config.clone());
+        self.client.add_event_handler_context(pixiv.clone());
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {
@@ -107,6 +110,16 @@ impl FuukaBot {
         });
 
         Ok(task.await?)
+    }
+
+    async fn pixiv_client(&self) -> anyhow::Result<Option<Arc<PixivClient>>> {
+        let Some(ref services) = self.config.services else {
+            return Ok(None);
+        };
+        let Some(ref token) = services.pixiv_token else {
+            return Ok(None);
+        };
+        Ok(Some(Arc::new(PixivClient::new(token).await?)))
     }
 
     async fn sync(&self, initial: bool) -> anyhow::Result<()> {

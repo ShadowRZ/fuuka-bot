@@ -36,6 +36,7 @@ ruma-html = "0.2"
 envsubst = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
+pixrs = { git = "https://github.com/ShadowRZ/pixrs" }
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]

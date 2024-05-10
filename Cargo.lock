@@ -1024,6 +1024,7 @@ dependencies = [
  "lol_html",
  "matrix-sdk",
  "mime",
+ "pixrs",
  "reqwest",
  "rpassword",
  "ruma-html",
@@ -2266,6 +2267,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
+name = "pixrs"
+version = "0.1.0"
+source = "git+https://github.com/ShadowRZ/pixrs#aacc15d300152ec7c6385b7d3461e44a1d7b12b9"
+dependencies = [
+ "async-stream",
+ "futures-util",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde-aux",
+ "serde_json",
+ "serde_repr",
+ "thiserror",
+]
+
+[[package]]
 name = "pkcs7"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2939,6 +2956,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-aux"
+version = "4.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d2e8bfba469d06512e11e3311d4d051a4a387a5b42d010404fecf3200321c95"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "serde-wasm-bindgen"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2991,6 +3018,17 @@ dependencies = [
  "itoa 1.0.11",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_repr"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c64451ba24fc7a6a2d60fc75dd9c83c90903b19028d4eff35e88fc1e86564e9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.61",
 ]
 
 [[package]]

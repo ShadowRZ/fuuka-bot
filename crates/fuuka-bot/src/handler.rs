@@ -15,6 +15,7 @@ use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::events::{AnyMessageLikeEventContent, AnyTimelineEvent};
 use matrix_sdk::ruma::{OwnedUserId, UserId};
 use matrix_sdk::{Client as MatrixClient, RoomState};
+use pixrs::PixivClient;
 use url::Url;
 
 /// An action, either a command or a message
@@ -127,6 +128,8 @@ pub struct Context {
     pub homeserver: Url,
     /// HTTP client.
     pub http: Ctx<reqwest::Client>,
+    /// Pixiv client.
+    pub pixiv: Ctx<Option<Arc<PixivClient>>>,
     /// The bot config.
     pub config: Arc<Config>,
     /// The action outcome.
@@ -141,6 +144,7 @@ impl Context {
         homeserver: Url,
         config: Arc<Config>,
         http: Ctx<reqwest::Client>,
+        pixiv: Ctx<Option<Arc<PixivClient>>>,
     ) {
         let prefix = &config.command_prefix;
         let ev = ev.into_full_event(room.room_id().into());
@@ -153,6 +157,7 @@ impl Context {
                     homeserver,
                     action,
                     http,
+                    pixiv,
                     config,
                 };
                 if let Err(e) = ctx.dispatch_inner().await {
@@ -504,6 +509,7 @@ pub async fn on_sync_message(
     client: MatrixClient,
     config: Ctx<Arc<Config>>,
     http: Ctx<reqwest::Client>,
+    pixiv: Ctx<Option<Arc<PixivClient>>>,
 ) {
     // It should be a joined room.
     if room.state() != RoomState::Joined {
@@ -517,7 +523,7 @@ pub async fn on_sync_message(
 
     tokio::spawn(async move {
         let Ctx(config) = config;
-        Context::dispatch(ev, room, client.homeserver(), config, http).await;
+        Context::dispatch(ev, room, client.homeserver(), config, http, pixiv).await;
     });
 }
 

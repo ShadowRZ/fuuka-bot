@@ -13,6 +13,7 @@ use futures_util::pin_mut;
 use futures_util::StreamExt;
 use fuuka_bot_events::sticker::StickerUsage;
 use matrix_sdk::deserialized_responses::MemberEvent;
+use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::event_handler::EventHandlerHandle;
 use matrix_sdk::media::MediaFormat;
 use matrix_sdk::media::MediaRequest;
@@ -43,7 +44,8 @@ use matrix_sdk::Client;
 use matrix_sdk::Media;
 use matrix_sdk::Room;
 use mime::Mime;
-use reqwest::header::HeaderValue;
+use pixrs::RankingContent;
+use pixrs::RankingMode;
 use ruma_html::remove_html_reply_fallback;
 use time::format_description::well_known::Rfc3339;
 use time::macros::offset;
@@ -59,7 +61,6 @@ use crate::events::sticker::StickerPack;
 use crate::handler::Command;
 use crate::stream::StreamFactory;
 use crate::types::HitokotoResult;
-use crate::types::PixivRanking;
 use crate::Context;
 use crate::Error;
 use crate::MxcUriExt;
@@ -82,8 +83,6 @@ static HELP_HTML: &str = concat!(
     env!("CARGO_PKG_REPOSITORY"),
     "/issues</p>",
 );
-
-static USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
 
 impl Context {
     /// Dispatchs a command.
@@ -691,21 +690,18 @@ impl Context {
         err
     )]
     async fn _pixiv(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-        let resp = self
-            .http
-            .get("https://www.pixiv.net/ranking.php?format=json&mode=daily&content=illust")
-            .header(
-                reqwest::header::USER_AGENT,
-                HeaderValue::from_static(USER_AGENT),
-            )
-            .send()
-            .await?
-            .error_for_status()?
-            .json::<PixivRanking>()
-            .await?;
+        let Ctx(Some(ref pixiv)) = self.pixiv else {
+            return Ok(None);
+        };
+        let resp = pixiv
+            .ranking_stream(RankingMode::Daily, RankingContent::Illust, None)
+            .await
+            .take(5);
         let mut body = String::from("Pixiv Ranking: (Illust/Daily)");
         let mut idx = 1;
-        for illust in resp.contents.into_iter().take(5) {
+        pin_mut!(resp);
+        while let Some(illust) = resp.next().await {
+            let illust = illust?;
             let tag_str = illust
                 .tags
                 .into_iter()
