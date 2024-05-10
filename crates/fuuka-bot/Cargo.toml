@@ -25,14 +25,14 @@ tokio = { version = "1", features = ["full"] }
 url = { version = "2", features = ["serde"] }
 zip = { version = "1", default-features = false, features = ["deflate"] }
 imagesize = "0.12"
-file-format = "0.24"
+file-format = "0.25"
 tokio-util = "0.7"
 toml = "0.8"
 async-stream = "0.3"
 futures-util = "0.3"
 html-escape = "0.2"
 mime = "0.3"
-ruma-html = "0.1"
+ruma-html = "0.2"
 envsubst = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
