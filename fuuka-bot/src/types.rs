@@ -40,3 +40,23 @@ pub struct CrateVersion {
     pub rust_version: Option<String>,
     pub yanked: bool,
 }
+
+#[derive(Deserialize, Debug, Clone)]
+#[allow(missing_docs)]
+pub struct PixivRanking {
+    pub contents: Vec<PixivRankingItem>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[allow(missing_docs)]
+pub struct PixivRankingItem {
+    pub title: String,
+    pub tags: Vec<String>,
+    pub user_name: String,
+    pub profile_img: String,
+    pub illust_id: i32,
+    pub user_id: i32,
+    pub width: i32,
+    pub height: i32,
+    pub view_count: i32,
+}

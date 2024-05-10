@@ -58,6 +58,7 @@ use crate::events::sticker::StickerPack;
 use crate::handler::Command;
 use crate::stream::StreamFactory;
 use crate::types::HitokotoResult;
+use crate::types::PixivRanking;
 use crate::Context;
 use crate::Error;
 use crate::MxcUriExt;
@@ -111,6 +112,7 @@ impl Context {
             } => self._upload_sticker(ev, pack_name, sticker_room).await,
             Command::Ignore(user_id) => self._ignore(user_id).await,
             Command::Unignore(user_id) => self._unignore(user_id).await,
+            Command::Pixiv => self._pixiv().await,
         }
     }
 
@@ -674,6 +676,46 @@ impl Context {
         account.unignore_user(&user_id).await?;
         Ok(Some(AnyMessageLikeEventContent::RoomMessage(
             RoomMessageEventContent::text_plain("Done."),
+        )))
+    }
+
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            event_id = %self.ev.event_id,
+            room_id = %self.room.room_id()
+        ),
+        err
+    )]
+    async fn _pixiv(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let resp = self
+            .http
+            .get("https://www.pixiv.net/ranking.php?format=json&mode=daily&content=illust")
+            .send()
+            .await?
+            .error_for_status()?
+            .json::<PixivRanking>()
+            .await?;
+        let mut body = String::from("Pixiv Ranking: (Illust/Daily)");
+        let mut idx = 1;
+        for illust in resp.contents.into_iter().take(5) {
+            let tag_str = illust
+                .tags
+                .into_iter()
+                .map(|str| format!("#{str}"))
+                .collect::<Vec<String>>()
+                .join(" ");
+            let this_line = format!(
+                "\n#{idx}: {title} https://pixiv.net/i/{illust_id} | {tag_str}",
+                idx = idx,
+                title = illust.title,
+                illust_id = illust.illust_id
+            );
+            body.push_str(&this_line);
+            idx += 1;
+        }
+        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+            RoomMessageEventContent::text_plain(body),
         )))
     }
 }

@@ -41,5 +41,6 @@ pub struct StickerPack {
 #[derive(Clone, Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum StickerUsage {
-    Emoticon, Sticker
+    Emoticon,
+    Sticker,
 }

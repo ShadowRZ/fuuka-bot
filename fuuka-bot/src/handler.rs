@@ -78,6 +78,8 @@ pub enum Command {
     Ignore(OwnedUserId),
     /// `unignore`
     Unignore(OwnedUserId),
+    /// `pixiv`
+    Pixiv,
 }
 
 /// Actionable message.
@@ -349,6 +351,7 @@ impl Context {
                     })?;
                     Ok(Some(Action::Command(Command::Unignore(user_id))))
                 }
+                "pixiv" => Ok(Some(Action::Command(Command::Pixiv))),
                 _ => Result::Err(Error::UnknownCommand(command).into()),
             }
         } else if let Some(text) = body.strip_prefix("//") {
