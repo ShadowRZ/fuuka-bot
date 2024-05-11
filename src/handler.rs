@@ -495,9 +495,9 @@ impl Context {
         ev: &OriginalRoomMessageEvent,
         room: &Room,
     ) -> anyhow::Result<OwnedUserId> {
-        Self::reply_target(ev, room)
-            .await
-            .map(|r| r.unwrap_or(ev.sender.clone()))
+        Ok(Self::reply_target(ev, room)
+            .await?
+            .unwrap_or(ev.sender.clone()))
     }
 }
 
