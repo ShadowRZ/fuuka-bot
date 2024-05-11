@@ -1,5 +1,6 @@
 //! Generic Matrix event callback handler.
 #![warn(missing_docs)]
+use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::{Config, Error};
@@ -80,7 +81,16 @@ pub enum Command {
     /// `unignore`
     Unignore(OwnedUserId),
     /// `pixiv`
-    Pixiv,
+    Pixiv(PixivCommand),
+}
+
+/// Pixiv commands.
+#[derive(Clone, Debug)]
+pub enum PixivCommand {
+    /// Ranking.
+    Ranking,
+    /// Illust info
+    IllustInfo(i32),
 }
 
 /// Actionable message.
@@ -356,7 +366,24 @@ impl Context {
                     })?;
                     Ok(Some(Action::Command(Command::Unignore(user_id))))
                 }
-                "pixiv" => Ok(Some(Action::Command(Command::Pixiv))),
+                "pixiv" => {
+                    let illust_id = args.next();
+                    match illust_id {
+                        Some(illust_id) => {
+                            let illust_id =
+                                <i32 as FromStr>::from_str(&illust_id).map_err(|e| {
+                                    Error::InvaildArgument {
+                                        arg: "Illust ID",
+                                        source: e.into(),
+                                    }
+                                })?;
+                            Ok(Some(Action::Command(Command::Pixiv(
+                                PixivCommand::IllustInfo(illust_id),
+                            ))))
+                        }
+                        None => Ok(Some(Action::Command(Command::Pixiv(PixivCommand::Ranking)))),
+                    }
+                }
                 _ => Result::Err(Error::UnknownCommand(command).into()),
             }
         } else if let Some(text) = body.strip_prefix("//") {

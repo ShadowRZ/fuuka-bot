@@ -8,6 +8,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::events::sticker::StickerUsage;
+use crate::handler::PixivCommand;
 use file_format::FileFormat;
 use file_format::Kind;
 use futures_util::pin_mut;
@@ -114,7 +115,7 @@ impl Context {
             } => self._upload_sticker(ev, pack_name, sticker_room).await,
             Command::Ignore(user_id) => self._ignore(user_id).await,
             Command::Unignore(user_id) => self._unignore(user_id).await,
-            Command::Pixiv => self._pixiv().await,
+            Command::Pixiv(command) => self._pixiv(command).await,
         }
     }
 
@@ -689,37 +690,56 @@ impl Context {
         ),
         err
     )]
-    async fn _pixiv(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+    async fn _pixiv(
+        &self,
+        command: PixivCommand,
+    ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         let Ctx(Some(ref pixiv)) = self.pixiv else {
             return Ok(None);
         };
-        let resp = pixiv
-            .ranking_stream(RankingMode::Daily, RankingContent::Illust, None)
-            .await
-            .take(5);
-        let mut body = String::from("Pixiv Ranking: (Illust/Daily)");
-        let mut idx = 1;
-        pin_mut!(resp);
-        while let Some(illust) = resp.next().await {
-            let illust = illust?;
-            let tag_str = illust
-                .tags
-                .into_iter()
-                .map(|str| format!("#{str}"))
-                .collect::<Vec<String>>()
-                .join(" ");
-            let this_line = format!(
-                "\n#{idx}: {title} https://pixiv.net/i/{illust_id} | {tag_str}",
-                idx = idx,
-                title = illust.title,
-                illust_id = illust.illust_id
-            );
-            body.push_str(&this_line);
-            idx += 1;
+        match command {
+            PixivCommand::Ranking => {
+                let resp = pixiv
+                    .ranking_stream(RankingMode::Daily, RankingContent::Illust, None)
+                    .await
+                    .take(5);
+                let mut body = String::from("Pixiv Ranking: (Illust/Daily)");
+                let mut idx = 1;
+                pin_mut!(resp);
+                while let Some(illust) = resp.next().await {
+                    let illust = illust?;
+                    let tag_str = illust
+                        .tags
+                        .into_iter()
+                        .map(|str| format!("#{str}"))
+                        .collect::<Vec<String>>()
+                        .join(" ");
+                    let this_line = format!(
+                        "\n#{idx}: {title} https://pixiv.net/i/{illust_id} | {tag_str}",
+                        idx = idx,
+                        title = illust.title,
+                        illust_id = illust.illust_id
+                    );
+                    body.push_str(&this_line);
+                    idx += 1;
+                }
+                Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                    RoomMessageEventContent::text_plain(body),
+                )))
+            }
+            PixivCommand::IllustInfo(illust_id) => {
+                let resp = pixiv.illust_info(illust_id).await?;
+                let body = format!(
+                    "{title} https://pixiv.net/i/{id}\nAuthor: {author}",
+                    title = resp.title,
+                    id = resp.id,
+                    author = resp.user_name
+                );
+                Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                    RoomMessageEventContent::text_plain(body),
+                )))
+            }
         }
-        Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-            RoomMessageEventContent::text_plain(body),
-        )))
     }
 }
 
