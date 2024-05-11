@@ -1,8 +1,8 @@
 name: Build
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ['v*']
 
 jobs:
   build:
@@ -18,12 +18,12 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      
+      - name: Install dependencies
+        run: apt-get install -y libssl-dev libsqlite3-dev
       - name: Build
         run: |
-          cargo build --release --features bundled-sqlite
+          cargo build --release
       - name: Upload
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${GITHUB_REF#refs/*/} ./target/release/fuuka-bot
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "./target/release/fuuka-bot"
