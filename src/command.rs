@@ -704,14 +704,21 @@ impl Context {
                     .await
                     .take(5);
                 let mut body = String::from("Pixiv Ranking: (Illust/Daily)");
+                let mut html_body = String::from("<b>Pixiv Ranking: (Illust/Daily)</b>");
                 let mut idx = 1;
                 pin_mut!(resp);
                 while let Some(illust) = resp.next().await {
                     let illust = illust?;
                     let tag_str = illust
                         .tags
-                        .into_iter()
+                        .iter()
                         .map(|str| format!("#{str}"))
+                        .collect::<Vec<String>>()
+                        .join(" ");
+                    let tag_html_str = illust
+                        .tags
+                        .iter()
+                        .map(|str| format!("<font color='#3771bb'>#{str}</font>"))
                         .collect::<Vec<String>>()
                         .join(" ");
                     let this_line = format!(
@@ -720,23 +727,50 @@ impl Context {
                         title = illust.title,
                         illust_id = illust.illust_id
                     );
+                    let this_line_html = format!(
+                        "<br/>#{idx}: <a href='https://pixiv.net/i/{illust_id}'>{title}</a> | {tag_html_str}",
+                        idx = idx,
+                        title = illust.title,
+                        illust_id = illust.illust_id
+                    );
                     body.push_str(&this_line);
+                    html_body.push_str(&this_line_html);
                     idx += 1;
                 }
                 Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-                    RoomMessageEventContent::text_plain(body),
+                    RoomMessageEventContent::text_html(body, html_body),
                 )))
             }
             PixivCommand::IllustInfo(illust_id) => {
                 let resp = pixiv.illust_info(illust_id).await?;
+                let tag_str = resp
+                    .tags
+                    .tags
+                    .iter()
+                    .map(|tag| format!("#{tag}", tag = tag.tag))
+                    .collect::<Vec<String>>()
+                    .join(" ");
+                let tag_html_str = resp
+                    .tags
+                    .tags
+                    .iter()
+                    .map(|tag| format!("<font color='#3771bb'>#{tag}</font>", tag = tag.tag))
+                    .collect::<Vec<String>>()
+                    .join(" ");
                 let body = format!(
-                    "{title} https://pixiv.net/i/{id}\nAuthor: {author}",
+                    "{title} https://pixiv.net/i/{id}\n{tag_str}\nAuthor: {author}",
+                    title = resp.title,
+                    id = resp.id,
+                    author = resp.user_name
+                );
+                let html_body = format!(
+                    "<a href='https://pixiv.net/i/{id}'>{title}</a><br/>{tag_html_str}<br/>Author: {author}",
                     title = resp.title,
                     id = resp.id,
                     author = resp.user_name
                 );
                 Ok(Some(AnyMessageLikeEventContent::RoomMessage(
-                    RoomMessageEventContent::text_plain(body),
+                    RoomMessageEventContent::text_html(body, html_body),
                 )))
             }
         }

@@ -673,6 +673,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b42b6fa04a440b495c8b04d0e71b707c585f83cb9cb28cf8cd0d976c315e31b4"
 dependencies = [
  "powerfmt",
+ "serde",
 ]
 
 [[package]]
@@ -2277,7 +2278,7 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 [[package]]
 name = "pixrs"
 version = "0.1.0"
-source = "git+https://github.com/ShadowRZ/pixrs#88ce8b0c1baeda48901a31aa86da980a47e91585"
+source = "git+https://github.com/ShadowRZ/pixrs#96c3e5c0d468f31381d7a418f52ac71b25b37cad"
 dependencies = [
  "async-stream",
  "futures-util",
@@ -2288,6 +2289,7 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "thiserror",
+ "time",
 ]
 
 [[package]]

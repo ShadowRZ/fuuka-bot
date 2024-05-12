@@ -207,14 +207,13 @@ impl Context {
                     _ => content,
                 };
                 self.room.send(content).await?;
-            },
+            }
             Err(e) => Self::send_error(e, &self.room, &self.ev).await,
             Ok(None) => (),
         }
         if let Err(e) = self.room.typing_notice(false).await {
             tracing::warn!("Error while updating typing notice: {e:#}");
         };
-
 
         Ok(())
     }
