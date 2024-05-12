@@ -174,34 +174,7 @@ impl Context {
                     tracing::error!("Unexpected error happened: {e:#}")
                 }
             }
-            Err(e) => {
-                let body = match e.downcast::<crate::Error>() {
-                    Ok(Error::RequiresReply) => {
-                        "Replying to a event is required for this command.".to_string()
-                    }
-                    Ok(Error::InvaildArgument { arg, source }) => {
-                        format!("Invaild argument for {arg}: {source}")
-                    }
-                    Ok(Error::MissingArgument(arg)) => format!("Missing argument: {arg}"),
-                    Ok(Error::UnknownCommand(command)) => format!("Unknown command {command}"),
-                    Ok(Error::UnexpectedError(e)) => e.to_string(),
-                    Err(e) => {
-                        tracing::error!("Unexpected error happened: {e:#}");
-                        format!("Unexpected error happened: {e:#}")
-                    }
-                };
-                match room
-                    .send(RoomMessageEventContent::text_plain(body).make_reply_to(
-                        &ev,
-                        ForwardThread::No,
-                        AddMentions::Yes,
-                    ))
-                    .await
-                {
-                    Ok(_) => (),
-                    Err(e) => tracing::error!("Unexpected error while sending error: {e:#}"),
-                }
-            }
+            Err(e) => Self::send_error(e, &room, &ev).await,
             Ok(None) => (),
         }
     }
@@ -221,30 +194,27 @@ impl Context {
             tracing::warn!("Error while updating typing notice: {e:#}");
         };
 
-        let content = match content {
-            Ok(Some(content)) => match content {
-                AnyMessageLikeEventContent::RoomMessage(msg) => {
-                    AnyMessageLikeEventContent::RoomMessage(msg.make_reply_to(
-                        &self.ev,
-                        ForwardThread::Yes,
-                        AddMentions::Yes,
-                    ))
-                }
-                _ => content,
+        match content {
+            Ok(Some(content)) => {
+                let content = match content {
+                    AnyMessageLikeEventContent::RoomMessage(msg) => {
+                        AnyMessageLikeEventContent::RoomMessage(msg.make_reply_to(
+                            &self.ev,
+                            ForwardThread::Yes,
+                            AddMentions::Yes,
+                        ))
+                    }
+                    _ => content,
+                };
+                self.room.send(content).await?;
             },
-            Err(e) => AnyMessageLikeEventContent::RoomMessage(
-                RoomMessageEventContent::text_plain(format!("{e:#}")).make_reply_to(
-                    &self.ev,
-                    ForwardThread::Yes,
-                    AddMentions::Yes,
-                ),
-            ),
-            Ok(None) => return Ok(()),
-        };
+            Err(e) => Self::send_error(e, &self.room, &self.ev).await,
+            Ok(None) => (),
+        }
         if let Err(e) = self.room.typing_notice(false).await {
             tracing::warn!("Error while updating typing notice: {e:#}");
         };
-        self.room.send(content).await?;
+
 
         Ok(())
     }
@@ -488,6 +458,35 @@ impl Context {
             Ok(Some(Action::Message(Message::Nahida(url))))
         } else {
             Ok(None)
+        }
+    }
+
+    async fn send_error(e: anyhow::Error, room: &Room, ev: &OriginalRoomMessageEvent) {
+        let body = match e.downcast::<crate::Error>() {
+            Ok(Error::RequiresReply) => {
+                "Replying to a event is required for this command.".to_string()
+            }
+            Ok(Error::InvaildArgument { arg, source }) => {
+                format!("Invaild argument for {arg}: {source}")
+            }
+            Ok(Error::MissingArgument(arg)) => format!("Missing argument: {arg}"),
+            Ok(Error::UnknownCommand(command)) => format!("Unknown command {command}"),
+            Ok(Error::UnexpectedError(e)) => e.to_string(),
+            Err(e) => {
+                tracing::error!("Unexpected error happened: {e:#}");
+                format!("Unexpected error happened: {e:#}")
+            }
+        };
+        match room
+            .send(RoomMessageEventContent::text_plain(body).make_reply_to(
+                ev,
+                ForwardThread::No,
+                AddMentions::Yes,
+            ))
+            .await
+        {
+            Ok(_) => (),
+            Err(e) => tracing::error!("Unexpected error while sending error: {e:#}"),
         }
     }
 
