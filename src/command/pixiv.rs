@@ -5,7 +5,7 @@ use matrix_sdk::{
 };
 use pixrs::{RankingContent, RankingMode};
 
-use crate::{handler::PixivCommand, Context};
+use crate::{handler::PixivCommand, Context, IllustTagsInfoExt};
 
 impl Context {
     #[tracing::instrument(
@@ -83,14 +83,43 @@ impl Context {
                     .map(|tag| format!("<font color='#3771bb'>#{tag}</font>", tag = tag.tag))
                     .collect::<Vec<String>>()
                     .join(" ");
+                // Specials
+                let specials_str = if resp.tags.has_any_tag(&[
+                    "調教",
+                    "束縛",
+                    "機械姦",
+                    "緊縛",
+                    "縛り",
+                    "鼻フック",
+                    "監禁",
+                    "口枷",
+                ]) {
+                    "\n@ #空指针诱捕器"
+                } else {
+                    ""
+                };
+                let specials_str_html = if resp.tags.has_any_tag(&[
+                    "調教",
+                    "束縛",
+                    "機械姦",
+                    "緊縛",
+                    "縛り",
+                    "鼻フック",
+                    "監禁",
+                    "口枷",
+                ]) {
+                    "<br/>@ <b><font color='#d72b6d'>#空指针诱捕器</font></b>"
+                } else {
+                    ""
+                };
                 let body = format!(
-                    "{title} https://pixiv.net/i/{id}\n{tag_str}\nAuthor: {author}",
+                    "{title} https://pixiv.net/i/{id}\n{tag_str}\nAuthor: {author}{specials_str}",
                     title = resp.title,
                     id = resp.id,
                     author = resp.user_name
                 );
                 let html_body = format!(
-                    "<a href='https://pixiv.net/i/{id}'>{title}</a><br/>{tag_html_str}<br/>Author: {author}",
+                    "<a href='https://pixiv.net/i/{id}'>{title}</a><br/>{tag_html_str}<br/>Author: {author}{specials_str_html}",
                     title = resp.title,
                     id = resp.id,
                     author = resp.user_name
