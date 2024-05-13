@@ -53,8 +53,6 @@ impl IllustTagsInfoExt for pixrs::IllustTagsInfo {
     }
 
     fn has_any_tag(&self, tags: &[&str]) -> bool {
-        self.tags
-            .iter()
-            .any(|il| tags.iter().any(|t| il.tag == *t))
+        self.tags.iter().any(|il| tags.iter().any(|t| il.tag == *t))
     }
 }
