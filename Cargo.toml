@@ -52,8 +52,9 @@ async-stream = "0.3"
 futures-util = "0.3"
 html-escape = "0.2"
 mime = "0.3"
-ruma-html = "0.2"
 envsubst = "0.2"
+# Flattens with the features used by matrix-rust-sdk
+ruma = { version = "0.10", features = ["events", "html", "federation-api-c"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
 pixrs = { git = "https://github.com/ShadowRZ/pixrs", default-features = false }

@@ -33,6 +33,8 @@ pub enum Action {
 pub enum Command {
     /// `help`
     Help,
+    /// `info`
+    Info,
     /// `send_avatar`
     SendAvatar(RoomMember),
     /// `crazy_thursday`
@@ -237,6 +239,7 @@ impl Context {
 
             match command.as_str() {
                 "help" => Ok(Some(Action::Command(Command::Help))),
+                "info" => Ok(Some(Action::Command(Command::Info))),
                 "send_avatar" => {
                     let user_id = Self::reply_target_fallback(ev, room).await?;
                     let Some(member) = room.get_member(&user_id).await? else {

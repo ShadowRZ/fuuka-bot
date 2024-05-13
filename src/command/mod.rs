@@ -2,6 +2,7 @@
 
 mod crazy_thursday;
 mod functions;
+mod info;
 mod member_changes;
 mod pixiv;
 mod quote;
@@ -46,6 +47,7 @@ impl Context {
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         match command {
             Command::Help => self._help().await,
+            Command::Info => self._info().await,
             Command::SendAvatar(member) => self._send_avatar(member).await,
             Command::CrazyThursday => self._crazy_thursday().await,
             Command::Ping => self._ping().await,

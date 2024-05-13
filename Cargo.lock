@@ -1090,7 +1090,7 @@ dependencies = [
  "pixrs",
  "reqwest",
  "rpassword",
- "ruma-html",
+ "ruma",
  "serde",
  "serde_json",
  "shell-words",
@@ -2828,6 +2828,8 @@ dependencies = [
  "ruma-common",
  "ruma-events",
  "ruma-federation-api",
+ "ruma-html",
+ "ruma-signatures",
  "web-time",
 ]
 
@@ -2900,6 +2902,7 @@ dependencies = [
  "percent-encoding",
  "regex",
  "ruma-common",
+ "ruma-html",
  "ruma-identifiers-validation",
  "ruma-macros",
  "serde",
@@ -2960,6 +2963,22 @@ dependencies = [
  "serde",
  "syn 2.0.61",
  "toml",
+]
+
+[[package]]
+name = "ruma-signatures"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d2bd9988e4434fb538eda8833bcb03ea680aaf50eae99db8deb5fe9959550a5"
+dependencies = [
+ "base64",
+ "ed25519-dalek",
+ "pkcs8",
+ "rand 0.8.5",
+ "ruma-common",
+ "serde_json",
+ "sha2",
+ "thiserror",
 ]
 
 [[package]]

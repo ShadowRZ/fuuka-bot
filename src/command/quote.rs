@@ -1,3 +1,4 @@
+use matrix_sdk::ruma::html::remove_html_reply_fallback;
 use matrix_sdk::{
     room::RoomMember,
     ruma::events::{
@@ -8,7 +9,6 @@ use matrix_sdk::{
         AnyMessageLikeEvent, AnyMessageLikeEventContent, AnyTimelineEvent, MessageLikeEvent,
     },
 };
-use ruma_html::remove_html_reply_fallback;
 
 use crate::{Context, MxcUriExt, RoomMemberExt};
 
