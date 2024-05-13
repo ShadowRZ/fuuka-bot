@@ -9,26 +9,11 @@ repository = "https://github.com/ShadowRZ/fuuka-bot"
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
-default-features = false
-features = [
-    "e2e-encryption",
-    "automatic-room-key-forwarding",
-    "sqlite",
-    "anyhow"
-]
+features = ["anyhow"]
 
 [dependencies.reqwest]
 version = "0.12"
-default-features = false
-features = [
-    "charset",
-    "http2",
-    "macos-system-configuration",
-    "gzip",
-    "brotli",
-    "deflate",
-    "json"
-]
+features = ["gzip", "brotli", "deflate", "json"]
 
 [dependencies]
 anyhow = "1"
@@ -60,7 +45,4 @@ time = { version = "0.3", features = ["macros", "formatting"] }
 pixrs = { git = "https://github.com/ShadowRZ/pixrs", default-features = false }
 
 [features]
-default = ["native-tls"]
-native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
-rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
