@@ -18,15 +18,16 @@ pub mod handler;
 pub mod message;
 #[doc(hidden)]
 pub mod session;
+pub mod traits;
 pub mod types;
 
 pub use crate::config::Config;
 pub use crate::handler::Context;
+pub use crate::traits::*;
+pub use crate::types::Error;
 
 use matrix_sdk::matrix_auth::MatrixSession;
-use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::presence::PresenceState;
-use matrix_sdk::ruma::MxcUri;
 use matrix_sdk::{config::SyncSettings, Client};
 use pixrs::PixivClient;
 use std::sync::Arc;
@@ -34,7 +35,6 @@ use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
-use url::Url;
 
 static APP_USER_AGENT: &str = concat!(
     env!("CARGO_PKG_NAME"),
@@ -203,69 +203,4 @@ impl FuukaBot {
 
         self
     }
-}
-
-/// Extensions to [RoomMember].
-pub trait RoomMemberExt {
-    /// Returns the display name or the user ID of the specified [RoomMember].
-    fn name_or_id(&self) -> &str;
-    /// Constructs a HTML link of the specified [RoomMember], known as the mention "pill".
-    fn make_pill(&self) -> String;
-}
-
-impl RoomMemberExt for RoomMember {
-    fn name_or_id(&self) -> &str {
-        self.display_name().unwrap_or(self.user_id().as_str())
-    }
-
-    fn make_pill(&self) -> String {
-        format!(
-            "<a href=\"{}\">@{}</a>",
-            self.user_id().matrix_to_uri(),
-            self.name()
-        )
-    }
-}
-
-/// Extensions to [MxcUri].
-pub trait MxcUriExt {
-    /// Returns the HTTP URL of the given [MxcUri], with the specified homeserver
-    /// using the [Client-Server API](https://spec.matrix.org/latest/client-server-api/#get_matrixmediav3downloadservernamemediaid).
-    fn http_url(&self, homeserver: &Url) -> anyhow::Result<Url>;
-}
-
-impl MxcUriExt for MxcUri {
-    #[tracing::instrument(err)]
-    fn http_url(&self, homeserver: &Url) -> anyhow::Result<Url> {
-        let (server_name, media_id) = self.parts()?;
-        Ok(homeserver
-            .join("/_matrix/media/r0/download/")?
-            .join(format!("{}/{}", server_name, media_id).as_str())?)
-    }
-}
-
-/// Error types.
-#[derive(Error, Debug)]
-pub enum Error {
-    /// This command requires replying to an event.
-    #[error("Replying to a event is required for this command")]
-    RequiresReply,
-    /// This command is missing an argument.
-    #[error("Missing an argument: {0}")]
-    MissingArgument(&'static str),
-    /// Invaild argument passed into an argument.
-    #[error("Invaild argument passed for {arg}: {source}")]
-    InvaildArgument {
-        /// The argument that is invaild.
-        arg: &'static str,
-        #[source]
-        /// The source error that caused it to happen.
-        source: anyhow::Error,
-    },
-    /// An unexpected error happened.
-    #[error("{0}")]
-    UnexpectedError(&'static str),
-    /// An unknown command was passed.
-    #[error("Unrecognized command {0}")]
-    UnknownCommand(String),
 }

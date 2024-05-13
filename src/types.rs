@@ -1,6 +1,7 @@
 //! Types for external API.
 
 use serde::Deserialize;
+use thiserror::Error;
 
 /// <https://developer.hitokoto.cn/sentence/#%E8%BF%94%E5%9B%9E%E4%BF%A1%E6%81%AF>
 #[derive(Deserialize, Debug, Clone)]
@@ -39,4 +40,30 @@ pub struct CrateVersion {
     pub num: String,
     pub rust_version: Option<String>,
     pub yanked: bool,
+}
+
+/// Error types.
+#[derive(Error, Debug)]
+pub enum Error {
+    /// This command requires replying to an event.
+    #[error("Replying to a event is required for this command")]
+    RequiresReply,
+    /// This command is missing an argument.
+    #[error("Missing an argument: {0}")]
+    MissingArgument(&'static str),
+    /// Invaild argument passed into an argument.
+    #[error("Invaild argument passed for {arg}: {source}")]
+    InvaildArgument {
+        /// The argument that is invaild.
+        arg: &'static str,
+        #[source]
+        /// The source error that caused it to happen.
+        source: anyhow::Error,
+    },
+    /// An unexpected error happened.
+    #[error("{0}")]
+    UnexpectedError(&'static str),
+    /// An unknown command was passed.
+    #[error("Unrecognized command {0}")]
+    UnknownCommand(String),
 }
