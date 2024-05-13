@@ -94,7 +94,9 @@ impl Context {
                     "監禁",
                     "口枷",
                 ]) {
-                    "\n@ #空指针诱捕器"
+                    "\n#空指针诱捕器"
+                } else if resp.tags.has_any_tag(&["ショタ", "触手", "獣人", "人外"]) {
+                    "\n#草方块诱捕器"
                 } else {
                     ""
                 };
@@ -108,7 +110,9 @@ impl Context {
                     "監禁",
                     "口枷",
                 ]) {
-                    "<br/>@ <b><font color='#d72b6d'>#空指针诱捕器</font></b>"
+                    "<br/><b><font color='#d72b6d'>#空指针诱捕器</font></b>"
+                } else if resp.tags.has_any_tag(&["ショタ", "触手", "獣人", "人外"]) {
+                    "<br/><b><font color='#d72b6d'>#草方块诱捕器</font></b>"
                 } else {
                     ""
                 };
