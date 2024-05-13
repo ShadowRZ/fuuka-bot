@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use crate::RoomMemberExt;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::ruma::events::Mentions;
 use time::macros::format_description;
 use time::OffsetDateTime;
 
@@ -38,18 +39,24 @@ pub async fn jerryxiao(
                 let arg1 = arg1.strip_suffix('了').unwrap_or(arg1);
                 let arg2 = splited.next().unwrap_or_default();
                 let arg2 = arg2.strip_suffix('了').unwrap_or(arg2);
-                Ok(Some(RoomMessageEventContent::text_html(
-                    format!(
-                        "@{from} {arg0} @{to} {arg1}了{arg2}",
-                        from = from_member.name(),
-                        to = to_member.name(),
-                    ),
-                    format!(
-                        "{from} {arg0} {to} {arg1}了{arg2}",
-                        from = from_pill,
-                        to = to_pill,
-                    ),
-                )))
+                Ok(Some(
+                    RoomMessageEventContent::text_html(
+                        format!(
+                            "@{from} {arg0} @{to} {arg1}了{arg2}",
+                            from = from_member.name(),
+                            to = to_member.name(),
+                        ),
+                        format!(
+                            "{from} {arg0} {to} {arg1}了{arg2}",
+                            from = from_pill,
+                            to = to_pill,
+                        ),
+                    )
+                    .add_mentions(Mentions::with_user_ids([
+                        from_member.user_id().to_owned(),
+                        to_member.user_id().to_owned(),
+                    ])),
+                ))
             } else {
                 let arg1 = splited.next();
                 let arg1 = arg1
@@ -59,26 +66,38 @@ pub async fn jerryxiao(
                 if (chars.len() == 2 && chars[0] == chars[1])
                     || (chars.len() == 3 && chars[1] == '了' && chars[0] == chars[2])
                 {
-                    Ok(Some(RoomMessageEventContent::text_html(
-                        format!(
-                            "@{} {}了{} @{}{arg1}",
-                            from_member.name(),
-                            chars[0],
-                            chars[0],
-                            to_member.name(),
-                        ),
-                        format!("{} {}了{} {}{arg1}", from_pill, chars[0], chars[0], to_pill),
-                    )))
+                    Ok(Some(
+                        RoomMessageEventContent::text_html(
+                            format!(
+                                "@{} {}了{} @{}{arg1}",
+                                from_member.name(),
+                                chars[0],
+                                chars[0],
+                                to_member.name(),
+                            ),
+                            format!("{} {}了{} {}{arg1}", from_pill, chars[0], chars[0], to_pill),
+                        )
+                        .add_mentions(Mentions::with_user_ids([
+                            from_member.user_id().to_owned(),
+                            to_member.user_id().to_owned(),
+                        ])),
+                    ))
                 } else {
                     let arg0 = arg0.strip_suffix('了').unwrap_or(arg0);
-                    Ok(Some(RoomMessageEventContent::text_html(
-                        format!(
-                            "@{} {arg0}了 @{}{arg1}",
-                            from_member.name(),
-                            to_member.name(),
-                        ),
-                        format!("{} {arg0}了 {}{arg1}", from_pill, to_pill),
-                    )))
+                    Ok(Some(
+                        RoomMessageEventContent::text_html(
+                            format!(
+                                "@{} {arg0}了 @{}{arg1}",
+                                from_member.name(),
+                                to_member.name(),
+                            ),
+                            format!("{} {arg0}了 {}{arg1}", from_pill, to_pill),
+                        )
+                        .add_mentions(Mentions::with_user_ids([
+                            from_member.user_id().to_owned(),
+                            to_member.user_id().to_owned(),
+                        ])),
+                    ))
                 }
             }
         } else {
@@ -110,10 +129,16 @@ pub async fn jerryxiao_formatted(
         let mut html_context = HashMap::new();
         html_context.insert("from".to_string(), from_member.make_pill());
         html_context.insert("to".to_string(), to_member.make_pill());
-        Ok(Some(RoomMessageEventContent::text_html(
-            envsubst::substitute(text, &text_context)?,
-            envsubst::substitute(text, &html_context)?,
-        )))
+        Ok(Some(
+            RoomMessageEventContent::text_html(
+                envsubst::substitute(text, &text_context)?,
+                envsubst::substitute(text, &html_context)?,
+            )
+            .add_mentions(Mentions::with_user_ids([
+                from_member.user_id().to_owned(),
+                to_member.user_id().to_owned(),
+            ])),
+        ))
     } else {
         Ok(Some(RoomMessageEventContent::text_plain(
             "No format slot ${from} ${to} found!",
