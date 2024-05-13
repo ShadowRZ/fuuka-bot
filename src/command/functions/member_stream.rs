@@ -1,5 +1,3 @@
-//! Various streams for the bot.
-#![warn(missing_docs)]
 use async_stream::stream;
 use futures_util::Stream;
 use matrix_sdk::room::Room;
@@ -11,22 +9,17 @@ use matrix_sdk::ruma::events::{AnyStateEvent, StateEvent};
 use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::{EventId, OwnedEventId};
 
-/// A set of stream factories for the bot.
-pub struct StreamFactory {}
-
-impl StreamFactory {
-    /// Creates a new [Stream] that outputs a series of [OriginalRoomMemberEvent] starting from the given [SyncRoomMemberEvent].
-    pub fn member_state_stream(
-        room: &Room,
-        ev: SyncRoomMemberEvent,
-    ) -> impl Stream<Item = OriginalRoomMemberEvent> + '_ {
-        stream! {
-            if let SyncStateEvent::Original(ev) = ev {
-                let event = ev.into_full_event(room.room_id().into());
-                let mut changes = MemberChanges::new(room, &event);
-                while let Some(member) = changes.next().await {
-                    yield member
-                }
+/// Creates a new [Stream] that outputs a series of [OriginalRoomMemberEvent] starting from the given [SyncRoomMemberEvent].
+pub fn member_state_stream(
+    room: &Room,
+    ev: SyncRoomMemberEvent,
+) -> impl Stream<Item = OriginalRoomMemberEvent> + '_ {
+    stream! {
+        if let SyncStateEvent::Original(ev) = ev {
+            let event = ev.into_full_event(room.room_id().into());
+            let mut changes = MemberChanges::new(room, &event);
+            while let Some(member) = changes.next().await {
+                yield member
             }
         }
     }

@@ -1,5 +1,5 @@
 //! Generic Matrix event callback handler.
-#![warn(missing_docs)]
+
 use std::str::FromStr;
 use std::sync::Arc;
 

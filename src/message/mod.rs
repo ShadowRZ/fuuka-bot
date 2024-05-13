@@ -1,11 +1,14 @@
 //! Responses to messages that are not commands.
-#![warn(missing_docs)]
+
+mod jerryxiao;
+mod nahida;
+
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 
+use self::jerryxiao::fortune;
+use self::jerryxiao::jerryxiao;
+use self::jerryxiao::jerryxiao_formatted;
 use crate::handler::Message;
-use crate::jerryxiao::fortune;
-use crate::jerryxiao::jerryxiao;
-use crate::jerryxiao::jerryxiao_formatted;
 use crate::Context;
 
 impl Context {
@@ -21,7 +24,7 @@ impl Context {
             Message::SlashFormatted { from, to, text } => jerryxiao_formatted(&from, &to, &text)
                 .await
                 .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
-            Message::Nahida(url) => crate::nahida::dispatch(&url, &self.http)
+            Message::Nahida(url) => self::nahida::dispatch(&url, &self.http)
                 .await
                 .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
             Message::Fortune { member, text, prob } => fortune(&member, &text, prob)

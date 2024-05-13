@@ -11,24 +11,17 @@
 //! ```
 //!
 //! Where `<version>` is the running version of the bot.
-#![warn(missing_docs)]
-#![warn(rustdoc::missing_crate_level_docs)]
 pub mod command;
 pub mod config;
 pub mod events;
 pub mod handler;
-pub mod jerryxiao;
 pub mod message;
-pub mod nahida;
-pub mod quote;
 #[doc(hidden)]
 pub mod session;
-pub mod stream;
 pub mod types;
 
 pub use crate::config::Config;
 pub use crate::handler::Context;
-pub use crate::stream::StreamFactory;
 
 use matrix_sdk::matrix_auth::MatrixSession;
 use matrix_sdk::room::RoomMember;
