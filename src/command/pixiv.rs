@@ -1,11 +1,12 @@
 use futures_util::{pin_mut, StreamExt};
+use matrix_sdk::ruma::RoomId;
 use matrix_sdk::{
     event_handler::Ctx,
     ruma::events::{room::message::RoomMessageEventContent, AnyMessageLikeEventContent},
 };
-use pixrs::{RankingContent, RankingMode};
+use pixrs::{IllustTagsInfo, RankingContent, RankingMode};
 
-use crate::{handler::PixivCommand, Context, IllustTagsInfoExt};
+use crate::{config::TrapConfig, handler::PixivCommand, Context, IllustTagsInfoExt};
 
 impl Context {
     #[tracing::instrument(
@@ -84,38 +85,20 @@ impl Context {
                     .collect::<Vec<String>>()
                     .join(" ");
                 // Specials
-                let specials_str = if resp.tags.has_any_tag(&[
-                    "調教",
-                    "束縛",
-                    "機械姦",
-                    "緊縛",
-                    "縛り",
-                    "鼻フック",
-                    "監禁",
-                    "口枷",
-                ]) {
-                    "\n#空指针诱捕器"
-                } else if resp.tags.has_any_tag(&["ショタ", "触手", "獣人", "人外"]) {
-                    "\n#草方块诱捕器"
-                } else {
-                    ""
-                };
-                let specials_str_html = if resp.tags.has_any_tag(&[
-                    "調教",
-                    "束縛",
-                    "機械姦",
-                    "緊縛",
-                    "縛り",
-                    "鼻フック",
-                    "監禁",
-                    "口枷",
-                ]) {
-                    "<br/><b><font color='#d72b6d'>#空指针诱捕器</font></b>"
-                } else if resp.tags.has_any_tag(&["ショタ", "触手", "獣人", "人外"]) {
-                    "<br/><b><font color='#d72b6d'>#草方块诱捕器</font></b>"
-                } else {
-                    ""
-                };
+                let specials_str = self
+                    .config
+                    .pixiv
+                    .traps
+                    .check_for_traps(&resp.tags, self.room.room_id())
+                    .map(|s| format!("\n#{s}诱捕器"))
+                    .unwrap_or_default();
+                let specials_str_html = self
+                    .config
+                    .pixiv
+                    .traps
+                    .check_for_traps(&resp.tags, self.room.room_id())
+                    .map(|s| format!("<br/><b><font color='#d72b6d'>#{s}诱捕器</font></b>"))
+                    .unwrap_or_default();
                 let body = format!(
                     "{title} https://pixiv.net/i/{id}\n{tag_str}\nAuthor: {author}{specials_str}",
                     title = resp.title,
@@ -133,5 +116,37 @@ impl Context {
                 )))
             }
         }
+    }
+}
+
+impl TrapConfig {
+    fn check_for_traps(&self, tags: &IllustTagsInfo, room_id: &RoomId) -> Option<&str> {
+        if let Some(infos) = self.room_scoped_config.get(room_id) {
+            for item in infos {
+                if tags.has_any_tag(
+                    &item
+                        .required_tags
+                        .iter()
+                        .map(AsRef::as_ref)
+                        .collect::<Vec<&str>>(),
+                ) {
+                    return Some(&item.target);
+                }
+            }
+        } else {
+            for item in &self.global_config {
+                if tags.has_any_tag(
+                    &item
+                        .required_tags
+                        .iter()
+                        .map(AsRef::as_ref)
+                        .collect::<Vec<&str>>(),
+                ) {
+                    return Some(&item.target);
+                }
+            }
+        }
+
+        None
     }
 }

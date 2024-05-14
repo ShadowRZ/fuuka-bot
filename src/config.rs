@@ -71,8 +71,8 @@ pub struct TrapItem {
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(from = "Vec<TrapItemInner>")]
 pub struct TrapConfig {
-    room_scoped_config: HashMap<OwnedRoomId, Vec<TrapItem>>,
-    global_config: Vec<TrapItem>,
+    pub(crate) room_scoped_config: HashMap<OwnedRoomId, Vec<TrapItem>>,
+    pub(crate) global_config: Vec<TrapItem>,
 }
 
 impl From<Vec<TrapItemInner>> for TrapConfig {

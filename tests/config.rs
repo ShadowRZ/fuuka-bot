@@ -2,7 +2,8 @@ use fuuka_bot::Config;
 
 #[test]
 fn config_test() -> anyhow::Result<()> {
-    let config: Config = toml::from_str(r#"
+    let config: Config = toml::from_str(
+        r#"
 # Admin user. (Optional)
 admin-user = "@example:example.org"
 
@@ -42,14 +43,16 @@ pixiv-r18 = false
 
 [stickers]
 send-to = "!XXXXXXXXXXX:example.org"
-"#)?;
+"#,
+    )?;
     println!("Config: {config:#?}");
     Ok(())
 }
 
 #[test]
 fn config_without_traps_test() -> anyhow::Result<()> {
-    let config: Config = toml::from_str(r#"
+    let config: Config = toml::from_str(
+        r#"
 # Admin user. (Optional)
 admin-user = "@example:example.org"
 
@@ -80,7 +83,8 @@ pixiv-r18 = false
 
 [stickers]
 send-to = "!XXXXXXXXXXX:example.org"
-"#)?;
+"#,
+    )?;
     println!("Config: {config:#?}");
     Ok(())
 }
