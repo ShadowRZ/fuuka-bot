@@ -1,17 +1,39 @@
-# The command prefix.
-command_prefix = "%%"
-# Homeserver URL.
-homeserver_url = "https://matrix.example.com"
 # Admin user. (Optional)
-#admin_user = "@example:example.org"
+admin-user = "@example:example.org"
+
+[command]
+# The command prefix.
+prefix = "%%"
+
+[matrix]
+# Homeserver URL.
+homeserver = "https://matrix.example.com"
 
 # Service URLs.
 [services]
 # Hitokoto API.
 hitokoto = "https://v1.hitokoto.cn"
 
-[features."!XXXXXXXXXXX:example.org"]
+[pixiv]
+enabled = false
+r18 = false
+token = "????????_XXXXXXXXXXXXXXXXXXXX"
+
+[[pixiv.traps]]
+rooms = ["!XXXXXXXXXXX:example.org"]
+required-tags = []
+target = ""
+
+[[pixiv.traps]]
+required-tags = []
+target = ""
+
+[[features]]
+room = ""
 jerryxiao = true
+fortune = false
+pixiv = false
+pixiv-r18 = false
 
 [stickers]
-sticker_room = "!XXXXXXXXXXX:example.org"
+send-to = "!XXXXXXXXXXX:example.org"

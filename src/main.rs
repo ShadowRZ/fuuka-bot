@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cred = Path::new(CREDENTIALS_FILE);
     if !cred.try_exists()? {
-        let session = fuuka_bot::session::prompt_for_login_data(&config.homeserver_url).await?;
+        let session = fuuka_bot::session::prompt_for_login_data(&config.matrix.homeserver).await?;
         fs::write(CREDENTIALS_FILE, serde_json::to_string(&session)?)?;
     }
 

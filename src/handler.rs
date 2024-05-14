@@ -158,7 +158,7 @@ impl Context {
         http: Ctx<reqwest::Client>,
         pixiv: Ctx<Option<Arc<PixivClient>>>,
     ) {
-        let prefix = &config.command_prefix;
+        let prefix = &config.command.prefix;
         let ev = ev.into_full_event(room.room_id().into());
         let action = Self::match_action(&ev, &room, prefix, &config).await;
         match action {
@@ -298,7 +298,7 @@ impl Context {
                     let Some(ref stickers_config) = config.stickers else {
                         return Ok(None);
                     };
-                    let Some(sticker_room) = room.client().get_room(&stickers_config.sticker_room)
+                    let Some(sticker_room) = room.client().get_room(&stickers_config.send_to)
                     else {
                         return Ok(None);
                     };
@@ -359,11 +359,7 @@ impl Context {
                 _ => Result::Err(Error::UnknownCommand(command).into()),
             }
         } else if let Some(text) = body.strip_prefix("//") {
-            if !features
-                .get(room.room_id())
-                .map(|f| f.jerryxiao)
-                .unwrap_or_default()
-            {
+            if !features.room_jerryxiao_enabled(room.room_id()) {
                 return Ok(None);
             }
             let from_sender = &ev.sender;
@@ -385,11 +381,7 @@ impl Context {
             .into_iter()
             .any(|p| body.starts_with(p))
         {
-            if !features
-                .get(room.room_id())
-                .map(|f| f.jerryxiao)
-                .unwrap_or_default()
-            {
+            if !features.room_jerryxiao_enabled(room.room_id()) {
                 return Ok(None);
             }
             let from_sender = &ev.sender;
@@ -430,11 +422,7 @@ impl Context {
                 Ok(None)
             }
         } else if ["@@", "@%"].into_iter().any(|p| body.starts_with(p)) {
-            if !features
-                .get(room.room_id())
-                .map(|f| f.jerryxiao)
-                .unwrap_or_default()
-            {
+            if !features.room_jerryxiao_enabled(room.room_id()) {
                 return Ok(None);
             }
             let Some(member) = room.get_member(&ev.sender).await? else {

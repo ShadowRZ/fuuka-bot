@@ -63,7 +63,7 @@ impl FuukaBot {
     /// Constructs the bot instance using the given `config` and `session`.
     pub async fn new(config: Config, session: MatrixSession) -> anyhow::Result<Self> {
         let builder = Client::builder()
-            .homeserver_url(&config.homeserver_url)
+            .homeserver_url(&config.matrix.homeserver)
             .sqlite_store("store", None);
         let client = builder.build().await?;
         client.restore_session(session).await?;
@@ -106,10 +106,7 @@ impl FuukaBot {
     }
 
     async fn pixiv_client(&self) -> anyhow::Result<Option<Arc<PixivClient>>> {
-        let Some(ref services) = self.config.services else {
-            return Ok(None);
-        };
-        let Some(ref token) = services.pixiv_token else {
+        let Some(ref token) = self.config.pixiv.token else {
             return Ok(None);
         };
         Ok(Some(Arc::new(PixivClient::new(token).await?)))
