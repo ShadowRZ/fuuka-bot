@@ -4,18 +4,18 @@ use url::{Host, Url};
 pub(super) enum LinkType {
     Crates(CrateLinkType),
     Pixiv(PixivLinkType),
-    Generic,
+    Generic(Url),
     CannotBeABase,
 }
 
 impl LinkType {
-    fn parse_crates_io(url: &Url) -> LinkType {
+    fn parse_crates_io(url: Url) -> LinkType {
         let Some(mut paths) = url.path_segments() else {
             return LinkType::CannotBeABase;
         };
 
         if paths.next() != Some("crates") {
-            return LinkType::Generic;
+            return LinkType::Generic(url);
         }
 
         let name = paths.next().map(ToString::to_string);
@@ -23,11 +23,11 @@ impl LinkType {
 
         match name {
             Some(name) => LinkType::Crates(CrateLinkType::CrateInfo { name, version }),
-            None => LinkType::Generic,
+            None => LinkType::Generic(url),
         }
     }
 
-    fn parse_pixiv(url: &Url) -> Result<LinkType, crate::Error> {
+    fn parse_pixiv(url: Url) -> Result<LinkType, crate::Error> {
         let Some(mut paths) = url.path_segments() else {
             return Ok(LinkType::CannotBeABase);
         };
@@ -38,7 +38,7 @@ impl LinkType {
             .map(|p01| ["artworks", "i"].into_iter().any(|allowed| allowed == p01))
             .unwrap_or_default()
         {
-            return Ok(LinkType::Generic);
+            return Ok(LinkType::Generic(url));
         }
 
         let artwork_id = paths
@@ -52,7 +52,7 @@ impl LinkType {
 
         match artwork_id {
             Some(artwork_id) => Ok(LinkType::Pixiv(PixivLinkType::Artwork(artwork_id))),
-            None => Ok(LinkType::Generic),
+            None => Ok(LinkType::Generic(url)),
         }
     }
 }
@@ -65,10 +65,10 @@ impl TryFrom<Url> for LinkType {
             Ok(LinkType::CannotBeABase)
         } else {
             match value.host() {
-                Some(Host::Domain("crates.io")) => Ok(Self::parse_crates_io(&value)),
-                Some(Host::Domain("www.pixiv.net")) => Self::parse_pixiv(&value),
-                Some(Host::Domain("pixiv.net")) => Self::parse_pixiv(&value),
-                _ => Ok(LinkType::Generic),
+                Some(Host::Domain("crates.io")) => Ok(Self::parse_crates_io(value)),
+                Some(Host::Domain("www.pixiv.net")) => Self::parse_pixiv(value),
+                Some(Host::Domain("pixiv.net")) => Self::parse_pixiv(value),
+                _ => Ok(LinkType::Generic(value)),
             }
         }
     }
