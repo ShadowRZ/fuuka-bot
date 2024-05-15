@@ -54,7 +54,7 @@ pub async fn extract(
 fn parse_html_title(input: &str) -> anyhow::Result<Option<String>> {
     let dom = tl::parse(input, tl::ParserOptions::default())?;
     let parser = dom.parser();
-    let title_element = dom.query_selector("head > title");
+    let title_element = dom.query_selector("title");
     match title_element {
         Some(mut title_element) => {
             let Some(elem) = title_element.next() else {
@@ -65,5 +65,20 @@ fn parse_html_title(input: &str) -> anyhow::Result<Option<String>> {
             Ok(title.as_deref().map(ToString::to_string))
         }
         None => Ok(None),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_html_title;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn parse_simple_html_title() {
+        let str = r#"<html><head><title>Title</title></head></html>"#;
+        let res = parse_html_title(str).unwrap();
+        let req = Some("Title".to_string());
+
+        assert_eq!(res, req);
     }
 }
