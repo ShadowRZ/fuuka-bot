@@ -24,7 +24,7 @@ impl Context {
             Message::SlashFormatted { from, to, text } => jerryxiao_formatted(&from, &to, &text)
                 .await
                 .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
-            Message::Nahida(url) => self::nahida::dispatch(&url, &self.http)
+            Message::Nahida(url) => self::nahida::dispatch(url, self)
                 .await
                 .map(|e| e.map(AnyMessageLikeEventContent::RoomMessage)),
             Message::Fortune { member, text, prob } => fortune(&member, &text, prob)

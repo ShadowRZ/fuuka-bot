@@ -4,6 +4,8 @@ use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId, RoomId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
+
+use crate::IllustTagsInfoExt;
 /// The config of Fuuka bot.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
@@ -182,4 +184,36 @@ pub struct ServiceConfig {
     /// Hitokoto API endpoint.
     /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
     pub hitokoto: Option<Url>,
+}
+
+impl TrapConfig {
+    pub fn check_for_traps(&self, tags: &pixrs::IllustTagsInfo, room_id: &RoomId) -> Option<&str> {
+        if let Some(infos) = self.room_scoped_config.get(room_id) {
+            for item in infos {
+                if tags.has_any_tag(
+                    &item
+                        .required_tags
+                        .iter()
+                        .map(AsRef::as_ref)
+                        .collect::<Vec<&str>>(),
+                ) {
+                    return Some(&item.target);
+                }
+            }
+        } else {
+            for item in &self.global_config {
+                if tags.has_any_tag(
+                    &item
+                        .required_tags
+                        .iter()
+                        .map(AsRef::as_ref)
+                        .collect::<Vec<&str>>(),
+                ) {
+                    return Some(&item.target);
+                }
+            }
+        }
+
+        None
+    }
 }

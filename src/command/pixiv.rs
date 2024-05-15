@@ -1,12 +1,11 @@
 use futures_util::{pin_mut, StreamExt};
-use matrix_sdk::ruma::RoomId;
 use matrix_sdk::{
     event_handler::Ctx,
     ruma::events::{room::message::RoomMessageEventContent, AnyMessageLikeEventContent},
 };
-use pixrs::{IllustTagsInfo, RankingContent, RankingMode};
+use pixrs::{RankingContent, RankingMode};
 
-use crate::{config::TrapConfig, handler::PixivCommand, Context, IllustTagsInfoExt};
+use crate::{handler::PixivCommand, Context};
 
 impl Context {
     #[tracing::instrument(
@@ -116,37 +115,5 @@ impl Context {
                 )))
             }
         }
-    }
-}
-
-impl TrapConfig {
-    fn check_for_traps(&self, tags: &IllustTagsInfo, room_id: &RoomId) -> Option<&str> {
-        if let Some(infos) = self.room_scoped_config.get(room_id) {
-            for item in infos {
-                if tags.has_any_tag(
-                    &item
-                        .required_tags
-                        .iter()
-                        .map(AsRef::as_ref)
-                        .collect::<Vec<&str>>(),
-                ) {
-                    return Some(&item.target);
-                }
-            }
-        } else {
-            for item in &self.global_config {
-                if tags.has_any_tag(
-                    &item
-                        .required_tags
-                        .iter()
-                        .map(AsRef::as_ref)
-                        .collect::<Vec<&str>>(),
-                ) {
-                    return Some(&item.target);
-                }
-            }
-        }
-
-        None
     }
 }

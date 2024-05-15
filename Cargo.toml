@@ -44,5 +44,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
 pixrs = { git = "https://github.com/ShadowRZ/pixrs", default-features = false }
 
+[dev-dependencies]
+pretty_assertions = "1"
+
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
