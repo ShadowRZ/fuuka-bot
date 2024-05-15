@@ -3,27 +3,52 @@
 The following content should be edited and saved to `fuuka-bot.toml` as you want.
 
 ```toml
-# The command prefix.
-command_prefix = "%%"
-# Homeserver URL.
-homeserver_url = "https://matrix.example.com"
 # Admin user. (Optional)
-#admin_user = "@example:example.org"
+admin-user = "@example:example.org"
 
-# Service URLs. (Optional)
+[command]
+# The command prefix.
+prefix = "%%"
+
+[matrix]
+# Homeserver URL.
+homeserver = "https://matrix.example.com"
+
+# Service URLs.
 [services]
-# Hitokoto API. (Optional)
+# Hitokoto API.
 hitokoto = "https://v1.hitokoto.cn"
 
-# Features
-# All fields are optional.
-[features."!XXXXXXXXXXX:example.org"]
-jerryxiao = true
+[pixiv]
+# Enable Pixiv support.
+enabled = false
+# Enable exporting R-18 content.
+r18 = false
+# The Pixiv PHPSESSID token.
+token = "????????_XXXXXXXXXXXXXXXXXXXX"
 
-# Configures sticker functions. (Optional)
+# Room scoped traps.
+[[pixiv.traps]]
+rooms = ["!XXXXXXXXXXX:example.org"]
+required-tags = []
+target = ""
+
+# Global traps.
+[[pixiv.traps]]
+required-tags = []
+target = ""
+
+[[features]]
+room = ""
+jerryxiao = true
+fortune = false
+pixiv = false
+pixiv-r18 = false
+
 [stickers]
-# Room for uploading stickers. (Required)
-sticker_room = "!XXXXXXXXXXX:example.org"
+# Where stickers are sent to.
+send-to = "!XXXXXXXXXXX:example.org"
+
 ```
 
 ## Logging in
