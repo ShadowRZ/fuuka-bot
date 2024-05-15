@@ -28,7 +28,8 @@ pub async fn jerryxiao(
     {
         let mut splited = text.split_whitespace();
         if let Some(arg0) = splited.next() {
-            if arg0.is_ascii() {
+            // All bytes >= 0x80 are for non ASCII char encoding in UTF-8
+            if !arg0.as_bytes().iter().all(|b| *b >= 0x80) {
                 return Ok(None);
             }
             if ["把", "拿", "被", "将", "令", "使", "让", "给", "替"]
