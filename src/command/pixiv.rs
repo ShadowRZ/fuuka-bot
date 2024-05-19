@@ -48,13 +48,13 @@ impl Context {
                         .collect::<Vec<String>>()
                         .join(" ");
                     let this_line = format!(
-                        "\n#{idx}: {title} https://pixiv.net/artworks/{illust_id} | {tag_str}",
+                        "\n#{idx}: {title} https://www.pixiv.net/artworks/{illust_id} | {tag_str}",
                         idx = idx,
                         title = illust.title,
                         illust_id = illust.illust_id
                     );
                     let this_line_html = format!(
-                        "<br/>#{idx}: <a href='https://pixiv.net/artworks/{illust_id}'>{title}</a> | {tag_html_str}",
+                        "<br/>#{idx}: <a href='https://www.pixiv.net/artworks/{illust_id}'>{title}</a> | {tag_html_str}",
                         idx = idx,
                         title = illust.title,
                         illust_id = illust.illust_id
@@ -99,13 +99,13 @@ impl Context {
                     .map(|s| format!("<br/><b><font color='#d72b6d'>#{s}诱捕器</font></b>"))
                     .unwrap_or_default();
                 let body = format!(
-                    "{title} https://pixiv.net/artworks/{id}\n{tag_str}\nAuthor: {author}{specials_str}",
+                    "{title} https://www.pixiv.net/artworks/{id}\n{tag_str}\nAuthor: {author}{specials_str}",
                     title = resp.title,
                     id = resp.id,
                     author = resp.user_name
                 );
                 let html_body = format!(
-                    "<a href='https://pixiv.net/artworks/{id}'>{title}</a><br/>{tag_html_str}<br/>Author: {author}{specials_str_html}",
+                    "<a href='https://www.pixiv.net/artworks/{id}'>{title}</a><br/>{tag_html_str}<br/>Author: {author}{specials_str_html}",
                     title = resp.title,
                     id = resp.id,
                     author = resp.user_name
