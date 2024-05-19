@@ -37,13 +37,13 @@ pub async fn pixiv_illust(
         .map(|s| format!("<p><b><font color='#d72b6d'>#{s}诱捕器</font></b></p>"))
         .unwrap_or_default();
     let body = format!(
-        "[Pixiv/Illust] {title} https://pixiv.net/i/{id}\n{tag_str}\nAuthor: {author}{specials_str}",
+        "[Pixiv/Illust] {title} https://pixiv.net/artworks/{id}\n{tag_str}\nAuthor: {author}{specials_str}",
         title = resp.title,
         id = resp.id,
         author = resp.user_name
     );
     let html_body = format!(
-        "<p><b>[Pixiv/Illust]</b> <a href='https://pixiv.net/i/{id}'>{title}</a></p><p>{tag_html_str}</p><p>Author: {author}</p>{specials_str_html}",
+        "<p><b>[Pixiv/Illust]</b> <a href='https://pixiv.net/artworks/{id}'>{title}</a></p><p>{tag_html_str}</p><p>Author: {author}</p>{specials_str_html}",
         title = resp.title,
         id = resp.id,
         author = resp.user_name
