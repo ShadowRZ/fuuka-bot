@@ -1,5 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/rust
+
+// WARN: Some configs might not be tailored to a generic environment.
 {
   "name": "Fuuka Bot",
   "build": {
@@ -14,7 +16,12 @@
         "tamasfe.even-better-toml"
       ]
     }
-  }
+  },
+  "runArgs": [
+    "--userns=keep-id:uid=1000,gid=100"
+  ],
+  "containerUser": "vscode",
+  "updateRemoteUserUID": true
   // Use 'mounts' to make the cargo cache persistent in a Docker Volume.
   // "mounts": [
   //  {
