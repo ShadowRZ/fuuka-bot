@@ -62,13 +62,6 @@ pub enum Command {
         /// Remind text.
         content: Option<String>,
     },
-    /// `quote`
-    Quote {
-        /// Event to be quoted.
-        ev: AnyTimelineEvent,
-        /// Member.
-        member: RoomMember,
-    },
     /// `upload_sticker`
     UploadSticker {
         /// Event replied.
@@ -283,15 +276,6 @@ impl Context {
                         sender,
                         content: text,
                     })))
-                }
-                "quote" => {
-                    let ev = Self::reply_event(ev, room)
-                        .await?
-                        .ok_or(Error::RequiresReply)?;
-                    let Some(member) = room.get_member(ev.sender()).await? else {
-                        return Ok(None);
-                    };
-                    Ok(Some(Action::Command(Command::Quote { ev, member })))
                 }
                 "upload_sticker" => {
                     // Check if we enable the command.

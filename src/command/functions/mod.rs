@@ -1,5 +1,4 @@
 pub(super) mod member_stream;
-pub(super) mod quote;
 
 use std::{
     collections::{HashMap, HashSet},

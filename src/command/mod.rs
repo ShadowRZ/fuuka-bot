@@ -5,7 +5,6 @@ mod functions;
 mod info;
 mod member_changes;
 mod pixiv;
-mod quote;
 mod remind;
 mod send_avatar;
 mod upload_sticker;
@@ -62,7 +61,6 @@ impl Context {
                 sender,
                 content,
             } => self._remind(target, sender, content).await,
-            Command::Quote { ev, member } => self._quote(ev, member).await,
             Command::UploadSticker {
                 ev,
                 pack_name,
