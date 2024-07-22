@@ -1,6 +1,7 @@
 //! Extracts Pixiv URLs.
 
 use matrix_sdk::ruma::{events::room::message::RoomMessageEventContent, RoomId};
+use pixrs::Restriction;
 
 use crate::config::PixivConfig;
 
@@ -11,6 +12,17 @@ pub async fn pixiv_illust(
     room_id: &RoomId,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let resp = pixiv.illust_info(artwork_id).await?;
+    // R18 = 1, R18G = 2, General = 0
+    let r18 = match resp.restriction {
+        Restriction::General => false,
+        Restriction::R18 => true,
+        Restriction::R18G => true,
+        _ => false,
+    };
+    let r18_enabled = config.r18;
+    if r18 && !r18_enabled {
+        return Ok(None);
+    };
     let tag_str = resp
         .tags
         .tags

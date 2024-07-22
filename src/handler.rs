@@ -323,6 +323,9 @@ impl Context {
                     Ok(Some(Action::Command(Command::Unignore(user_id))))
                 }
                 "pixiv" => {
+                    if !features.room_pixiv_enabled(room.room_id()) {
+                        return Ok(None);
+                    }
                     let illust_id = args.next();
                     match illust_id {
                         Some(illust_id) => {
