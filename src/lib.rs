@@ -88,12 +88,10 @@ impl FuukaBot {
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {
-                    let mut initial = true;
-                    while let Err(e) = self.sync(initial).await {
+                    while let Err(e) = self.sync().await {
                         use tokio::time::{sleep, Duration};
                         tracing::error!("Unexpected error happened, retrying in 10s: {e:#}");
                         sleep(Duration::from_secs(10)).await;
-                        initial = false;
                     }
                 } => {},
                 _ = self.cts.cancelled() => {
@@ -112,8 +110,8 @@ impl FuukaBot {
         Ok(Some(Arc::new(PixivClient::new(token).await?)))
     }
 
-    async fn sync(&self, initial: bool) -> anyhow::Result<()> {
-        let next_batch = self.initial_sync(initial).await?;
+    async fn sync(&self) -> anyhow::Result<()> {
+        let next_batch = self.initial_sync().await?;
         let settings = SyncSettings::default()
             .token(next_batch)
             .set_presence(PresenceState::Online);
@@ -125,11 +123,27 @@ impl FuukaBot {
                 tracing::warn!("Failed to set presence: {e:#}");
             }
         }
-        self.client.sync(settings).await?;
+
+        let h1 = self
+            .client
+            .add_event_handler(crate::handler::on_sync_message);
+        let h2 = self
+            .client
+            .add_event_handler(crate::handler::on_stripped_member);
+        let h3 = self
+            .client
+            .add_event_handler(crate::handler::on_room_replace);
+
+        if let Err(e) = self.client.sync(settings).await {
+            self.client.remove_event_handler(h1);
+            self.client.remove_event_handler(h2);
+            self.client.remove_event_handler(h3);
+            return Err(e.into());
+        }
         Ok(())
     }
 
-    async fn initial_sync(&self, register_handler: bool) -> anyhow::Result<String> {
+    async fn initial_sync(&self) -> anyhow::Result<String> {
         let user_id = self.client.user_id();
         let homeserver = self.client.homeserver();
         tracing::info!(user_id = ?user_id, homeserver = %homeserver, "Initial sync beginning...");
@@ -146,15 +160,6 @@ impl FuukaBot {
                     "Found a DM room with admin."
                 );
             }
-        }
-
-        if register_handler {
-            self.client
-                .add_event_handler(crate::handler::on_sync_message);
-            self.client
-                .add_event_handler(crate::handler::on_stripped_member);
-            self.client
-                .add_event_handler(crate::handler::on_room_replace);
         }
 
         Ok(response.next_batch)
