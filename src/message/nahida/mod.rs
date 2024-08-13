@@ -14,6 +14,7 @@
 mod extractors;
 mod link_type;
 
+use link_type::BiliBiliLinkType;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use url::Url;
 
@@ -23,8 +24,6 @@ use self::link_type::{CrateLinkType, LinkType, PixivLinkType};
 pub async fn dispatch(
     url: Url,
     ctx: &crate::Context,
-    // client: &reqwest::Client,
-    // pixiv: Option<&pixrs::PixivClient>,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let client = &ctx.http;
     let pixiv = ctx.pixiv.as_deref();
@@ -48,5 +47,6 @@ pub async fn dispatch(
         LinkType::CannotBeABase => {
             Result::Err(crate::Error::UnexpectedError("URL is a cannot-be-a-base!").into())
         }
+        LinkType::BiliBili(BiliBiliLinkType::Video(url)) => self::extractors::bilibili::bilibili_video(client, url).await,
     }
 }

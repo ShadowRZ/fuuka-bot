@@ -1095,6 +1095,7 @@ dependencies = [
  "mime",
  "pixrs",
  "pretty_assertions",
+ "regex",
  "reqwest",
  "rpassword",
  "ruma",

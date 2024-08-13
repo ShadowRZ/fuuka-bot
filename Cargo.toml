@@ -36,6 +36,7 @@ lol_html = "1"
 shell-words = "1"
 fastrand = "2"
 rpassword = "7"
+regex = "1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
 tracing = "0.1"

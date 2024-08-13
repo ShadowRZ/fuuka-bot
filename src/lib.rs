@@ -13,6 +13,7 @@
 //! Where `<version>` is the running version of the bot.
 pub mod command;
 pub mod config;
+pub mod de;
 pub mod events;
 pub mod handler;
 pub mod message;

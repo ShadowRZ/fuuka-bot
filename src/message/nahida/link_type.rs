@@ -4,6 +4,7 @@ use url::{Host, Url};
 pub(super) enum LinkType {
     Crates(CrateLinkType),
     Pixiv(PixivLinkType),
+    BiliBili(BiliBiliLinkType),
     Generic(Url),
     CannotBeABase,
 }
@@ -25,6 +26,18 @@ impl LinkType {
             Some(name) => LinkType::Crates(CrateLinkType::CrateInfo { name, version }),
             None => LinkType::Generic(url),
         }
+    }
+
+    fn parse_bilibili(url: Url) -> LinkType {
+        let Some(mut paths) = url.path_segments() else {
+            return LinkType::CannotBeABase;
+        };
+
+        if paths.next() != Some("video") {
+            return LinkType::Generic(url);
+        }
+
+        return LinkType::BiliBili(BiliBiliLinkType::Video(url));
     }
 
     fn parse_pixiv(url: Url) -> Result<LinkType, crate::Error> {
@@ -68,6 +81,8 @@ impl TryFrom<Url> for LinkType {
                 Some(Host::Domain("crates.io")) => Ok(Self::parse_crates_io(value)),
                 Some(Host::Domain("www.pixiv.net")) => Self::parse_pixiv(value),
                 Some(Host::Domain("pixiv.net")) => Self::parse_pixiv(value),
+                Some(Host::Domain("www.bilibili.com")) => Ok(Self::parse_bilibili(value)),
+                Some(Host::Domain("bilibili.com")) => Ok(Self::parse_bilibili(value)),
                 _ => Ok(LinkType::Generic(value)),
             }
         }
@@ -87,12 +102,17 @@ pub(super) enum PixivLinkType {
     Artwork(i32),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum BiliBiliLinkType {
+    Video(Url),
+}
+
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
     use url::Url;
 
-    use crate::message::nahida::link_type::{CrateLinkType, PixivLinkType};
+    use crate::message::nahida::link_type::{BiliBiliLinkType, CrateLinkType, PixivLinkType};
 
     use super::LinkType;
 
@@ -125,6 +145,15 @@ mod tests {
         let url = Url::parse("https://www.pixiv.net/artworks/73396560").unwrap();
         let result: LinkType = url.try_into().unwrap();
         let expected = LinkType::Pixiv(PixivLinkType::Artwork(73396560));
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn parse_bilibili_ok() {
+        let url = Url::parse("https://www.bilibili.com/video/BV1GJ411x7h7").unwrap();
+        let result: LinkType = url.clone().try_into().unwrap();
+        let expected = LinkType::BiliBili(BiliBiliLinkType::Video(url));
 
         assert_eq!(expected, result);
     }
