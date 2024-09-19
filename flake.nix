@@ -33,6 +33,7 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        fenix' = fenix.packages.${system};
 
         inherit (pkgs) lib;
 
@@ -56,7 +57,7 @@
         };
 
         craneLibLLvmTools = craneLib.overrideToolchain (
-          fenix.packages.${system}.stable.withComponents [
+          fenix'.stable.withComponents [
             "cargo"
             "clippy"
             "rust-src"
@@ -160,6 +161,8 @@
               pkgs.rustfmt
               pkgs.clippy
             ];
+
+            RUST_SRC_PATH = "${fenix'.stable.rust-src}/lib/rustlib/src/rust/library";
           };
           fhs =
             (pkgs.buildFHSUserEnv {
