@@ -3,7 +3,6 @@ use fuuka_bot::Config;
 use fuuka_bot::FuukaBot;
 use matrix_sdk::matrix_auth::MatrixSession;
 use std::fs;
-use std::path::Path;
 use std::path::PathBuf;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
@@ -60,7 +59,7 @@ async fn main() -> anyhow::Result<()> {
 
     let config: Config = get_config().context("Getting config failed!")?;
 
-    let cred = Path::new(CREDENTIALS_FILE);
+    let cred = get_config_file(CREDENTIALS_FILE)?;
     if !cred.try_exists()? {
         let session = fuuka_bot::session::prompt_for_login_data(&config.matrix.homeserver).await?;
         fs::write(CREDENTIALS_FILE, serde_json::to_string(&session)?)?;

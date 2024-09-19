@@ -1,0 +1,52 @@
+[Unit]
+Description=Fuuka Bot
+Documentation=https://shadowrz.github.io/fuuka-bot/
+Wants=network-online.target
+After=network-online.target nss-lookup.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/fuuka-bot
+
+# Hardening / Sandbox
+
+NoNewPrivileges=true
+SecureBits=noroot
+ProtectSystem=strict
+PrivateTmp=true
+PrivateDevices=true
+PrivateIPC=true
+PrivateUsers=true
+RestrictSUIDSGID=true
+PrivateMounts=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+ProtectClock=true
+ProtectKernelLogs=true
+ProtectHostname=true
+ProtectHome=true
+ProtectProc=invisible
+ProcSubset=pid
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+UMask=077
+SystemCallArchitectures=native
+
+CapabilityBoundingSet=
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallErrorNumber=EPERM
+
+NoExecPaths=/
+ExecPaths=/usr/local/bin/fuuka-bot -/usr/lib -/usr/lib64
+
+ConfigurationDirectory=fuuka-bot
+StateDirectory=fuuka-bot
+DynamicUser=true
