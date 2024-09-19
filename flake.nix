@@ -55,7 +55,15 @@
           ];
         };
 
-        craneLibLLvmTools = craneLib.overrideToolchain (fenix.packages.${system}.stable.toolchain);
+        craneLibLLvmTools = craneLib.overrideToolchain (
+          fenix.packages.${system}.stable.withComponents [
+            "cargo"
+            "clippy"
+            "rust-src"
+            "rustc"
+            "rustfmt"
+          ]
+        );
 
         # Build *just* the cargo dependencies, so we can reuse
         # all of that work (e.g. via cachix) when running in CI
@@ -165,7 +173,13 @@
                 # Add additional build inputs here
                 pkgs.openssl
                 pkgs.sqlite
-                fenix.packages.${system}.stable.toolchain
+                (fenix.packages.${system}.stable.withComponents [
+                  "cargo"
+                  "clippy"
+                  "rust-src"
+                  "rustc"
+                  "rustfmt"
+                ])
               ];
               extraOutputsToInstall = [ "dev" ];
             }).env;

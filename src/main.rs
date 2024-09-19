@@ -7,10 +7,15 @@ use std::path::Path;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
+static ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY: &str = "FUUKA_BOT_CONFIGURATION_DIRECTORY";
+static ENV_CONFIGURATION_DIRECTORY: &str = "CONFIGURATION_DIRECTORY";
+
 static CREDENTIALS_FILE: &str = "credentials.json";
 static CONFIG_FILE: &str = "fuuka-bot.toml";
 
 fn get_credentials() -> anyhow::Result<MatrixSession> {
+    let dir = std::env::var(ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY);
+
     let contents = fs::read_to_string(CREDENTIALS_FILE)?;
     let session = serde_json::from_str::<MatrixSession>(&contents)?;
     Ok(session)
