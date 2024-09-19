@@ -55,13 +55,7 @@
           ];
         };
 
-        craneLibLLvmTools = craneLib.overrideToolchain (
-          fenix.packages.${system}.complete.withComponents [
-            "cargo"
-            "llvm-tools"
-            "rustc"
-          ]
-        );
+        craneLibLLvmTools = craneLib.overrideToolchain (fenix.packages.${system}.stable.toolchain);
 
         # Build *just* the cargo dependencies, so we can reuse
         # all of that work (e.g. via cachix) when running in CI
