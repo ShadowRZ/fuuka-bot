@@ -81,12 +81,14 @@ impl Context {
     async fn _ping(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
         let MilliSecondsSinceUnixEpoch(event_ts) = self.ev.origin_server_ts;
-        let delta: i64 = (now - event_ts).into();
-        let body = if delta >= 2000 {
-            let duration = Duration::milliseconds(delta);
-            format!("Pong after {duration:.3}")
+        let now= Duration::milliseconds(now.into());
+        let event_ts = Duration::milliseconds(event_ts.into());
+        let delta = now - event_ts;
+        let delta_ms = delta.whole_milliseconds();
+        let body = if delta_ms >= 2000 {
+            format!("Pong after {delta:.3}")
         } else {
-            format!("Pong after {}ms", delta)
+            format!("Pong after {}ms", delta_ms)
         };
 
         Ok(Some(AnyMessageLikeEventContent::RoomMessage(
