@@ -47,6 +47,8 @@ pub async fn dispatch(
         LinkType::CannotBeABase => {
             Result::Err(crate::Error::UnexpectedError("URL is a cannot-be-a-base!").into())
         }
-        LinkType::BiliBili(BiliBiliLinkType::Video(url)) => self::extractors::bilibili::bilibili_video(client, url).await,
+        LinkType::BiliBili(BiliBiliLinkType::Video(url)) => {
+            self::extractors::bilibili::bilibili_video(client, url).await
+        }
     }
 }

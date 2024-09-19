@@ -81,7 +81,7 @@ impl Context {
     async fn _ping(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
         let MilliSecondsSinceUnixEpoch(event_ts) = self.ev.origin_server_ts;
-        let now= Duration::milliseconds(now.into());
+        let now = Duration::milliseconds(now.into());
         let event_ts = Duration::milliseconds(event_ts.into());
         let delta = now - event_ts;
         let delta_ms = delta.whole_milliseconds();

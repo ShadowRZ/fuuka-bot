@@ -31,6 +31,7 @@ use matrix_sdk::matrix_auth::MatrixSession;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::{config::SyncSettings, Client};
 use pixrs::PixivClient;
+use std::path::PathBuf;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::signal;
@@ -63,9 +64,10 @@ pub struct FuukaBot {
 impl FuukaBot {
     /// Constructs the bot instance using the given `config` and `session`.
     pub async fn new(config: Config, session: MatrixSession) -> anyhow::Result<Self> {
+        let store_path = Self::store_path()?;
         let builder = Client::builder()
             .homeserver_url(&config.matrix.homeserver)
-            .sqlite_store("store", None);
+            .sqlite_store(store_path, None);
         let client = builder.build().await?;
         client.restore_session(session).await?;
         let config = config.into();
@@ -164,6 +166,25 @@ impl FuukaBot {
         }
 
         Ok(response.next_batch)
+    }
+
+    fn store_path() -> anyhow::Result<PathBuf> {
+        static ENV_FUUKA_BOT_STATE_DIRECTORY: &str = "FUUKA_BOT_STATE_DIRECTORY";
+        static ENV_STATE_DIRECTORY: &str = "STATE_DIRECTORY";
+
+        static SQLITE_STORE_PATH: &str = "store";
+
+        let dir = std::env::var(ENV_FUUKA_BOT_STATE_DIRECTORY)
+            .ok()
+            .or_else(|| std::env::var(ENV_STATE_DIRECTORY).ok());
+
+        let mut path = PathBuf::new();
+        if let Some(dir) = dir {
+            path.push(dir);
+        }
+        path.push(SQLITE_STORE_PATH);
+
+        Ok(path)
     }
 
     /// Disable encrypted message recovery.

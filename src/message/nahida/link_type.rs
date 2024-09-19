@@ -37,7 +37,7 @@ impl LinkType {
             return LinkType::Generic(url);
         }
 
-        return LinkType::BiliBili(BiliBiliLinkType::Video(url));
+        LinkType::BiliBili(BiliBiliLinkType::Video(url))
     }
 
     fn parse_pixiv(url: Url) -> Result<LinkType, crate::Error> {

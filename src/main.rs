@@ -4,25 +4,42 @@ use fuuka_bot::FuukaBot;
 use matrix_sdk::matrix_auth::MatrixSession;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
-
-static ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY: &str = "FUUKA_BOT_CONFIGURATION_DIRECTORY";
-static ENV_CONFIGURATION_DIRECTORY: &str = "CONFIGURATION_DIRECTORY";
 
 static CREDENTIALS_FILE: &str = "credentials.json";
 static CONFIG_FILE: &str = "fuuka-bot.toml";
 
-fn get_credentials() -> anyhow::Result<MatrixSession> {
-    let dir = std::env::var(ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY);
+fn get_config_file(file: &'static str) -> anyhow::Result<PathBuf> {
+    static ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY: &str = "FUUKA_BOT_CONFIGURATION_DIRECTORY";
+    static ENV_CONFIGURATION_DIRECTORY: &str = "CONFIGURATION_DIRECTORY";
 
-    let contents = fs::read_to_string(CREDENTIALS_FILE)?;
+    let dir = std::env::var(ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY)
+        .ok()
+        .or_else(|| std::env::var(ENV_CONFIGURATION_DIRECTORY).ok());
+
+    let mut path = PathBuf::new();
+    if let Some(dir) = dir {
+        path.push(dir);
+    }
+    path.push(file);
+
+    Ok(path)
+}
+
+fn get_credentials() -> anyhow::Result<MatrixSession> {
+    let file = get_config_file(CREDENTIALS_FILE)?;
+
+    let contents = fs::read_to_string(file)?;
     let session = serde_json::from_str::<MatrixSession>(&contents)?;
     Ok(session)
 }
 
 fn get_config() -> anyhow::Result<Config> {
-    let contents = fs::read_to_string(CONFIG_FILE)?;
+    let file = get_config_file(CONFIG_FILE)?;
+
+    let contents = fs::read_to_string(file)?;
     let config = toml::from_str::<Config>(&contents)?;
     Ok(config)
 }
