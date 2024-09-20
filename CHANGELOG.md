@@ -7,11 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix actions
+
+## [0.3.2] - 2024-09-20
+
+### Changed
+
+- Update actions
+- Update warning in avatar_changes
+- 0.3.2
+
+
+## [0.3.1] - 2024-09-20
+
 ### Added
 
 - Add www prefix to pixiv links
 - Add a warning to avatar_changes
 - Add interactive-login feature
+- Add changelog
+- Add changelog workflow
 
 ### Changed
 
@@ -31,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow specifiy directories in env var
 - Systemd service
 - Bump dependencies
+- 0.3.1
+
 
 ### Fixed
 
@@ -534,7 +553,9 @@ This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
 Can't make it work. :(
 
 
-[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.0..HEAD
+[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.2..HEAD
+[0.3.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.1..v0.3.2
+[0.3.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.0..v0.3.1
 [0.3.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.11..v0.3.0
 [0.2.11]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.10..v0.2.11
 [0.2.10]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.9..v0.2.10
