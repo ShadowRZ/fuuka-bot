@@ -42,7 +42,7 @@ impl MemberChanges {
     async fn next(&mut self) -> Option<OriginalRoomMemberEvent> {
         match &self.replaces_state {
             Some(replaces_state) => {
-                if let Ok(timeline) = self.room.event(replaces_state).await {
+                if let Ok(timeline) = self.room.event(replaces_state, None).await {
                     let ev = &timeline.event;
                     self.replaces_state = Self::get_replaces_state(ev).await;
                     Self::get_member_event(ev).await

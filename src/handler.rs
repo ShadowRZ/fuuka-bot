@@ -475,7 +475,7 @@ impl Context {
         match &ev.content.relates_to {
             Some(Relation::Reply { in_reply_to }) => {
                 let event_id = &in_reply_to.event_id;
-                let event = room.event(event_id).await?.event.deserialize()?;
+                let event = room.event(event_id, None).await?.event.deserialize()?;
                 Ok(Some(event))
             }
             _ => Ok(None),
