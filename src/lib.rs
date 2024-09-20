@@ -192,12 +192,52 @@ impl FuukaBot {
 
     /// Enable encrypted message recovery.
     #[tracing::instrument(skip_all)]
-    pub async fn enable_recovery(self) -> Self {
-        if let Err(e) = self.client.encryption().recovery().enable().await {
-            tracing::warn!("Error while enabling backup: {e:#}");
+    pub async fn enable_recovery(self) -> anyhow::Result<Self> {
+        let backup = self.client.encryption().backups();
+
+        if backup.are_enabled().await {
+            if backup.exists_on_server().await? {
+                tracing::debug!("Bot has an existing server key backup that is valid, skipping recovery provision.");
+                return Ok(self);
+            }
         }
 
-        self
+        let recovery = self.client.encryption().recovery();
+        let enable = recovery.enable().wait_for_backups_to_upload();
+
+        let mut progress = enable.subscribe_to_progress();
+
+        tokio::spawn(async move {
+            use futures_util::StreamExt;
+            use matrix_sdk::encryption::recovery::EnableProgress;
+
+            while let Some(update) = progress.next().await {
+                let Ok(update) = update else {
+                    panic!("Update to the enable progress lagged");
+                };
+
+                match update {
+                    EnableProgress::CreatingBackup => {
+                        tracing::debug!("Creating a new backup");
+                    }
+                    EnableProgress::CreatingRecoveryKey => {
+                        tracing::debug!("Creating a new recovery key");
+                    }
+                    EnableProgress::Done { .. } => {
+                        tracing::debug!("Recovery has been enabled");
+                        break;
+                    }
+                    _ => (),
+                }
+            }
+        });
+
+        match enable.await {
+            Ok(key) => tracing::info!("The recovery key is: {key}"),
+            Err(e) => tracing::warn!("Error while enabling backup: {e:#}"),
+        }
+
+        Ok(self)
     }
 
     /// Registers the graceful shutdown handler.

@@ -78,7 +78,7 @@ async fn main() -> anyhow::Result<()> {
         .await?
         .with_shutdown()
         .enable_recovery()
-        .await
+        .await?
         .run()
         .await
 }
