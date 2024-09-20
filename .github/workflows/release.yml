@@ -1,0 +1,25 @@
+name: Create a release for the tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate Changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: .github/cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: .CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: .CHANGELOG.md
