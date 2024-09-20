@@ -30,7 +30,9 @@ impl Context {
         member: RoomMember,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         let homeserver = &self.homeserver;
-        let mut body = String::from("WARN: These URLs may not work! with unauthenticated media disabled on the running server!\n");
+        let mut body = String::from(
+            "WARN: If unauthenticated media is frozen on the server, these URLs may not work!\n",
+        );
         let current_avatar = member
             .avatar_url()
             .map(|url| url.http_url(homeserver))
