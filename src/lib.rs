@@ -80,6 +80,7 @@ impl FuukaBot {
     }
 
     /// Run this bot.
+    #[tracing::instrument(skip_all)]
     pub async fn run(self) -> anyhow::Result<()> {
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
@@ -113,6 +114,7 @@ impl FuukaBot {
         Ok(Some(Arc::new(PixivClient::new(token).await?)))
     }
 
+    #[tracing::instrument(skip_all)]
     async fn sync(&self) -> anyhow::Result<()> {
         let next_batch = self.initial_sync().await?;
         let settings = SyncSettings::default()
@@ -146,6 +148,7 @@ impl FuukaBot {
         Ok(())
     }
 
+    #[tracing::instrument(skip_all)]
     async fn initial_sync(&self) -> anyhow::Result<String> {
         let user_id = self.client.user_id();
         let homeserver = self.client.homeserver();
@@ -187,10 +190,14 @@ impl FuukaBot {
         Ok(path)
     }
 
-    /// Disable encrypted message recovery.
-    pub async fn disable_recovery(self) -> anyhow::Result<Self> {
-        self.client.encryption().recovery().disable().await?;
-        Ok(self)
+    /// Enable encrypted message recovery.
+    #[tracing::instrument(skip_all)]
+    pub async fn enable_recovery(self) -> Self {
+        if let Err(e) = self.client.encryption().recovery().enable().await {
+            tracing::warn!("Error while enabling backup: {e:#}");
+        }
+
+        self
     }
 
     /// Registers the graceful shutdown handler.
