@@ -60,9 +60,16 @@ async fn main() -> anyhow::Result<()> {
     let config: Config = get_config().context("Getting config failed!")?;
 
     let cred = get_config_file(CREDENTIALS_FILE)?;
+
+    #[cfg(feature = "interactive-login")]
     if !cred.try_exists()? {
         let session = fuuka_bot::session::prompt_for_login_data(&config.matrix.homeserver).await?;
         fs::write(CREDENTIALS_FILE, serde_json::to_string(&session)?)?;
+    }
+
+    #[cfg(not(feature = "interactive-login"))]
+    if !cred.try_exists()? {
+        anyhow::bail!("No credentials files provided!");
     }
 
     let session = get_credentials().context("Getting credentials failed!")?;

@@ -7,22 +7,6 @@ repository = "https://github.com/ShadowRZ/fuuka-bot"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies.matrix-sdk]
-git = "https://github.com/matrix-org/matrix-rust-sdk"
-features = ["anyhow"]
-
-[dependencies.reqwest]
-version = "0.12"
-features = ["gzip", "brotli", "deflate", "json"]
-
-[dependencies.ruma]
-# Flattens with the features used by matrix-rust-sdk
-version = "0.10"
-features = ["events", "html", "federation-api-c"]
-
-[dependencies.pixrs]
-git = "https://github.com/ShadowRZ/pixrs"
-
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 url = { version = "2", features = ["serde"] }
@@ -51,8 +35,25 @@ mime = "0.3"
 envsubst = "0.2"
 tl = "0.7"
 
+[dependencies.matrix-sdk]
+git = "https://github.com/matrix-org/matrix-rust-sdk"
+features = ["anyhow"]
+
+[dependencies.reqwest]
+version = "0.12"
+features = ["gzip", "brotli", "deflate", "json"]
+
+[dependencies.ruma]
+# Flattens with the features used by matrix-rust-sdk
+version = "0.10"
+features = ["events", "html", "federation-api-c"]
+
+[dependencies.pixrs]
+git = "https://github.com/ShadowRZ/pixrs"
+
 [dev-dependencies]
 pretty_assertions = "1"
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
+interactive-login = []
