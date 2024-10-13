@@ -37,24 +37,30 @@ tl = "0.7"
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
-features = ["anyhow"]
+default-features = false
+features = ["anyhow", "e2e-encryption", "automatic-room-key-forwarding", "sqlite"]
 
 [dependencies.reqwest]
 version = "0.12"
+default-features = false
 features = ["gzip", "brotli", "deflate", "json"]
 
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
 git = "https://github.com/ruma/ruma"
-rev = "1ae98db9c44f46a590f4c76baf5cef70ebb6970d"
+rev = "26165b23fc2ae9928c5497a21db3d31f4b44cc2a"
 features = ["events", "html", "federation-api-c"]
 
 [dependencies.pixrs]
 git = "https://github.com/ShadowRZ/pixrs"
+default-features = false
 
 [dev-dependencies]
 pretty_assertions = "1"
 
 [features]
+default = ["native-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
 interactive-login = []
+native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
+rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
