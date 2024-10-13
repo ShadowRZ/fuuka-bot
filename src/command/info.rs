@@ -1,5 +1,5 @@
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
-use ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 
 use crate::Context;
 
