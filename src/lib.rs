@@ -195,11 +195,9 @@ impl FuukaBot {
     pub async fn enable_recovery(self) -> anyhow::Result<Self> {
         let backup = self.client.encryption().backups();
 
-        if backup.are_enabled().await {
-            if backup.exists_on_server().await? {
-                tracing::debug!("Bot has an existing server key backup that is valid, skipping recovery provision.");
-                return Ok(self);
-            }
+        if backup.are_enabled().await && backup.exists_on_server().await? {
+            tracing::debug!("Bot has an existing server key backup that is valid, skipping recovery provision.");
+            return Ok(self);
         }
 
         let recovery = self.client.encryption().recovery();
