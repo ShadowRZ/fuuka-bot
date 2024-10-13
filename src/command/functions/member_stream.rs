@@ -1,13 +1,13 @@
 use async_stream::stream;
 use futures_util::Stream;
 use matrix_sdk::room::Room;
+use matrix_sdk::ruma::events::room::member::OriginalSyncRoomMemberEvent;
 use matrix_sdk::ruma::events::room::member::SyncRoomMemberEvent;
+use matrix_sdk::ruma::events::AnySyncStateEvent;
+use matrix_sdk::ruma::events::AnySyncTimelineEvent;
 use matrix_sdk::ruma::events::SyncStateEvent;
 use matrix_sdk::ruma::serde::Raw;
 use matrix_sdk::ruma::{EventId, OwnedEventId};
-use matrix_sdk::ruma::events::room::member::OriginalSyncRoomMemberEvent;
-use matrix_sdk::ruma::events::AnySyncStateEvent;
-use matrix_sdk::ruma::events::AnySyncTimelineEvent;
 
 /// Creates a new [Stream] that outputs a series of [OriginalSyncRoomMemberEvent] starting from the given [SyncRoomMemberEvent].
 pub fn member_state_stream(

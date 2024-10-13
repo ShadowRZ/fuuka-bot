@@ -13,6 +13,7 @@ use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
+use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::ruma::OwnedUserId;
 use time::Duration;
 
@@ -51,7 +52,10 @@ impl Context {
             Command::CrazyThursday => self._crazy_thursday().await,
             Command::Ping => self._ping().await,
             Command::RoomId => self._room_id().await,
-            Command::UserId(user_id) => self._user_id(user_id).await,
+            Command::UserId {
+                sender,
+                in_reply_to,
+            } => self._user_id(sender, in_reply_to).await,
             Command::NameChanges(member) => self._name_changes(member).await,
             Command::AvatarChanges(member) => self._avatar_changes(member).await,
             Command::Divergence => self._divergence().await,
@@ -104,8 +108,27 @@ impl Context {
 
     async fn _user_id(
         &self,
-        user_id: OwnedUserId,
+        sender: OwnedUserId,
+        in_reply_to: Option<OwnedEventId>,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+
+        let user_id = match in_reply_to {
+            Some(event_id) => {
+                use matrix_sdk::deserialized_responses::TimelineEventKind;
+                match self.room.event(&event_id, None).await?.kind {
+                    TimelineEventKind::Decrypted(decrypted) => {
+                        let ev = decrypted.event.deserialize()?;
+                        ev.sender().to_owned()
+                    },
+                    TimelineEventKind::PlainText { event } => {
+                        let ev = event.deserialize()?;
+                        ev.sender().to_owned()
+                    },
+                }
+            }
+            None => sender,
+        };
+
         Ok(Some(AnyMessageLikeEventContent::RoomMessage(
             RoomMessageEventContent::text_plain(user_id.as_str()),
         )))

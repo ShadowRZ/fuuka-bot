@@ -196,7 +196,9 @@ impl FuukaBot {
         let backup = self.client.encryption().backups();
 
         if backup.are_enabled().await && backup.exists_on_server().await? {
-            tracing::debug!("Bot has an existing server key backup that is valid, skipping recovery provision.");
+            tracing::debug!(
+                "Bot has an existing server key backup that is valid, skipping recovery provision."
+            );
             return Ok(self);
         }
 

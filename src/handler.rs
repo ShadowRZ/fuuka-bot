@@ -14,6 +14,7 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::events::{AnyMessageLikeEventContent, AnyTimelineEvent};
+use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::ruma::{OwnedUserId, UserId};
 use matrix_sdk::{Client as MatrixClient, RoomState};
 use pixrs::PixivClient;
@@ -44,7 +45,10 @@ pub enum Command {
     /// `room_id`
     RoomId,
     /// `user_id`
-    UserId(OwnedUserId),
+    UserId {
+        sender: OwnedUserId,
+        in_reply_to: Option<OwnedEventId>,
+    },
     /// `name_changes`
     NameChanges(RoomMember),
     /// `avatar_chanegs`
@@ -244,7 +248,13 @@ impl Context {
                 "crazy_thursday" => Ok(Some(Action::Command(Command::CrazyThursday))),
                 "ping" => Ok(Some(Action::Command(Command::Ping))),
                 "room_id" => Ok(Some(Action::Command(Command::RoomId))),
-                "user_id" => Ok(Some(Action::Command(Command::UserId(ev.sender.clone())))),
+                "user_id" => Ok(Some(Action::Command(Command::UserId {
+                    sender: (ev.sender.clone()),
+                    in_reply_to: ev.content.relates_to.as_ref().and_then(|rel| match rel {
+                        Relation::Reply { in_reply_to } => Some(in_reply_to.event_id.clone()),
+                        _ => None,
+                    }),
+                }))),
                 "name_changes" => {
                     let user_id = Self::reply_target_fallback(ev, room).await?;
                     let Some(member) = room.get_member(&user_id).await? else {
@@ -478,8 +488,12 @@ impl Context {
                 use matrix_sdk::ruma::events::AnyTimelineEvent;
                 let event_id = &in_reply_to.event_id;
                 let event = match room.event(event_id, None).await?.kind {
-                    TimelineEventKind::PlainText { event } => event.deserialize()?.into_full_event(room.room_id().to_owned()),
-                    TimelineEventKind::Decrypted(decrypted) => AnyTimelineEvent::MessageLike(decrypted.event.deserialize()?),
+                    TimelineEventKind::PlainText { event } => event
+                        .deserialize()?
+                        .into_full_event(room.room_id().to_owned()),
+                    TimelineEventKind::Decrypted(decrypted) => {
+                        AnyTimelineEvent::MessageLike(decrypted.event.deserialize()?)
+                    }
                 };
                 Ok(Some(event))
             }
