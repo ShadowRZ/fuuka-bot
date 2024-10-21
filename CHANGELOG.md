@@ -7,9 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add proper recovery support
+
+### Changed
+
+- Update changelog
+
+- Enable recovery instead
+- Bump dependencies
+- Apply Clippy suggestions
+- Update docs
+
 ### Fixed
 
 - Fix actions
+- Fix code for changed matrix-rust-sdk API
+- Fix user_id command
 
 ## [0.3.2] - 2024-09-20
 
