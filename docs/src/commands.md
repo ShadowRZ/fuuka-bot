@@ -2,6 +2,16 @@
 
 **TODO: Still needs to be written.**
 
+## `help`
+
+Sends the help message link and source code repo.
+
+## `info`
+
+**TODO: Might change**
+
+Sends the info of the running user and server version.
+
 ## `avatar_changes`
 
 Get the target user's avatar change history.
@@ -50,3 +60,25 @@ For fun, print the make-up divergence measurement.
 ## `hitokoto`
 
 Sends a quote from [https://hitokoto.cn](https://hitokoto.cn)
+
+## `pixiv [illust_id]`
+
+Without argument, print the first five items of the Pixiv daily ranking.
+
+With argument `illust_id`, print the info of the illust.
+
+## `ignore`
+
+Ask the bot to hard ignore a user.
+
+_Requires replying to a message._
+
+_Requires a defined admin user._
+
+## `unignore <user_id>`
+
+Ask the bot to unignore a user.
+
+_Requires replying to a message._
+
+_Requires a defined admin user._
