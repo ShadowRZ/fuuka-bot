@@ -12,6 +12,7 @@ mod upload_sticker;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
+use matrix_sdk::ruma::events::Mentions;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::OwnedEventId;
 use matrix_sdk::ruma::OwnedUserId;
@@ -20,6 +21,7 @@ use time::Duration;
 use crate::handler::Command;
 use crate::types::HitokotoResult;
 use crate::Context;
+use crate::RoomMemberExt;
 
 static HELP_TEXT: &str = concat!(
     "Fuuka Bot\n\nSource: ",
@@ -51,6 +53,7 @@ impl Context {
             Command::SendAvatar(member) => self._send_avatar(member).await,
             Command::CrazyThursday => self._crazy_thursday().await,
             Command::Ping => self._ping().await,
+            Command::PingAdmin => self._ping_admin().await,
             Command::RoomId => self._room_id().await,
             Command::UserId {
                 sender,
@@ -100,6 +103,29 @@ impl Context {
         )))
     }
 
+    async fn _ping_admin(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        let Some(ref admin_user) = self.config.admin_user else {
+            return Ok(None);
+        };
+
+        let member = self.room.get_member(admin_user).await?;
+        match member {
+            Some(member) => {
+                let admin_pill = member.make_pill();
+                Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                    RoomMessageEventContent::text_html(
+                        format!("Ping @{admin}", admin = member.name()),
+                        format!("Ping {admin}", admin = admin_pill),
+                    )
+                    .add_mentions(Mentions::with_user_ids([admin_user.to_owned()])),
+                )))
+            }
+            None => Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                RoomMessageEventContent::text_plain("Admin isn't here."),
+            ))),
+        }
+    }
+
     async fn _room_id(&self) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         Ok(Some(AnyMessageLikeEventContent::RoomMessage(
             RoomMessageEventContent::text_plain(self.room.room_id()),
@@ -111,7 +137,6 @@ impl Context {
         sender: OwnedUserId,
         in_reply_to: Option<OwnedEventId>,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
-
         let user_id = match in_reply_to {
             Some(event_id) => {
                 use matrix_sdk::deserialized_responses::TimelineEventKind;
@@ -119,11 +144,11 @@ impl Context {
                     TimelineEventKind::Decrypted(decrypted) => {
                         let ev = decrypted.event.deserialize()?;
                         ev.sender().to_owned()
-                    },
+                    }
                     TimelineEventKind::PlainText { event } => {
                         let ev = event.deserialize()?;
                         ev.sender().to_owned()
-                    },
+                    }
                 }
             }
             None => sender,

@@ -40,6 +40,12 @@ Print the Matrix user ID of the replied user, or the sender.
 
 Ping the bot, print the time elpased to receive the message.
 
+## `ping-admin`
+
+Ping the admin user for convenience of bridged users.
+
+_Requires a defined admin user._
+
 ## `send_avatar`
 
 In a reply, send the avatar of the person being replied to.

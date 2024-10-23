@@ -42,6 +42,8 @@ pub enum Command {
     CrazyThursday,
     /// `ping`
     Ping,
+    /// `ping-admin`
+    PingAdmin,
     /// `room_id`
     RoomId,
     /// `user_id`
@@ -247,6 +249,12 @@ impl Context {
                 }
                 "crazy_thursday" => Ok(Some(Action::Command(Command::CrazyThursday))),
                 "ping" => Ok(Some(Action::Command(Command::Ping))),
+                "ping-admin" => {
+                    let Some(ref _admin_user) = config.admin_user else {
+                        return Ok(None);
+                    };
+                    Ok(Some(Action::Command(Command::PingAdmin)))
+                }
                 "room_id" => Ok(Some(Action::Command(Command::RoomId))),
                 "user_id" => Ok(Some(Action::Command(Command::UserId {
                     sender: (ev.sender.clone()),
