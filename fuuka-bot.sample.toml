@@ -37,3 +37,6 @@ pixiv-r18 = false
 
 [stickers]
 send-to = "!XXXXXXXXXXX:example.org"
+
+[nixpkgs-pr]
+token = ""

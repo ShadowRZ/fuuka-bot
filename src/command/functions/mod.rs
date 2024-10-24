@@ -1,4 +1,5 @@
 pub(super) mod member_stream;
+pub(super) mod nixpkgs_pr;
 
 use std::{
     collections::{HashMap, HashSet},

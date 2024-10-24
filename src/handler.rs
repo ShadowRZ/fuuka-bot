@@ -59,6 +59,8 @@ pub enum Command {
     Divergence,
     /// `hitokoto`
     Hitokoto,
+    /// `nixpkgs`
+    Nixpkgs { pr_number: u64 },
     /// `remind`
     Remind {
         /// Remind target.
@@ -360,6 +362,11 @@ impl Context {
                         }
                         None => Ok(Some(Action::Command(Command::Pixiv(PixivCommand::Ranking)))),
                     }
+                }
+                "nixpkgs" => {
+                    let pr_number = args.next().ok_or(Error::MissingArgument("pr_number"))?;
+                    let pr_number = u64::from_str(&pr_number)?;
+                    Ok(Some(Action::Command(Command::Nixpkgs { pr_number })))
                 }
                 _ => Result::Err(Error::UnknownCommand(command).into()),
             }

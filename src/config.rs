@@ -25,6 +25,8 @@ pub struct Config {
     pub services: Option<ServiceConfig>,
     /// Stickers feature related configuration.
     pub stickers: Option<StickerConfig>,
+    /// Nixpkgs PR configuration
+    pub nixpkgs_pr: Option<NixpkgsPrConfig>,
 }
 
 /// Command configs.
@@ -216,4 +218,10 @@ impl TrapConfig {
 
         None
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub struct NixpkgsPrConfig {
+    pub token: String,
 }

@@ -4,6 +4,7 @@ mod crazy_thursday;
 mod functions;
 mod info;
 mod member_changes;
+mod nixpkgs;
 mod pixiv;
 mod remind;
 mod send_avatar;
@@ -76,6 +77,7 @@ impl Context {
             Command::Ignore(user_id) => self._ignore(user_id).await,
             Command::Unignore(user_id) => self._unignore(user_id).await,
             Command::Pixiv(command) => self._pixiv(command).await,
+            Command::Nixpkgs { pr_number } => self._nixpkgs(pr_number).await,
         }
     }
 
