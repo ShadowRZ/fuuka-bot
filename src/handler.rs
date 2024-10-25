@@ -6,6 +6,8 @@ use std::sync::Arc;
 use crate::{Config, Error};
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::{Room, RoomMember};
+use matrix_sdk::ruma::events::reaction::ReactionEventContent;
+use matrix_sdk::ruma::events::relation::Annotation;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
 use matrix_sdk::ruma::events::room::message::{
@@ -508,6 +510,20 @@ impl Context {
                         .into_full_event(room.room_id().to_owned()),
                     TimelineEventKind::Decrypted(decrypted) => {
                         AnyTimelineEvent::MessageLike(decrypted.event.deserialize()?)
+                    }
+                    TimelineEventKind::UnableToDecrypt { event, utd_info } => {
+                        tracing::warn!(
+                            ?utd_info,
+                            "Unable to decrypt event {event:?}",
+                            event = event.get_field::<String>("event_id")
+                        );
+                        room.send(ReactionEventContent::new(Annotation::new(
+                            ev.event_id.clone(),
+                            "↖️❌🔒".to_string(),
+                        )));
+                        event
+                            .deserialize()?
+                            .into_full_event(room.room_id().to_owned())
                     }
                 };
                 Ok(Some(event))

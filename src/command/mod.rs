@@ -10,6 +10,8 @@ mod remind;
 mod send_avatar;
 mod upload_sticker;
 
+use matrix_sdk::ruma::events::reaction::ReactionEventContent;
+use matrix_sdk::ruma::events::relation::Annotation;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
@@ -150,6 +152,19 @@ impl Context {
                     TimelineEventKind::PlainText { event } => {
                         let ev = event.deserialize()?;
                         ev.sender().to_owned()
+                    }
+                    TimelineEventKind::UnableToDecrypt { event, utd_info } => {
+                        tracing::warn!(
+                            ?utd_info,
+                            "Unable to decrypt event {event:?}",
+                            event = event.get_field::<String>("event_id")
+                        );
+                        return Ok(Some(AnyMessageLikeEventContent::Reaction(
+                            ReactionEventContent::new(Annotation::new(
+                                self.ev.event_id.clone(),
+                                "↖️❌🔒".to_string(),
+                            )),
+                        )));
                     }
                 }
             }
