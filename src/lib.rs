@@ -117,6 +117,24 @@ impl FuukaBot {
     #[tracing::instrument(skip_all)]
     async fn sync(&self) -> anyhow::Result<()> {
         let next_batch = self.initial_sync().await?;
+        // Print some info regarding this device.
+        {
+            let encryption = self.client.encryption();
+            let cross_signing_status = encryption.cross_signing_status().await;
+            if let Some(device) = encryption.get_own_device().await? {
+                let device_id = device.device_id();
+                tracing::debug!(
+                    cross_signing_status = ?cross_signing_status,
+                    is_cross_signed_by_owner = device.is_cross_signed_by_owner(),
+                    is_verified = device.is_verified(),
+                    is_verified_with_cross_signing = device.is_verified_with_cross_signing(),
+                    "Own device ID: {device_id}"
+                );
+            }
+        }
+        if let Err(e) = self.ensure_self_device_verified().await {
+            tracing::warn!("Failed to ensure this device is verified: {e:#}");
+        }
         let settings = SyncSettings::default()
             .token(next_batch)
             .set_presence(PresenceState::Online);
@@ -145,6 +163,28 @@ impl FuukaBot {
             self.client.remove_event_handler(h3);
             return Err(e.into());
         }
+        Ok(())
+    }
+
+    async fn ensure_self_device_verified(&self) -> anyhow::Result<()> {
+        let encryption = self.client.encryption();
+        let has_keys = encryption
+            .cross_signing_status()
+            .await
+            .map(|status| status.has_self_signing && status.has_master)
+            .unwrap_or_default();
+
+        if !has_keys {
+            tracing::warn!("No self signing key to sign this own device!");
+            return Ok(());
+        }
+
+        if let Some(device) = encryption.get_own_device().await? {
+            if !device.is_cross_signed_by_owner() {
+                device.verify().await?
+            }
+        }
+
         Ok(())
     }
 
@@ -273,5 +313,118 @@ impl FuukaBot {
         });
 
         self
+    }
+
+    /// Prepares the bootstrap cross signing key if needed.
+    pub async fn bootstrap_cross_signing_if_needed(&self) -> anyhow::Result<()> {
+        use anyhow::Context;
+        use matrix_sdk::ruma::api::client::uiaa;
+        use rpassword::read_password;
+
+        if let Err(e) = self
+            .client
+            .encryption()
+            .bootstrap_cross_signing_if_needed(None)
+            .await
+        {
+            if let Some(response) = e.as_uiaa_response() {
+                use std::io::Write;
+
+                print!("Enter password for preparing cross signing: ");
+                std::io::stdout().flush()?;
+                let password = read_password()?;
+                let mut password = uiaa::Password::new(
+                    uiaa::UserIdentifier::UserIdOrLocalpart(
+                        self.client.user_id().unwrap().to_string(),
+                    ),
+                    password,
+                );
+                password.session = response.session.clone();
+
+                self.client
+                    .encryption()
+                    .bootstrap_cross_signing(Some(uiaa::AuthData::Password(password)))
+                    .await
+                    .context("Couldn't bootstrap cross signing")?
+            } else {
+                anyhow::bail!("Error during cross signing bootstrap {:#?}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Prepares the bootstrap cross signing key.
+    pub async fn bootstrap_cross_signing(&self) -> anyhow::Result<()> {
+        use anyhow::Context;
+        use matrix_sdk::ruma::api::client::uiaa;
+        use rpassword::read_password;
+
+        if let Err(e) = self.client.encryption().bootstrap_cross_signing(None).await {
+            if let Some(response) = e.as_uiaa_response() {
+                use std::io::Write;
+
+                print!("Enter password for preparing cross signing: ");
+                std::io::stdout().flush()?;
+                let password = read_password()?;
+                let mut password = uiaa::Password::new(
+                    uiaa::UserIdentifier::UserIdOrLocalpart(
+                        self.client.user_id().unwrap().to_string(),
+                    ),
+                    password,
+                );
+                password.session = response.session.clone();
+
+                self.client
+                    .encryption()
+                    .bootstrap_cross_signing(Some(uiaa::AuthData::Password(password)))
+                    .await
+                    .context("Couldn't bootstrap cross signing")?
+            } else {
+                anyhow::bail!("Error during cross signing bootstrap {:#?}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Resets the bootstrap cross signing key.
+    pub async fn reset_cross_signing(&self) -> anyhow::Result<()> {
+        use matrix_sdk::encryption::CrossSigningResetAuthType;
+
+        if let Some(handle) = self.client.encryption().reset_cross_signing().await? {
+            match handle.auth_type() {
+                CrossSigningResetAuthType::Uiaa(uiaa) => {
+                    use matrix_sdk::ruma::api::client::uiaa;
+                    use rpassword::read_password;
+                    use std::io::Write;
+
+                    print!("Enter password for resetting cross signing: ");
+                    std::io::stdout().flush()?;
+                    let password = read_password()?;
+                    let mut password = uiaa::Password::new(
+                        uiaa::UserIdentifier::UserIdOrLocalpart(
+                            self.client.user_id().unwrap().to_string(),
+                        ),
+                        password,
+                    );
+                    password.session = uiaa.session.clone();
+
+                    handle
+                        .auth(Some(uiaa::AuthData::Password(password)))
+                        .await?;
+                }
+                CrossSigningResetAuthType::Oidc(o) => {
+                    tracing::info!(
+                        "To reset your end-to-end encryption cross-signing identity, \
+                            you first need to approve it at {}",
+                        o.approval_url
+                    );
+                    handle.auth(None).await?;
+                }
+            }
+        }
+
+        Ok(())
     }
 }

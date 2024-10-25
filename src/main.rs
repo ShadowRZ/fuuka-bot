@@ -74,11 +74,30 @@ async fn main() -> anyhow::Result<()> {
 
     let session = get_credentials().context("Getting credentials failed!")?;
 
-    FuukaBot::new(config, session)
-        .await?
-        .with_shutdown()
-        .enable_recovery()
-        .await?
-        .run()
-        .await
+    let bot = FuukaBot::new(config, session).await?;
+
+    let mut args = std::env::args();
+    args.next();
+    if let Some(arg1) = args.next() {
+        match arg1.as_str() {
+            "bootstrap-cross-signing-if-needed" => {
+                bot.bootstrap_cross_signing_if_needed().await?;
+                return Ok(());
+            }
+            "bootstrap-cross-signing" => {
+                bot.bootstrap_cross_signing_if_needed().await?;
+                return Ok(());
+            }
+            "reset-cross-signing" => {
+                bot.reset_cross_signing().await?;
+                return Ok(());
+            }
+            _ => {
+                println!("Unknown command!");
+                return Ok(());
+            }
+        }
+    }
+
+    bot.with_shutdown().enable_recovery().await?.run().await
 }
