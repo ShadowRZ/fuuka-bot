@@ -1,0 +1,65 @@
+[package]
+name = "fuuka-bot"
+license = "Apache-2.0"
+version.workspace = true
+edition.workspace = true
+repository = "https://github.com/ShadowRZ/fuuka-bot"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+url = { version = "2", features = ["serde"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+serde = { version = "1", features = ["derive"] }
+anyhow = "1"
+serde_json = "1"
+crc32fast = "1"
+thiserror = "1"
+shell-words = "1"
+fastrand = "2"
+rpassword = "7"
+regex = "1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+time = { version = "0.3", features = ["macros", "formatting"] }
+tracing = "0.1"
+imagesize = "0.13"
+file-format = "0.25"
+tokio-util = "0.7"
+toml = "0.8"
+async-stream = "0.3"
+futures-util = "0.3"
+html-escape = "0.2"
+mime = "0.3"
+envsubst = "0.2"
+tl = "0.7"
+
+[dependencies.matrix-sdk]
+git = "https://github.com/matrix-org/matrix-rust-sdk"
+default-features = false
+features = ["anyhow", "e2e-encryption", "automatic-room-key-forwarding", "sqlite"]
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["gzip", "brotli", "deflate", "json"]
+
+[dependencies.ruma]
+# Flattens with the features used by matrix-rust-sdk
+git = "https://github.com/ruma/ruma"
+rev = "26165b23fc2ae9928c5497a21db3d31f4b44cc2a"
+features = ["events", "html", "federation-api-c"]
+
+[dependencies.pixrs]
+git = "https://github.com/ShadowRZ/pixrs"
+default-features = false
+
+[dev-dependencies]
+pretty_assertions = "1"
+
+[features]
+default = ["native-tls"]
+bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
+interactive-login = []
+native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
+rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
