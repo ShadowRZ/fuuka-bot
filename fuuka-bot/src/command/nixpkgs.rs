@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use crate::Context;
+use futures_util::{pin_mut, StreamExt};
 use matrix_sdk::ruma::events::{
     room::message::RoomMessageEventContent, AnyMessageLikeEventContent,
 };
@@ -9,12 +12,72 @@ impl Context {
     pub(super) async fn _nixpkgs(
         &self,
         pr_number: i32,
+        track: bool,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         let Some(ref nixpkgs_pr) = self.config.nixpkgs_pr else {
             return Ok(None);
         };
+
         let client = &self.http;
         let result = fetch_nixpkgs_pr(client, &nixpkgs_pr.token, pr_number).await?;
+
+        if track {
+            let pr_info = result.clone();
+            let config = self.config.clone();
+            let http = self.http.clone();
+            let room = self.room.clone();
+            tokio::spawn(async move {
+                use crate::command::functions::nixpkgs_pr::pr_state_stream;
+
+                let config = config;
+
+                let Some(ref nixpkgs_pr) = config.nixpkgs_pr else {
+                    return;
+                };
+                let Some(ref cron) = nixpkgs_pr.cron else {
+                    return;
+                };
+                let token = &nixpkgs_pr.token;
+
+                tokio::time::sleep(Duration::from_secs(1)).await;
+
+                let stream = pr_state_stream(&http, cron, token, pr_number, pr_info);
+                pin_mut!(stream);
+
+                tracing::debug!(room_id = %room.room_id(), "Start tracking Nixpkgs PR #{pr_number}");
+                while let Some(status) = stream.next().await {
+                    use crate::command::functions::nixpkgs_pr::TrackStatus;
+                    match status {
+                        TrackStatus::Pending { new_branch, .. } => {
+                            if let Some(new_branch) = new_branch {
+                                use crate::command::functions::nixpkgs_pr::NewBranch;
+                                let format_str = match new_branch {
+                                    NewBranch::StagingNext => "staging-next",
+                                    NewBranch::Master => "master",
+                                    NewBranch::UnstableSmall => "nixos-unstable-small",
+                                    NewBranch::NixpkgsUnstable => "nixpkgs-unstable",
+                                    NewBranch::Unstable => "nixos-unstable",
+                                };
+                                if let Err(e) = room
+                                    .send(RoomMessageEventContent::text_plain(format!(
+                                        "PR #{pr_number} is now in branch {format_str}!"
+                                    )))
+                                    .await
+                                {
+                                    tracing::warn!("Failed to send status: {e:?}");
+                                }
+                            }
+                        }
+                        TrackStatus::Done => {
+                            room.send(RoomMessageEventContent::text_plain(format!(
+                                "PR #{pr_number} OK!"
+                            )));
+                            return;
+                        }
+                    }
+                }
+            });
+        }
 
         let in_branches = result.in_branches.as_ref().map(|in_branches| {
             format!(

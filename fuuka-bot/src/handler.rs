@@ -62,7 +62,7 @@ pub enum Command {
     /// `hitokoto`
     Hitokoto,
     /// `nixpkgs`
-    Nixpkgs { pr_number: i32 },
+    Nixpkgs { pr_number: i32, track: bool },
     /// `remind`
     Remind {
         /// Remind target.
@@ -367,8 +367,9 @@ impl Context {
                 }
                 "nixpkgs" => {
                     let pr_number = args.next().ok_or(Error::MissingArgument("pr_number"))?;
+                    let track = args.next().map(|s| s == "track").unwrap_or_default();
                     let pr_number = i32::from_str(&pr_number)?;
-                    Ok(Some(Action::Command(Command::Nixpkgs { pr_number })))
+                    Ok(Some(Action::Command(Command::Nixpkgs { pr_number, track })))
                 }
                 _ => Result::Err(Error::UnknownCommand(command).into()),
             }

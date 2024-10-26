@@ -1,5 +1,6 @@
 //! Fuuka Bot configuration.
 
+use cronchik::CronSchedule;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId, RoomId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -224,4 +225,5 @@ impl TrapConfig {
 #[serde(rename_all = "kebab-case")]
 pub struct NixpkgsPrConfig {
     pub token: String,
+    pub cron: Option<CronSchedule>,
 }

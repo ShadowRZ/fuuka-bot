@@ -40,7 +40,7 @@ pub mod pull_info {
         pub head: GitObjectId,
     }
 
-    #[derive(cynic::Enum, Clone, Copy, Debug)]
+    #[derive(cynic::Enum, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
     #[cynic(schema = "github")]
     pub enum PullRequestState {
         Closed,
@@ -58,8 +58,8 @@ pub mod pull_branches {
     use fuuka_bot_github_schema::schema;
 
     #[derive(cynic::QueryVariables, Debug)]
-    pub struct PullBranchesVariables {
-        pub head: String,
+    pub struct PullBranchesVariables<'a> {
+        pub head: &'a str,
     }
 
     #[derive(cynic::QueryFragment, Debug)]

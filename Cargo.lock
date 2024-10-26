@@ -569,6 +569,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cronchik"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fed6ebd7de0ccc9a965de26ed115973d3ab896b3862c5bf574dc3aafc211388"
+dependencies = [
+ "serde",
+ "statiki",
+ "time",
+]
+
+[[package]]
 name = "crossbeam-utils"
 version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1109,6 +1120,7 @@ dependencies = [
  "anyhow",
  "async-stream",
  "crc32fast",
+ "cronchik",
  "cynic",
  "envsubst",
  "fastrand",
@@ -3428,6 +3440,12 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "statiki"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a1c67447fac391c432298ea64d0150fc1bfa911e2d00a37da6510e8fa72ab83"
 
 [[package]]
 name = "string_cache"
