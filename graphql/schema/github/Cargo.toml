@@ -1,0 +1,11 @@
+[package]
+name = "fuuka-bot-github-schema"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+cynic = { version = "3", features = ["rkyv"] }
+
+[build-dependencies]
+cynic-codegen = { version = "3", features = ["rkyv"] }

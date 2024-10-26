@@ -62,7 +62,7 @@ pub enum Command {
     /// `hitokoto`
     Hitokoto,
     /// `nixpkgs`
-    Nixpkgs { pr_number: u64 },
+    Nixpkgs { pr_number: i32 },
     /// `remind`
     Remind {
         /// Remind target.
@@ -367,7 +367,7 @@ impl Context {
                 }
                 "nixpkgs" => {
                     let pr_number = args.next().ok_or(Error::MissingArgument("pr_number"))?;
-                    let pr_number = u64::from_str(&pr_number)?;
+                    let pr_number = i32::from_str(&pr_number)?;
                     Ok(Some(Action::Command(Command::Nixpkgs { pr_number })))
                 }
                 _ => Result::Err(Error::UnknownCommand(command).into()),
@@ -476,6 +476,9 @@ impl Context {
             Ok(Error::MissingArgument(arg)) => format!("Missing argument: {arg}"),
             Ok(Error::UnknownCommand(command)) => format!("Unknown command {command}"),
             Ok(Error::UnexpectedError(e)) => e.to_string(),
+            Ok(Error::GraphQLError { service, .. }) => {
+                format!("GraphQL Error response from {service}!")
+            }
             Err(e) => {
                 tracing::error!("Unexpected error happened: {e:#}");
                 format!("Unexpected error happened: {e:#}")

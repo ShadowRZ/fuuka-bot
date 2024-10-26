@@ -1,146 +1,4 @@
-mod models {
-    pub mod pr_info {
-        use serde::Deserialize;
-        use serde::Serialize;
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrInfo {
-            pub data: PrInfoData,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrInfoData {
-            pub repository: PrInfoRepository,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrInfoRepository {
-            pub pull_request: PrInfoPullRequest,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrInfoPullRequest {
-            pub title: String,
-            pub state: PullRequestState,
-            pub merge_commit: Option<PrInfoMergeCommit>,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrInfoMergeCommit {
-            pub head: String,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "UPPERCASE")]
-        pub enum PullRequestState {
-            Closed,
-            Merged,
-            Open,
-        }
-    }
-
-    pub mod pr_branches {
-        use serde::Deserialize;
-        use serde::Serialize;
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrBranches {
-            pub data: PrBranchesData,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrBranchesData {
-            pub merged_branches: PrBranchesMergedBranches,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct PrBranchesMergedBranches {
-            pub staging: Comparison,
-            pub master: Comparison,
-            pub nixos_unstable_small: Comparison,
-            pub nixpkgs_unstable: Comparison,
-            pub nixos_unstable: Comparison,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        pub struct Comparison {
-            pub compare: ComparisonStatusWrapper,
-        }
-
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-        pub struct ComparisonStatusWrapper {
-            pub status: ComparisonStatus,
-        }
-
-        #[derive(Copy, Clone, Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
-        #[serde(rename_all = "UPPERCASE")]
-        pub enum ComparisonStatus {
-            Ahead,
-            Behind,
-            Diverged,
-            Identical,
-        }
-
-        impl ComparisonStatus {
-            pub fn is_included(self) -> bool {
-                self == ComparisonStatus::Identical || self == ComparisonStatus::Behind
-            }
-        }
-    }
-}
-
-mod requests {
-    use serde::Deserialize;
-    use serde::Serialize;
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    pub struct PrInfoRequest {
-        query: &'static str,
-        variables: PrInfoRequestVariables,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    pub struct PrInfoRequestVariables {
-        pub pr_number: u64,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    pub struct PrBranchesRequest {
-        query: &'static str,
-        variables: PrBranchesRequestVariables,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    pub struct PrBranchesRequestVariables {
-        pub head: String,
-    }
-
-    impl PrInfoRequest {
-        pub fn new(pr_number: u64) -> PrInfoRequest {
-            PrInfoRequest {
-                query: include_str!("./graphql/pr-info.graphql"),
-                variables: PrInfoRequestVariables { pr_number },
-            }
-        }
-    }
-
-    impl PrBranchesRequest {
-        pub fn new(head: String) -> PrBranchesRequest {
-            PrBranchesRequest {
-                query: include_str!("./graphql/branches.graphql"),
-                variables: PrBranchesRequestVariables { head },
-            }
-        }
-    }
-}
+use cynic::{http::ReqwestExt, QueryBuilder};
 
 static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
 
@@ -161,76 +19,84 @@ pub struct PrBranchesStatus {
 pub async fn fetch_nixpkgs_pr(
     client: &reqwest::Client,
     token: &str,
-    pr_number: u64,
+    pr_number: i32,
 ) -> anyhow::Result<PrInfo> {
-    use self::requests::PrInfoRequest;
+    use crate::services::github::pull_info::{PullInfo, PullInfoVariables};
 
-    let body = PrInfoRequest::new(pr_number);
+    let operation = PullInfo::build(PullInfoVariables { pr_number });
     let resp = client
         .post(GRAPHQL_ENDPOINT)
         .bearer_auth(token)
-        .json(&body)
-        .send()
-        .await?
-        .error_for_status()?
-        .json::<self::models::pr_info::PrInfo>()
+        .run_graphql(operation)
         .await?;
+    let Some(data) = resp.data else {
+        return Err(crate::Error::GraphQLError {
+            service: "github",
+            errors: resp.errors.unwrap_or_default(),
+        }
+        .into());
+    };
 
-    let title = resp.data.repository.pull_request.title;
+    let Some(repository) = data.repository else {
+        anyhow::bail!("NixOS/nixpkgs repository disappeared!");
+    };
+
+    let Some(pull_request) = repository.pull_request else {
+        return Err(crate::Error::UnexpectedError("This PR is not a pull request!").into());
+    };
+
+    let title = pull_request.title;
     //let state = resp.data.repository.pull_request.state;
 
-    let in_branches = match resp.data.repository.pull_request.merge_commit {
+    let in_branches = match pull_request.merge_commit {
         Some(merge_commit) => {
-            use self::requests::PrBranchesRequest;
+            use crate::services::github::pull_branches::{PullBranches, PullBranchesVariables};
+            use crate::services::github::pull_info::GitObjectId;
 
-            let head = merge_commit.head;
-            let body = PrBranchesRequest::new(head);
+            let GitObjectId(head) = merge_commit.head;
+            let operation = PullBranches::build(PullBranchesVariables { head });
             let resp = client
                 .post(GRAPHQL_ENDPOINT)
                 .bearer_auth(token)
-                .json(&body)
-                .send()
-                .await?
-                .error_for_status()?
-                .json::<self::models::pr_branches::PrBranches>()
+                .run_graphql(operation)
                 .await?;
+            let Some(data) = resp.data else {
+                return Err(crate::Error::GraphQLError {
+                    service: "github",
+                    errors: resp.errors.unwrap_or_default(),
+                }
+                .into());
+            };
+            let Some(merged_branches) = data.merged_branches else {
+                anyhow::bail!("NixOS/nixpkgs repository disappeared!");
+            };
 
             Some(PrBranchesStatus {
-                staging: resp
-                    .data
-                    .merged_branches
+                staging: merged_branches
                     .staging
-                    .compare
-                    .status
-                    .is_included(),
-                master: resp
-                    .data
-                    .merged_branches
+                    .and_then(|ref_| ref_.compare)
+                    .map(|compare| compare.status.is_included())
+                    .unwrap_or_default(),
+                master: merged_branches
                     .master
-                    .compare
-                    .status
-                    .is_included(),
-                nixos_unstable_small: resp
-                    .data
-                    .merged_branches
+                    .and_then(|ref_| ref_.compare)
+                    .map(|compare| compare.status.is_included())
+                    .unwrap_or_default(),
+                nixos_unstable_small: merged_branches
                     .nixos_unstable_small
-                    .compare
-                    .status
-                    .is_included(),
-                nixpkgs_unstable: resp
-                    .data
-                    .merged_branches
+                    .and_then(|ref_| ref_.compare)
+                    .map(|compare| compare.status.is_included())
+                    .unwrap_or_default(),
+                nixpkgs_unstable: merged_branches
                     .nixpkgs_unstable
-                    .compare
-                    .status
-                    .is_included(),
-                nixos_unstable: resp
-                    .data
-                    .merged_branches
+                    .and_then(|ref_| ref_.compare)
+                    .map(|compare| compare.status.is_included())
+                    .unwrap_or_default(),
+                nixos_unstable: merged_branches
                     .nixos_unstable
-                    .compare
-                    .status
-                    .is_included(),
+                    .and_then(|ref_| ref_.compare)
+                    .map(|compare| compare.status.is_included())
+                    .unwrap_or_default(),
             })
         }
         None => None,

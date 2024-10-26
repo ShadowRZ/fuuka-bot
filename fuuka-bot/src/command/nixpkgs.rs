@@ -8,7 +8,7 @@ use super::functions::nixpkgs_pr::fetch_nixpkgs_pr;
 impl Context {
     pub(super) async fn _nixpkgs(
         &self,
-        pr_number: u64,
+        pr_number: i32,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
         let Some(ref nixpkgs_pr) = self.config.nixpkgs_pr else {
             return Ok(None);

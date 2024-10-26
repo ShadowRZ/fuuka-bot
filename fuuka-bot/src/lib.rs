@@ -17,6 +17,7 @@ pub mod de;
 pub mod events;
 pub mod handler;
 pub mod message;
+pub mod services;
 #[doc(hidden)]
 pub mod session;
 pub mod traits;

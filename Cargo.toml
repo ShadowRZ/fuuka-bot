@@ -1,5 +1,5 @@
 [workspace]
-members = ["fuuka-bot"]
+members = ["fuuka-bot", "graphql/schema/*", "graphql/query/*"]
 resolver = "2"
 
 [workspace.package]

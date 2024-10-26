@@ -1,5 +1,6 @@
 //! Types for external API.
 
+use cynic::GraphQlError;
 use serde::Deserialize;
 use thiserror::Error;
 use time::OffsetDateTime;
@@ -108,4 +109,10 @@ pub enum Error {
     /// An unknown command was passed.
     #[error("Unrecognized command {0}")]
     UnknownCommand(String),
+    /// A GraphQL error occured.
+    #[error("Error response from {service}: {errors:?}")]
+    GraphQLError {
+        service: &'static str,
+        errors: Vec<GraphQlError>,
+    },
 }

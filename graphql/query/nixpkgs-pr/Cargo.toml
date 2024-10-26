@@ -1,0 +1,12 @@
+[package]
+name = "fuuka-bot-query-nixpkgs-pr"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+cynic = { version = "3", features = ["rkyv"] }
+fuuka-bot-github-schema = { path = "../../schema/github" }
+
+[build-dependencies]
+cynic-codegen = { version = "3", features = ["rkyv"] }
