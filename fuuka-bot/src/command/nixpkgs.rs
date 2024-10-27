@@ -22,6 +22,13 @@ impl Context {
         let result = fetch_nixpkgs_pr(client, &nixpkgs_pr.token, pr_number).await?;
 
         if track {
+            if !self.room.is_direct().await? {
+                return Ok(Some(AnyMessageLikeEventContent::RoomMessage(
+                    RoomMessageEventContent::text_plain(
+                        "Tracking Nixpkgs PR is only avaliable in a DM!",
+                    ),
+                )));
+            }
             let pr_info = result.clone();
             let config = self.config.clone();
             let http = self.http.clone();
@@ -69,9 +76,14 @@ impl Context {
                             }
                         }
                         TrackStatus::Done => {
-                            room.send(RoomMessageEventContent::text_plain(format!(
-                                "PR #{pr_number} OK!"
-                            )));
+                            if let Err(e) = room
+                                .send(RoomMessageEventContent::text_plain(format!(
+                                    "PR #{pr_number} is now in all branches!"
+                                )))
+                                .await
+                            {
+                                tracing::warn!("Failed to send status: {e:?}");
+                            }
                             return;
                         }
                     }
@@ -103,12 +115,14 @@ impl Context {
         Ok(Some(AnyMessageLikeEventContent::RoomMessage(
             RoomMessageEventContent::text_html(
                 format!(
-                    "PR #{pr_number}: {title} https://github.com/NixOS/nixpkgs/pull/{pr_number}{in_branches}",
+                    "{track_or_not}PR #{pr_number}: {title} https://github.com/NixOS/nixpkgs/pull/{pr_number}{in_branches}",
+                    track_or_not = if track { "Tracking " } else { "" },
                     title = result.title,
                     in_branches = in_branches,
                 ),
                 format!(
-                    "<p><a href='https://github.com/NixOS/nixpkgs/pull/{pr_number}'>PR #{pr_number}: {title}</a>{in_branches}",
+                    "<p>{track_or_not}<a href='https://github.com/NixOS/nixpkgs/pull/{pr_number}'>PR #{pr_number}: {title}</a>{in_branches}",
+                    track_or_not = if track { "Tracking " } else { "" },
                     title = result.title,
                     in_branches = in_branches_html,
                 ),
