@@ -36,6 +36,11 @@ tl = "0.7"
 cynic = { version = "3", features = ["http-reqwest", "rkyv"] }
 fuuka-bot-query-nixpkgs-pr = { version = "0.1.0", path = "../graphql/query/nixpkgs-pr" }
 cronchik = { version = "2", features = ["time", "serde"] }
+axum = { version = "0.7", optional = true }
+jose-jwk = { version = "0.1", optional = true }
+bytes = { version = "1", optional = true }
+hmac = { version = "0.12", optional = true }
+sha2 = { version = "0.10", optional = true }
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
@@ -61,8 +66,9 @@ default-features = false
 pretty_assertions = "1"
 
 [features]
-default = ["native-tls"]
+default = ["native-tls", "media-proxy"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
 interactive-login = []
+media-proxy = ["dep:axum", "dep:jose-jwk", "dep:bytes", "dep:hmac", "dep:sha2"]
 native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
 rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]

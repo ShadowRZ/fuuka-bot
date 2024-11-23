@@ -22,6 +22,8 @@ pub struct Config {
     /// Optional room features.
     #[serde(default)]
     pub features: FeaturesConfig,
+    /// Media proxy configuration.
+    pub media_proxy: Option<MediaProxyConfig>,
     /// HTTP Services configuration.
     pub services: Option<ServiceConfig>,
     /// Stickers feature related configuration.
@@ -226,4 +228,12 @@ impl TrapConfig {
 pub struct NixpkgsPrConfig {
     pub token: String,
     pub cron: Option<CronSchedule>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub struct MediaProxyConfig {
+    pub enabled: bool,
+    pub listen: String,
+    pub public_url: Url,
 }

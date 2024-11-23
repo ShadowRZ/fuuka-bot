@@ -28,14 +28,22 @@ pub trait MxcUriExt {
     /// Returns the HTTP URL of the given [MxcUri], with the specified homeserver
     /// using the [Client-Server API](https://spec.matrix.org/latest/client-server-api/#get_matrixmediav3downloadservernamemediaid).
     fn http_url(&self, homeserver: &Url) -> anyhow::Result<Url>;
+    /// Returns the HTTP URL of the given [MxcUri], with the specified homeserver.
+    fn authed_http_url(&self, homeserver: &Url) -> anyhow::Result<Url>;
 }
 
 impl MxcUriExt for MxcUri {
-    #[tracing::instrument(err)]
     fn http_url(&self, homeserver: &Url) -> anyhow::Result<Url> {
         let (server_name, media_id) = self.parts()?;
         Ok(homeserver
             .join("/_matrix/media/r0/download/")?
+            .join(format!("{}/{}", server_name, media_id).as_str())?)
+    }
+
+    fn authed_http_url(&self, homeserver: &Url) -> anyhow::Result<Url> {
+        let (server_name, media_id) = self.parts()?;
+        Ok(homeserver
+            .join("/_matrix/client/v1/media/download/")?
             .join(format!("{}/{}", server_name, media_id).as_str())?)
     }
 }

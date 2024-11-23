@@ -3,7 +3,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::{Config, Error};
+use crate::{Config, Error, MediaProxy};
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::{Room, RoomMember};
 use matrix_sdk::ruma::events::reaction::ReactionEventContent;
@@ -145,6 +145,8 @@ pub struct Context {
     pub http: Ctx<reqwest::Client>,
     /// Pixiv client.
     pub pixiv: Ctx<Option<Arc<PixivClient>>>,
+    /// Media proxy.
+    pub media_proxy: Ctx<Option<Arc<MediaProxy>>>,
     /// The bot config.
     pub config: Arc<Config>,
     /// The action outcome.
@@ -160,6 +162,7 @@ impl Context {
         config: Arc<Config>,
         http: Ctx<reqwest::Client>,
         pixiv: Ctx<Option<Arc<PixivClient>>>,
+        media_proxy: Ctx<Option<Arc<MediaProxy>>>,
     ) {
         let prefix = &config.command.prefix;
         let ev = ev.into_full_event(room.room_id().into());
@@ -174,6 +177,7 @@ impl Context {
                     http,
                     pixiv,
                     config,
+                    media_proxy,
                 };
                 if let Err(e) = ctx.dispatch_inner().await {
                     tracing::error!("Unexpected error happened: {e:#}")
@@ -567,6 +571,7 @@ pub async fn on_sync_message(
     config: Ctx<Arc<Config>>,
     http: Ctx<reqwest::Client>,
     pixiv: Ctx<Option<Arc<PixivClient>>>,
+    media_proxy: Ctx<Option<Arc<MediaProxy>>>,
 ) {
     // It should be a joined room.
     if room.state() != RoomState::Joined {
@@ -580,7 +585,16 @@ pub async fn on_sync_message(
 
     tokio::spawn(async move {
         let Ctx(config) = config;
-        Context::dispatch(ev, room, client.homeserver(), config, http, pixiv).await;
+        Context::dispatch(
+            ev,
+            room,
+            client.homeserver(),
+            config,
+            http,
+            pixiv,
+            media_proxy,
+        )
+        .await;
     });
 }
 

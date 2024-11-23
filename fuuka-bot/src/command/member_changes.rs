@@ -1,4 +1,5 @@
 use matrix_sdk::deserialized_responses::MemberEvent;
+use ruma::MilliSecondsSinceUnixEpoch;
 
 use crate::Context;
 
@@ -29,13 +30,24 @@ impl Context {
         &self,
         member: RoomMember,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        use matrix_sdk::event_handler::Ctx;
+
         let homeserver = &self.homeserver;
+        let media_proxy = &self.media_proxy;
+        let public_url = self.config.media_proxy.as_ref().map(|cfg| &cfg.public_url);
+
         let mut body = String::from(
             "WARN: If unauthenticated media is frozen on the server, these URLs may not work!\n",
         );
         let current_avatar = member
             .avatar_url()
-            .map(|url| url.http_url(homeserver))
+            .map(|uri| {
+                if let (Ctx(Some(media_proxy)), Some(public_url)) = (media_proxy, public_url) {
+                    media_proxy.create_media_url(public_url, uri, MilliSecondsSinceUnixEpoch::now())
+                } else {
+                    uri.http_url(homeserver)
+                }
+            })
             .transpose()?
             .map(|result| result.to_string())
             .unwrap_or("(None)".to_string());
@@ -76,7 +88,18 @@ impl Context {
                                     let timestamp =
                                         OffsetDateTime::from_unix_timestamp_nanos(nanos)?
                                             .format(&Rfc3339)?;
-                                    let avatar_link = avatar_url.http_url(homeserver)?;
+                                    let avatar_link =
+                                        if let (Ctx(Some(media_proxy)), Some(public_url)) =
+                                            (media_proxy, public_url)
+                                        {
+                                            media_proxy.create_media_url(
+                                                public_url,
+                                                avatar_url,
+                                                MilliSecondsSinceUnixEpoch::now(),
+                                            )?
+                                        } else {
+                                            avatar_url.http_url(homeserver)?
+                                        };
                                     let result = format!(
                                         "{count}: Changed to {avatar_link} ({timestamp})\n"
                                     );
@@ -93,7 +116,19 @@ impl Context {
                             let avatar_link = event
                                 .content
                                 .avatar_url
-                                .map(|uri| uri.http_url(homeserver))
+                                .map(|uri| {
+                                    if let (Ctx(Some(media_proxy)), Some(public_url)) =
+                                        (media_proxy, public_url)
+                                    {
+                                        media_proxy.create_media_url(
+                                            public_url,
+                                            &uri,
+                                            MilliSecondsSinceUnixEpoch::now(),
+                                        )
+                                    } else {
+                                        uri.http_url(homeserver)
+                                    }
+                                })
                                 .transpose()?;
                             let result = format!(
                                 "{count}: Joined with avatar {}\n",
