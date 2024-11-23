@@ -1,5 +1,4 @@
 use matrix_sdk::deserialized_responses::MemberEvent;
-use ruma::MilliSecondsSinceUnixEpoch;
 
 use crate::Context;
 
@@ -35,6 +34,7 @@ impl Context {
         let homeserver = &self.homeserver;
         let media_proxy = &self.media_proxy;
         let public_url = self.config.media_proxy.as_ref().map(|cfg| &cfg.public_url);
+        let ttl_seconds = self.config.media_proxy.as_ref().map(|cfg| cfg.ttl_seconds);
 
         let mut body = String::from(
             "WARN: If unauthenticated media is frozen on the server, these URLs may not work!\n",
@@ -42,8 +42,10 @@ impl Context {
         let current_avatar = member
             .avatar_url()
             .map(|uri| {
-                if let (Ctx(Some(media_proxy)), Some(public_url)) = (media_proxy, public_url) {
-                    media_proxy.create_media_url(public_url, uri, MilliSecondsSinceUnixEpoch::now())
+                if let (Ctx(Some(media_proxy)), Some(public_url), Some(ttl_seconds)) =
+                    (media_proxy, public_url, ttl_seconds)
+                {
+                    media_proxy.create_media_url(public_url, uri, ttl_seconds)
                 } else {
                     uri.http_url(homeserver)
                 }
@@ -88,18 +90,20 @@ impl Context {
                                     let timestamp =
                                         OffsetDateTime::from_unix_timestamp_nanos(nanos)?
                                             .format(&Rfc3339)?;
-                                    let avatar_link =
-                                        if let (Ctx(Some(media_proxy)), Some(public_url)) =
-                                            (media_proxy, public_url)
-                                        {
-                                            media_proxy.create_media_url(
-                                                public_url,
-                                                avatar_url,
-                                                MilliSecondsSinceUnixEpoch::now(),
-                                            )?
-                                        } else {
-                                            avatar_url.http_url(homeserver)?
-                                        };
+                                    let avatar_link = if let (
+                                        Ctx(Some(media_proxy)),
+                                        Some(public_url),
+                                        Some(ttl_seconds),
+                                    ) = (media_proxy, public_url, ttl_seconds)
+                                    {
+                                        media_proxy.create_media_url(
+                                            public_url,
+                                            avatar_url,
+                                            ttl_seconds,
+                                        )?
+                                    } else {
+                                        avatar_url.http_url(homeserver)?
+                                    };
                                     let result = format!(
                                         "{count}: Changed to {avatar_link} ({timestamp})\n"
                                     );
@@ -117,14 +121,13 @@ impl Context {
                                 .content
                                 .avatar_url
                                 .map(|uri| {
-                                    if let (Ctx(Some(media_proxy)), Some(public_url)) =
-                                        (media_proxy, public_url)
+                                    if let (
+                                        Ctx(Some(media_proxy)),
+                                        Some(public_url),
+                                        Some(ttl_seconds),
+                                    ) = (media_proxy, public_url, ttl_seconds)
                                     {
-                                        media_proxy.create_media_url(
-                                            public_url,
-                                            &uri,
-                                            MilliSecondsSinceUnixEpoch::now(),
-                                        )
+                                        media_proxy.create_media_url(public_url, &uri, ttl_seconds)
                                     } else {
                                         uri.http_url(homeserver)
                                     }

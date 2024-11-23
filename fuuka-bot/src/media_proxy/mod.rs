@@ -72,7 +72,7 @@ impl MediaProxy {
         Some(k)
     }
 
-    pub fn create_media_token(
+    fn create_media_token(
         hmac_key: &[u8],
         mxc: &MxcUri,
         end: MilliSecondsSinceUnixEpoch,
@@ -98,25 +98,24 @@ impl MediaProxy {
         Ok(token)
     }
 
-    pub fn verify_media_token(
-        hmac_key: &[u8],
-        token: &str,
-    ) -> anyhow::Result<(OwnedMxcUri, Duration)> {
+    fn verify_media_token(hmac_key: &[u8], token: &str) -> self::Result<(OwnedMxcUri, Duration)> {
         use bytes::Buf;
         let mut hmac = HmacSha512::new_from_slice(hmac_key)?;
 
-        let data = Base64UrlUnpadded::decode_vec(token)?;
+        let data =
+            Base64UrlUnpadded::decode_vec(token).map_err(|_| MediaProxyError::InvalidToken)?;
         let mut data = data.as_slice();
         let version = data.get_u8();
 
         if version != 1 {
-            anyhow::bail!("Unrecognized version of media token (${version})");
+            return Err(MediaProxyError::UnknownTokenVersion(version));
         }
 
         let sig = data.copy_to_bytes(64);
         let mut ex_data = data.chunk();
         hmac.update(ex_data);
-        hmac.verify_slice(&sig)?;
+        hmac.verify_slice(&sig)
+            .map_err(|_| MediaProxyError::BrokenSignature)?;
 
         let expiry = ex_data.get_f64().milliseconds();
         let mxc = ex_data.chunk();
@@ -129,8 +128,10 @@ impl MediaProxy {
         &self,
         public_url: &Url,
         mxc: &MxcUri,
-        end: MilliSecondsSinceUnixEpoch,
+        ttl_seconds: u32,
     ) -> anyhow::Result<Url> {
+        let mut end = MilliSecondsSinceUnixEpoch::now();
+        end.0 += (ttl_seconds * 1000).into();
         let token = Self::create_media_token(&self.state.hmac_key, mxc, end)?;
 
         let mut public_url = public_url.clone();
@@ -160,8 +161,13 @@ impl MediaProxy {
         let client = &state.client;
         let hmac_key = &state.hmac_key;
 
-        // TODO: Use the expiry date
-        let (mxc, _expiry) = Self::verify_media_token(hmac_key, &token)?;
+        let (mxc, expiry) = Self::verify_media_token(hmac_key, &token)?;
+        let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
+        let now = Duration::milliseconds(now.into());
+
+        if now > expiry {
+            return Err(MediaProxyError::TokenExpired);
+        }
 
         let url = mxc.authed_http_url(&state.server)?;
 
@@ -194,15 +200,37 @@ impl MediaProxy {
     }
 }
 
-struct MediaProxyError(anyhow::Error);
+#[derive(Debug)]
+enum MediaProxyError {
+    InvalidToken,
+    TokenExpired,
+    BrokenSignature,
+    UnknownTokenVersion(u8),
+    Other(anyhow::Error),
+}
 
 impl IntoResponse for MediaProxyError {
     fn into_response(self) -> Response {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong: {}", self.0),
-        )
-            .into_response()
+        match self {
+            MediaProxyError::InvalidToken => {
+                (StatusCode::BAD_REQUEST, "Token is invalid".to_string())
+            }
+            MediaProxyError::TokenExpired => {
+                (StatusCode::NOT_FOUND, "Media token expired".to_string())
+            }
+            MediaProxyError::BrokenSignature => {
+                (StatusCode::BAD_REQUEST, "Signature is broken".to_string())
+            }
+            MediaProxyError::UnknownTokenVersion(version) => (
+                StatusCode::BAD_REQUEST,
+                format!("Unrecognized version of media token (${version})"),
+            ),
+            MediaProxyError::Other(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Something wrong happened: {e:#}"),
+            ),
+        }
+        .into_response()
     }
 }
 
@@ -211,7 +239,7 @@ where
     E: Into<anyhow::Error>,
 {
     fn from(err: E) -> Self {
-        Self(err.into())
+        Self::Other(err.into())
     }
 }
 

@@ -236,4 +236,5 @@ pub struct MediaProxyConfig {
     pub enabled: bool,
     pub listen: String,
     pub public_url: Url,
+    pub ttl_seconds: u32,
 }
