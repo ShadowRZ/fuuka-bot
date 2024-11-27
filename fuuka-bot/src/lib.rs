@@ -14,9 +14,11 @@
 pub mod command;
 pub mod config;
 pub mod de;
+pub mod dispatcher;
 pub mod events;
 pub mod handler;
 pub mod media_proxy;
+pub mod member_changes;
 pub mod message;
 pub mod services;
 #[doc(hidden)]
@@ -27,6 +29,7 @@ pub mod types;
 pub use crate::config::Config;
 pub use crate::handler::Context;
 pub use crate::media_proxy::MediaProxy;
+pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
 pub use crate::types::Error;
 
@@ -518,7 +521,7 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         }
     }
 
-    let h1 = client.add_event_handler(crate::handler::on_sync_message);
+    let h1 = client.add_event_handler(crate::dispatcher::on_sync_message);
     let h2 = client.add_event_handler(crate::handler::on_stripped_member);
     let h3 = client.add_event_handler(crate::handler::on_room_replace);
 

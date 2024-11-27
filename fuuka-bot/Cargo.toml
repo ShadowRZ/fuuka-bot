@@ -33,6 +33,7 @@ html-escape = "0.2"
 mime = "0.3"
 envsubst = "0.2"
 tl = "0.7"
+dptree = "0.3"
 cynic = { version = "3", features = ["http-reqwest", "rkyv"] }
 fuuka-bot-query-nixpkgs-pr = { version = "0.1.0", path = "../graphql/query/nixpkgs-pr" }
 cronchik = { version = "2", features = ["time", "serde"] }
@@ -41,6 +42,8 @@ jose-jwk = { version = "0.1", optional = true }
 bytes = { version = "1", optional = true }
 hmac = { version = "0.12", optional = true }
 sha2 = { version = "0.10", optional = true }
+pin-project-lite = "0.2"
+async-fn-stream = "0.2"
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"

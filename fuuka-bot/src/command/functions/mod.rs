@@ -1,5 +1,5 @@
 pub(super) mod member_stream;
-pub(super) mod nixpkgs_pr;
+pub(crate) mod nixpkgs_pr;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -27,7 +27,7 @@ use crate::{
 };
 
 #[tracing::instrument(skip(client, data), err)]
-pub(super) async fn prepare_sticker_upload_event_content(
+pub(crate) async fn prepare_sticker_upload_event_content(
     client: &Client,
     data: Vec<u8>,
     display_name: String,

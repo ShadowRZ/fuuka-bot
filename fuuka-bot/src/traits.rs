@@ -1,5 +1,13 @@
+use std::future::Future;
+
+use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
+use matrix_sdk::ruma::events::room::message::Relation;
+use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::{room::RoomMember, ruma::MxcUri};
+use ruma::OwnedUserId;
 use url::Url;
+
+use crate::MembershipHistory;
 
 /// Extensions to [RoomMember].
 pub trait RoomMemberExt {
@@ -62,5 +70,83 @@ impl IllustTagsInfoExt for pixrs::IllustTagsInfo {
 
     fn has_any_tag(&self, tags: &[&str]) -> bool {
         self.tags.iter().any(|il| tags.iter().any(|t| il.tag == *t))
+    }
+}
+
+pub trait RoomExt {
+    fn in_reply_to_event(
+        &self,
+        ev: &OriginalRoomMessageEvent,
+    ) -> impl Future<Output = anyhow::Result<Option<AnyTimelineEvent>>> + Send;
+    fn in_reply_to_target(
+        &self,
+        ev: &OriginalRoomMessageEvent,
+    ) -> impl Future<Output = anyhow::Result<Option<OwnedUserId>>> + Send;
+    fn in_reply_to_target_fallback(
+        &self,
+        ev: &OriginalRoomMessageEvent,
+    ) -> impl Future<Output = anyhow::Result<OwnedUserId>> + Send;
+    fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember)
+        -> MembershipHistory<'a>;
+}
+
+impl RoomExt for matrix_sdk::Room {
+    async fn in_reply_to_event(
+        &self,
+        ev: &OriginalRoomMessageEvent,
+    ) -> anyhow::Result<Option<AnyTimelineEvent>> {
+        match &ev.content.relates_to {
+            Some(Relation::Reply { in_reply_to }) => {
+                use matrix_sdk::deserialized_responses::TimelineEventKind;
+                use matrix_sdk::ruma::events::AnyTimelineEvent;
+                let event_id = &in_reply_to.event_id;
+                let event = match self.event(event_id, None).await?.kind {
+                    TimelineEventKind::PlainText { event } => event
+                        .deserialize()?
+                        .into_full_event(self.room_id().to_owned()),
+                    TimelineEventKind::Decrypted(decrypted) => {
+                        AnyTimelineEvent::MessageLike(decrypted.event.deserialize()?)
+                    }
+                    TimelineEventKind::UnableToDecrypt { event, utd_info } => {
+                        tracing::warn!(
+                            ?utd_info,
+                            "Unable to decrypt event {event:?}",
+                            event = event.get_field::<String>("event_id")
+                        );
+                        event
+                            .deserialize()?
+                            .into_full_event(self.room_id().to_owned())
+                    }
+                };
+                Ok(Some(event))
+            }
+            _ => Ok(None),
+        }
+    }
+
+    async fn in_reply_to_target(
+        &self,
+        ev: &OriginalRoomMessageEvent,
+    ) -> anyhow::Result<Option<OwnedUserId>> {
+        self.in_reply_to_event(ev)
+            .await
+            .map(|ev| ev.map(|ev| ev.sender().to_owned()))
+    }
+
+    async fn in_reply_to_target_fallback(
+        &self,
+        ev: &OriginalRoomMessageEvent,
+    ) -> anyhow::Result<OwnedUserId> {
+        Ok(self
+            .in_reply_to_target(ev)
+            .await?
+            .unwrap_or(ev.sender.clone()))
+    }
+
+    fn get_member_membership_changes<'a>(
+        &'a self,
+        member: &'a RoomMember,
+    ) -> MembershipHistory<'a> {
+        MembershipHistory::new(self, member)
     }
 }

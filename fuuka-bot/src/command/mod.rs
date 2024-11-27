@@ -1,7 +1,7 @@
 //! Bot commands handler.
 
 mod crazy_thursday;
-mod functions;
+pub(crate) mod functions;
 mod info;
 mod member_changes;
 mod nixpkgs;

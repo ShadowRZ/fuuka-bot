@@ -168,71 +168,61 @@ impl Context {
         &self,
         member: RoomMember,
     ) -> anyhow::Result<Option<AnyMessageLikeEventContent>> {
+        use crate::RoomExt as _;
+
         let mut body = String::new();
         let current_name = member.display_name().unwrap_or("(None)");
         let result = format!("Current Name: {current_name}\n");
         body.push_str(&result);
         let mut count: i32 = 0;
 
-        let event: &MemberEvent = member.event();
-        match event {
-            MemberEvent::Sync(event) => {
-                let stream = member_state_stream(&self.room, event.clone()).peekable();
-                pin_mut!(stream);
-                while let Some(event) = stream.next().await {
-                    if count <= -5 {
-                        break;
-                    }
+        let stream = self.room.get_member_membership_changes(&member).peekable();
+        pin_mut!(stream);
+        while let Some(event) = stream.next().await {
+            if count <= -5 {
+                break;
+            }
 
-                    let prev_event = stream.as_mut().peek().await;
-                    let detail = prev_event.map(|e| e.content.details());
-                    let change =
-                        event
-                            .content
-                            .membership_change(detail, &event.sender, &event.state_key);
-                    match change {
-                        MembershipChange::ProfileChanged {
-                            displayname_change,
-                            avatar_url_change: _,
-                        } => {
-                            let Some(displayname_change) = displayname_change else {
-                                continue;
-                            };
-                            match displayname_change.new {
-                                Some(displayname) => {
-                                    count -= 1;
-                                    let nanos: i128 =
-                                        <UInt as Into<i128>>::into(event.origin_server_ts.0)
-                                            * 1000000;
-                                    let timestamp =
-                                        OffsetDateTime::from_unix_timestamp_nanos(nanos)?
-                                            .format(&Rfc3339)?;
-                                    let result = format!(
-                                        "{count}: Changed to {displayname} ({timestamp})\n"
-                                    );
-                                    body.push_str(&result);
-                                }
-                                None => {
-                                    let result = format!("{count}: Removed display name.\n");
-                                    body.push_str(&result);
-                                }
-                            }
-                        }
-                        MembershipChange::Joined => {
+            let prev_event = stream.as_mut().peek().await;
+            let detail = prev_event.map(|e| e.content.details());
+            let change = event
+                .content
+                .membership_change(detail, &event.sender, &event.state_key);
+            match change {
+                MembershipChange::ProfileChanged {
+                    displayname_change,
+                    avatar_url_change: _,
+                } => {
+                    let Some(displayname_change) = displayname_change else {
+                        continue;
+                    };
+                    match displayname_change.new {
+                        Some(displayname) => {
                             count -= 1;
-                            let result = format!(
-                                "{count}: Joined with display name {}\n",
-                                event.content.displayname.unwrap_or("(No name)".to_string())
-                            );
+                            let nanos: i128 =
+                                <UInt as Into<i128>>::into(event.origin_server_ts.0) * 1000000;
+                            let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos)?
+                                .format(&Rfc3339)?;
+                            let result =
+                                format!("{count}: Changed to {displayname} ({timestamp})\n");
                             body.push_str(&result);
                         }
-                        _ => {}
-                    };
+                        None => {
+                            let result = format!("{count}: Removed display name.\n");
+                            body.push_str(&result);
+                        }
+                    }
                 }
-            }
-            _ => tracing::warn!(
-                "INTERNAL ERROR: A member event in a joined room should not be stripped."
-            ),
+                MembershipChange::Joined => {
+                    count -= 1;
+                    let result = format!(
+                        "{count}: Joined with display name {}\n",
+                        event.content.displayname.unwrap_or("(No name)".to_string())
+                    );
+                    body.push_str(&result);
+                }
+                _ => {}
+            };
         }
 
         Ok(Some(AnyMessageLikeEventContent::RoomMessage(

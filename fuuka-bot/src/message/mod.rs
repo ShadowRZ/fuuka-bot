@@ -1,7 +1,7 @@
 //! Responses to messages that are not commands.
 
-mod jerryxiao;
-mod nahida;
+pub mod jerryxiao;
+pub mod nahida;
 
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 
