@@ -16,7 +16,6 @@ pub mod config;
 pub mod de;
 pub mod dispatcher;
 pub mod events;
-pub mod handler;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
@@ -28,13 +27,14 @@ pub mod traits;
 pub mod types;
 
 pub use crate::config::Config;
-pub use crate::handler::Context;
 pub use crate::media_proxy::MediaProxy;
 pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
 pub use crate::types::Error;
 
 use matrix_sdk::matrix_auth::MatrixSession;
+use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
+use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::{config::SyncSettings, Client};
 use pixrs::PixivClient;
@@ -528,8 +528,8 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
     }
 
     let h1 = client.add_event_handler(crate::dispatcher::on_sync_message);
-    let h2 = client.add_event_handler(crate::handler::on_stripped_member);
-    let h3 = client.add_event_handler(crate::handler::on_room_replace);
+    let h2 = client.add_event_handler(crate::on_stripped_member);
+    let h3 = client.add_event_handler(crate::on_room_replace);
 
     if let Err(e) = client.sync(settings).await {
         client.remove_event_handler(h1);
@@ -538,4 +538,64 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         return Err(e.into());
     }
     Ok(())
+}
+
+/// Called when a member event is from an invited room.
+pub async fn on_stripped_member(
+    ev: StrippedRoomMemberEvent,
+    room: matrix_sdk::Room,
+    client: matrix_sdk::Client,
+) {
+    // Ignore state events not for ourselves.
+    if ev.state_key != client.user_id().unwrap() {
+        return;
+    }
+
+    tokio::spawn(async move {
+        let room_id = room.room_id();
+        tracing::info!("Autojoining room {}", room_id);
+        let mut delay = 2;
+        while let Err(e) = room.join().await {
+            use tokio::time::{sleep, Duration};
+            tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
+            sleep(Duration::from_secs(delay)).await;
+            delay *= 2;
+
+            if delay > 3600 {
+                tracing::error!("Can't join room {room_id} ({e:#})");
+                break;
+            }
+        }
+    });
+}
+
+/// Called when we have a tombstone event.
+pub async fn on_room_replace(
+    ev: OriginalSyncRoomTombstoneEvent,
+    room: matrix_sdk::Room,
+    client: matrix_sdk::Client,
+) {
+    tokio::spawn(async move {
+        let room_id = ev.content.replacement_room;
+        tracing::info!("Room replaced, Autojoining new room {}", room_id);
+        let mut delay = 2;
+        while let Err(e) = client.join_room_by_id(&room_id).await {
+            use tokio::time::{sleep, Duration};
+            tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
+            sleep(Duration::from_secs(delay)).await;
+            delay *= 2;
+
+            if delay > 3600 {
+                tracing::error!("Can't join room {room_id} ({e:#})");
+                break;
+            }
+        }
+        if let Some(room) = client.get_room(room.room_id()) {
+            tokio::spawn(async move {
+                if let Err(e) = room.leave().await {
+                    tracing::error!("Can't leave the original room {} ({e:#})", room.room_id());
+                }
+            });
+        }
+    });
 }

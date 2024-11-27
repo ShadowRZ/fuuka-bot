@@ -56,8 +56,7 @@ features = ["gzip", "brotli", "deflate", "json"]
 
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
-git = "https://github.com/ruma/ruma"
-rev = "26165b23fc2ae9928c5497a21db3d31f4b44cc2a"
+version = "0.11"
 features = ["events", "html", "federation-api-c"]
 
 [dependencies.pixrs]

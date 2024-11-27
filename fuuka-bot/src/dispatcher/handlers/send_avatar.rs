@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use file_format::FileFormat;
-use matrix_sdk::media::{MediaFormat, MediaRequest};
+use matrix_sdk::media::{MediaFormat, MediaRequestParameters};
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, ImageMessageEventContent, MessageType, RoomMessageEventContent,
@@ -54,7 +54,7 @@ async fn get_image_info(
     avatar_url: &MxcUri,
     client: &matrix_sdk::Client,
 ) -> anyhow::Result<ImageInfo> {
-    let request = MediaRequest {
+    let request = MediaRequestParameters {
         source: MediaSource::Plain(avatar_url.into()),
         format: MediaFormat::File,
     };

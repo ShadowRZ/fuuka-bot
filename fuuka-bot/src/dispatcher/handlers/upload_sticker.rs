@@ -134,7 +134,7 @@ async fn prepare_sticker_upload_event_content(
 
         let media = media.clone();
         set.spawn(async move {
-            match media.upload(&mime, data).await {
+            match media.upload(&mime, data, None).await {
                 Ok(resp) => Some((name, resp.content_uri, info)),
                 Err(e) => {
                     tracing::error!("Unexpected error while uploading '{name}': {e:#}");
