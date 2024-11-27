@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2024-11-27
+
+### Changed
+
+- Update changelog
+
+- Media Proxy
+- Allow media token to expire
+- Use dptree based dispatching
+- Import ruma from matrix_sdk
+- Refactor Rust files
+- Update
+- Redo some code
+- 0.3.4
+
+
+### Fixed
+
+- Fix release action
+
 ## [0.3.3] - 2024-11-05
 
 ### Added
@@ -582,6 +602,7 @@ This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
 Can't make it work. :(
 
 
+[0.3.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.3..v0.3.4
 [0.3.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.2..v0.3.3
 [0.3.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.1..v0.3.2
 [0.3.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.0..v0.3.1
