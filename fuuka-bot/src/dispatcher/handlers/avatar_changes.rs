@@ -8,8 +8,8 @@ use matrix_sdk::ruma::events::{
     room::message::RoomMessageEventContent, AnyMessageLikeEventContent,
 };
 use matrix_sdk::Room;
-use ruma::events::room::member::MembershipChange;
-use ruma::UInt;
+use matrix_sdk::ruma::events::room::member::MembershipChange;
+use matrix_sdk::ruma::UInt;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 

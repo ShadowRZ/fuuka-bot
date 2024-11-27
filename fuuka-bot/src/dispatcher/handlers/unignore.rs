@@ -5,7 +5,7 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
-use ruma::OwnedUserId;
+use matrix_sdk::ruma::OwnedUserId;
 
 use super::{Event, OutgoingContent, OutgoingResponse};
 

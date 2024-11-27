@@ -7,9 +7,9 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
-use ruma::events::room::message::OriginalSyncRoomMessageEvent;
-use ruma::events::Mentions;
-use ruma::OwnedUserId;
+use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
+use matrix_sdk::ruma::events::Mentions;
+use matrix_sdk::ruma::OwnedUserId;
 
 use crate::RoomMemberExt as _;
 

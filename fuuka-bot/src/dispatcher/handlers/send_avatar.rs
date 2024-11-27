@@ -4,12 +4,12 @@ use file_format::FileFormat;
 use matrix_sdk::media::{MediaFormat, MediaRequest};
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
-use ruma::events::room::message::{
+use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, ImageMessageEventContent, MessageType, RoomMessageEventContent,
 };
-use ruma::events::room::{ImageInfo, MediaSource, ThumbnailInfo};
-use ruma::events::AnyMessageLikeEventContent;
-use ruma::{MxcUri, UInt};
+use matrix_sdk::ruma::events::room::{ImageInfo, MediaSource, ThumbnailInfo};
+use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
+use matrix_sdk::ruma::{MxcUri, UInt};
 
 use crate::RoomMemberExt;
 

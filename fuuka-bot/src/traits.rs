@@ -4,7 +4,7 @@ use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::{room::RoomMember, ruma::MxcUri};
-use ruma::OwnedUserId;
+use matrix_sdk::ruma::OwnedUserId;
 use url::Url;
 
 use crate::MembershipHistory;
