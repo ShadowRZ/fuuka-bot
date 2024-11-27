@@ -23,10 +23,11 @@ use self::link_type::{CrateLinkType, LinkType, PixivLinkType};
 /// Dispatch prefixed messages that starts with `@Nahida`.
 pub async fn dispatch(
     url: Url,
-    ctx: &crate::Context,
+    room: &matrix_sdk::Room,
+    config: &crate::Config,
+    client: &reqwest::Client,
+    pixiv: Option<&pixrs::PixivClient>,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let client = &ctx.http;
-    let pixiv = ctx.pixiv.as_deref();
     match url.try_into()? {
         LinkType::Crates(CrateLinkType::CrateInfo { name, version }) => {
             self::extractors::crates::crates_crate(name, version, client).await
@@ -36,8 +37,8 @@ pub async fn dispatch(
                 self::extractors::pixiv::pixiv_illust(
                     pixiv,
                     artwork_id,
-                    &ctx.config.pixiv,
-                    ctx.room.room_id(),
+                    &config.pixiv,
+                    room.room_id(),
                 )
                 .await
             }

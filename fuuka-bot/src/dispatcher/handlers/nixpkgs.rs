@@ -20,7 +20,7 @@ pub fn event_handler() -> super::EventHandler {
          room: Arc<Room>,
          config: Arc<Config>,
          http: reqwest::Client| async move {
-            use crate::command::functions::nixpkgs_pr::fetch_nixpkgs_pr;
+            use crate::services::github::nixpkgs_pr::fetch_nixpkgs_pr;
 
             let Some(ref nixpkgs_pr) = config.nixpkgs_pr else {
                 return Ok(OutgoingResponse {
@@ -54,7 +54,7 @@ pub fn event_handler() -> super::EventHandler {
                 let http = http.clone();
                 let room = room.clone();
                 tokio::spawn(async move {
-                    use crate::command::functions::nixpkgs_pr::pr_state_stream;
+                    use crate::services::github::nixpkgs_pr::track_nixpkgs_pr;
 
                     let config = config;
 
@@ -68,16 +68,16 @@ pub fn event_handler() -> super::EventHandler {
 
                     tokio::time::sleep(Duration::from_secs(1)).await;
 
-                    let stream = pr_state_stream(&http, cron, token, pr_number, pr_info);
+                    let stream = track_nixpkgs_pr(&http, cron, token, pr_number, pr_info);
                     pin_mut!(stream);
 
                     tracing::debug!(room_id = %room.room_id(), "Start tracking Nixpkgs PR #{pr_number}");
                     while let Some(status) = stream.next().await {
-                        use crate::command::functions::nixpkgs_pr::TrackStatus;
+                        use crate::services::github::nixpkgs_pr::TrackStatus;
                         match status {
                             TrackStatus::Pending { new_branch, .. } => {
                                 if let Some(new_branch) = new_branch {
-                                    use crate::command::functions::nixpkgs_pr::NewBranch;
+                                    use crate::services::github::nixpkgs_pr::NewBranch;
                                     let format_str = match new_branch {
                                         NewBranch::StagingNext => "staging-next",
                                         NewBranch::Master => "master",

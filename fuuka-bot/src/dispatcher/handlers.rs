@@ -4,6 +4,7 @@ pub(super) mod help;
 pub(super) mod hitokoto;
 pub(super) mod ignore;
 pub(super) mod jerryxiao;
+pub(super) mod nahida;
 pub(super) mod name_changes;
 pub(super) mod nixpkgs;
 pub(super) mod ping;

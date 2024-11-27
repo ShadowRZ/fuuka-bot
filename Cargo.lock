@@ -1250,7 +1250,6 @@ name = "fuuka-bot"
 version = "0.3.3"
 dependencies = [
  "anyhow",
- "async-stream",
  "axum",
  "bytes",
  "crc32fast",

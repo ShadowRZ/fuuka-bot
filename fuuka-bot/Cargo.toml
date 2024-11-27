@@ -28,7 +28,6 @@ imagesize = "0.13"
 file-format = "0.25"
 tokio-util = "0.7"
 toml = "0.8"
-async-stream = "0.3"
 futures-util = "0.3"
 mime = "0.3"
 envsubst = "0.2"
@@ -57,7 +56,7 @@ features = ["gzip", "brotli", "deflate", "json"]
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
 version = "0.11"
-features = ["events", "html", "federation-api-c"]
+features = ["html", "federation-api-c"]
 
 [dependencies.pixrs]
 git = "https://github.com/ShadowRZ/pixrs"

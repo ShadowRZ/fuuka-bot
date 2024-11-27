@@ -55,6 +55,7 @@ pub static DISPATCHER: LazyLock<Handler<'static, DependencyMap, anyhow::Result<O
             .branch(self::handlers::remind::event_handler())
             .branch(self::handlers::upload_sticker::event_handler())
             .branch(self::handlers::jerryxiao::event_handler())
+            .branch(self::handlers::nahida::event_handler())
     });
 
 /// Called when a message is sent.
