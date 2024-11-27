@@ -22,6 +22,7 @@ pub mod member_changes;
 pub mod message;
 pub mod services;
 #[doc(hidden)]
+#[cfg(feature = "interactive-login")]
 pub mod session;
 pub mod traits;
 pub mod types;
@@ -128,14 +129,17 @@ impl FuukaBot {
         args.next();
         if let Some(arg1) = args.next() {
             match arg1.as_str() {
+                #[cfg(feature = "interactive-login")]
                 "bootstrap-cross-signing-if-needed" => {
                     Self::bootstrap_cross_signing_if_needed(&client).await?;
                     return Ok(());
                 }
+                #[cfg(feature = "interactive-login")]
                 "bootstrap-cross-signing" => {
                     Self::bootstrap_cross_signing(&client).await?;
                     return Ok(());
                 }
+                #[cfg(feature = "interactive-login")]
                 "reset-cross-signing" => {
                     Self::reset_cross_signing(&client).await?;
                     return Ok(());
@@ -260,6 +264,7 @@ impl FuukaBot {
     }
 
     /// Prepares the bootstrap cross signing key if needed.
+    #[cfg(feature = "interactive-login")]
     async fn bootstrap_cross_signing_if_needed(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         use anyhow::Context;
         use matrix_sdk::ruma::api::client::uiaa;
@@ -296,6 +301,7 @@ impl FuukaBot {
     }
 
     /// Prepares the bootstrap cross signing key.
+    #[cfg(feature = "interactive-login")]
     async fn bootstrap_cross_signing(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         use anyhow::Context;
         use matrix_sdk::ruma::api::client::uiaa;
@@ -328,6 +334,7 @@ impl FuukaBot {
     }
 
     /// Resets the bootstrap cross signing key.
+    #[cfg(feature = "interactive-login")]
     async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         use matrix_sdk::encryption::CrossSigningResetAuthType;
 
@@ -414,7 +421,6 @@ fn get_config_file(file: &'static str) -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
-#[cfg(feature = "media-proxy")]
 fn get_jwk_token() -> anyhow::Result<jose_jwk::Jwk> {
     let file = get_config_file(JWK_TOKEN_FILE)?;
 

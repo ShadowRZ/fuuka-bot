@@ -12,16 +12,17 @@ tokio = { version = "1", features = ["full"] }
 url = { version = "2", features = ["serde"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 serde = { version = "1", features = ["derive"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+time = { version = "0.3", features = ["macros", "formatting"] }
+cynic = { version = "3", features = ["http-reqwest", "rkyv"] }
+cronchik = { version = "2", features = ["time", "serde"] }
 anyhow = "1"
 serde_json = "1"
 crc32fast = "1"
 thiserror = "1"
 shell-words = "1"
 fastrand = "2"
-rpassword = "7"
 regex = "1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-time = { version = "0.3", features = ["macros", "formatting"] }
 tracing = "0.1"
 imagesize = "0.13"
 file-format = "0.25"
@@ -29,21 +30,19 @@ tokio-util = "0.7"
 toml = "0.8"
 async-stream = "0.3"
 futures-util = "0.3"
-html-escape = "0.2"
 mime = "0.3"
 envsubst = "0.2"
 tl = "0.7"
 dptree = "0.3"
-cynic = { version = "3", features = ["http-reqwest", "rkyv"] }
-fuuka-bot-query-nixpkgs-pr = { version = "0.1.0", path = "../graphql/query/nixpkgs-pr" }
-cronchik = { version = "2", features = ["time", "serde"] }
-axum = { version = "0.7", optional = true }
-jose-jwk = { version = "0.1", optional = true }
-bytes = { version = "1", optional = true }
-hmac = { version = "0.12", optional = true }
-sha2 = { version = "0.10", optional = true }
 pin-project-lite = "0.2"
-async-fn-stream = "0.2"
+axum = "0.7"
+jose-jwk = "0.1"
+bytes = "1"
+hmac = "0.12"
+sha2 = "0.10"
+rpassword = { version = "7", optional = true }
+
+fuuka-bot-query-nixpkgs-pr = { version = "0.1.0", path = "../graphql/query/nixpkgs-pr" }
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
@@ -69,9 +68,9 @@ default-features = false
 pretty_assertions = "1"
 
 [features]
-default = ["native-tls", "media-proxy"]
+default = ["native-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
 interactive-login = []
-media-proxy = ["dep:axum", "dep:jose-jwk", "dep:bytes", "dep:hmac", "dep:sha2"]
 native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
 rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
+rpassword = ["dep:rpassword"]

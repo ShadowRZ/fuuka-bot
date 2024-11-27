@@ -5,17 +5,17 @@ use std::path::Path;
 use std::sync::Arc;
 
 use file_format::{FileFormat, Kind};
+use matrix_sdk::ruma::events::room::message::MessageType;
 use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, RoomMessageEventContent,
 };
+use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
+use matrix_sdk::ruma::events::{AnyMessageLikeEvent, AnyTimelineEvent, MessageLikeEvent};
+use matrix_sdk::ruma::UInt;
 use matrix_sdk::Media;
 use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
 use mime::Mime;
-use matrix_sdk::ruma::events::room::message::MessageType;
-use matrix_sdk::ruma::events::room::ImageInfo;
-use matrix_sdk::ruma::events::{AnyMessageLikeEvent, AnyTimelineEvent, MessageLikeEvent};
-use matrix_sdk::ruma::UInt;
 use tokio::task::JoinSet;
 use zip::ZipArchive;
 

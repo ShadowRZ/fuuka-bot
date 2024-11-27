@@ -4,8 +4,8 @@ use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, RoomMessageEventContent,
 };
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
-use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
 use matrix_sdk::ruma::OwnedUserId;
+use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
 
 use super::{Event, OutgoingContent, OutgoingResponse};
 

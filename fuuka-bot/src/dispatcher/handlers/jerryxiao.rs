@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use matrix_sdk::{room::RoomMember, Room};
 use matrix_sdk::ruma::events::{
     room::message::{AddMentions, ForwardThread, OriginalRoomMessageEvent},
     AnyMessageLikeEventContent,
 };
+use matrix_sdk::{room::RoomMember, Room};
 
 use super::{Event, OutgoingContent, OutgoingResponse};
 

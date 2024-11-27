@@ -3,13 +3,13 @@ use std::sync::Arc;
 use file_format::FileFormat;
 use matrix_sdk::media::{MediaFormat, MediaRequest};
 use matrix_sdk::room::RoomMember;
-use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
 use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, ImageMessageEventContent, MessageType, RoomMessageEventContent,
 };
 use matrix_sdk::ruma::events::room::{ImageInfo, MediaSource, ThumbnailInfo};
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
 use matrix_sdk::ruma::{MxcUri, UInt};
+use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
 
 use crate::RoomMemberExt;
 

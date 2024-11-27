@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use matrix_sdk::event_handler::EventHandlerHandle;
 use matrix_sdk::room::RoomMember;
+use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, RoomMessageEventContent,
 };
 use matrix_sdk::ruma::events::AnyMessageLikeEventContent;
-use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
-use matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent;
 use matrix_sdk::ruma::events::Mentions;
 use matrix_sdk::ruma::OwnedUserId;
+use matrix_sdk::{ruma::events::room::message::OriginalRoomMessageEvent, Room};
 
 use crate::RoomMemberExt as _;
 

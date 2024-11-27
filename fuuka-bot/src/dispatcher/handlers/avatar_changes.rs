@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use futures_util::pin_mut;
 use matrix_sdk::room::RoomMember;
+use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
 use matrix_sdk::ruma::events::{
     room::message::RoomMessageEventContent, AnyMessageLikeEventContent,
 };
-use matrix_sdk::Room;
-use matrix_sdk::ruma::events::room::member::MembershipChange;
 use matrix_sdk::ruma::UInt;
+use matrix_sdk::Room;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
