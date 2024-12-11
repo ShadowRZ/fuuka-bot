@@ -51,13 +51,13 @@
               inherit (pkgs) lib;
 
               craneLib = (crane.mkLib pkgs).overrideToolchain (_: fenix.stable.toolchain);
-              graphQlFilter = path: _type: null != builtins.match ".*graphql$" path;
-              graphQlOrCargo = path: type: (graphQlFilter path type) || (craneLib.filterCargoSources path type);
 
-              src = lib.cleanSourceWith {
-                src = ./.; # The original, unfiltered source
-                filter = graphQlOrCargo;
-                name = "source"; # Be reproducible, regardless of the directory name
+              src = lib.fileset.toSource {
+                root = ./.;
+                fileset = lib.fileset.unions [
+                  (craneLib.fileset.commonCargoSources ./.)
+                  ./graphql/schemas
+                ];
               };
 
               # Common arguments can be set here to avoid repeating them later
