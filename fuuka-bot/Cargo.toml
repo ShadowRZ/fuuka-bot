@@ -16,16 +16,17 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 time = { version = "0.3", features = ["macros", "formatting"] }
 cynic = { version = "3", features = ["http-reqwest", "rkyv"] }
 cronchik = { version = "2", features = ["time", "serde"] }
+jose-jwk = { version = "0.1", default-features = false }
 anyhow = "1"
 serde_json = "1"
 crc32fast = "1"
-thiserror = "1"
+thiserror = "2"
 shell-words = "1"
 fastrand = "2"
 regex = "1"
 tracing = "0.1"
 imagesize = "0.13"
-file-format = "0.25"
+file-format = "0.26"
 tokio-util = "0.7"
 toml = "0.8"
 futures-util = "0.3"
@@ -35,7 +36,6 @@ tl = "0.7"
 dptree = "0.3"
 pin-project-lite = "0.2"
 axum = "0.7"
-jose-jwk = "0.1"
 bytes = "1"
 hmac = "0.12"
 sha2 = "0.10"
@@ -55,7 +55,8 @@ features = ["gzip", "brotli", "deflate", "json"]
 
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
-version = "0.11"
+git = "https://github.com/ruma/ruma"
+rev = "c91499fc464adc865a7c99d0ce0b35982ad96711"
 features = ["html", "federation-api-c"]
 
 [dependencies.pixrs]
@@ -68,7 +69,7 @@ pretty_assertions = "1"
 [features]
 default = ["native-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
-interactive-login = []
+interactive-login = ["dep:rpassword"]
+
 native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
 rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
-rpassword = ["dep:rpassword"]
