@@ -162,7 +162,7 @@ pub mod nixpkgs_pr {
         }
     }
 
-    impl<'a> Stream for TrackNixpkgsPr<'a> {
+    impl Stream for TrackNixpkgsPr<'_> {
         type Item = TrackStatus;
 
         fn poll_next(

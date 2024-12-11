@@ -3,10 +3,120 @@
 use cronchik::CronSchedule;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId, RoomId};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 use url::Url;
 
 use crate::IllustTagsInfoExt;
+
+/// A reloadable [Config].
+#[derive(Clone)]
+pub struct ReloadableConfig(pub Arc<RwLock<Config>>);
+
+impl ReloadableConfig {
+    pub fn homeserver(&self) -> Url {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let homeserver = &config.matrix.homeserver;
+        homeserver.clone()
+    }
+
+    pub fn media_proxy_config(&self) -> (Option<Url>, Option<u32>) {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+
+        let public_url = config
+            .media_proxy
+            .as_ref()
+            .map(|cfg| cfg.public_url.clone());
+        let ttl_seconds = config.media_proxy.as_ref().map(|cfg| cfg.ttl_seconds);
+
+        (public_url, ttl_seconds)
+    }
+
+    pub fn room_jerryxiao_enabled(&self, room_id: &RoomId) -> bool {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let features = &config.features;
+        features
+            .0
+            .get(room_id)
+            .map(|res| res.jerryxiao)
+            .unwrap_or_default()
+    }
+
+    pub fn room_fortune_enabled(&self, room_id: &RoomId) -> bool {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let features = &config.features;
+        features
+            .0
+            .get(room_id)
+            .map(|res| res.fortune)
+            .unwrap_or_default()
+    }
+
+    pub fn room_pixiv_enabled(&self, room_id: &RoomId) -> bool {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let features = &config.features;
+        features
+            .0
+            .get(room_id)
+            .map(|res| res.pixiv)
+            .unwrap_or_default()
+    }
+
+    pub fn room_pixiv_r18_enabled(&self, room_id: &RoomId) -> bool {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let features = &config.features;
+        features
+            .0
+            .get(room_id)
+            .map(|res| res.pixiv_r18)
+            .unwrap_or_default()
+    }
+
+    pub fn reload(&self) -> anyhow::Result<()> {
+        let Self(config) = self;
+        let mut config = config.as_ref().write().expect("RwLock posioned!");
+        *config = crate::get_config()?;
+
+        Ok(())
+    }
+
+    pub fn hitokoto(&self) -> Option<Url> {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let hitokoto = config.services.as_ref().and_then(|c| c.hitokoto.clone());
+        hitokoto.clone()
+    }
+
+    pub fn nixpkgs(&self) -> Option<NixpkgsPrConfig> {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        config.nixpkgs_pr.clone()
+    }
+
+    pub fn pixiv_check_for_traps(
+        &self,
+        tags: &pixrs::IllustTagsInfo,
+        room_id: &RoomId,
+    ) -> Option<String> {
+        let Self(config) = self;
+        let config = config.as_ref().read().expect("RwLock posioned!");
+        let pixiv = &config.pixiv;
+
+        pixiv
+            .traps
+            .check_for_traps(tags, room_id)
+            .map(|s| s.to_string())
+    }
+}
+
 /// The config of Fuuka bot.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]

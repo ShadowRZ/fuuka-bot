@@ -25,7 +25,7 @@ pub mod session;
 pub mod traits;
 pub mod types;
 
-pub use crate::config::Config;
+pub use crate::config::{Config, ReloadableConfig};
 pub use crate::media_proxy::MediaProxy;
 pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
@@ -38,7 +38,7 @@ use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::{config::SyncSettings, Client};
 use pixrs::PixivClient;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
@@ -154,11 +154,18 @@ impl FuukaBot {
             Self::enable_key_backups(&client).await?;
         }
 
-        let config: Arc<Config> = self.config.into();
-        client.add_event_handler_context(http.clone());
-        client.add_event_handler_context(config.clone());
-        client.add_event_handler_context(pixiv.clone());
-        client.add_event_handler_context(media_proxy.clone());
+        let prefix = self.config.command.prefix.clone();
+        let config = ReloadableConfig(Arc::new(RwLock::new(self.config)));
+
+        let injected = self::dispatcher::Injected {
+            config,
+            prefix,
+            http: http.clone(),
+            pixiv: pixiv.clone(),
+            media_proxy: media_proxy.clone(),
+        };
+
+        client.add_event_handler_context(injected);
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {

@@ -1,36 +1,40 @@
-use std::sync::Arc;
-
-use matrix_sdk::ruma::events::{
-    room::message::{AddMentions, ForwardThread, OriginalRoomMessageEvent},
-    AnyMessageLikeEventContent,
-};
-use matrix_sdk::Room;
+use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
 use url::Url;
 
-use super::{Event, OutgoingContent, OutgoingResponse};
+use super::{IncomingRequest, Injected, RequestBody};
 
 pub fn event_handler() -> super::EventHandler {
-    dptree::case![Event::Nahida(url,)].endpoint(
-        |(url,): (Url,),
-         ev: Arc<OriginalRoomMessageEvent>,
-         room: Arc<Room>,
-         config: Arc<crate::Config>,
-         http: reqwest::Client,
-         pixiv: Option<Arc<pixrs::PixivClient>>| async move {
-            let content =
-                crate::message::nahida::dispatch(url, &room, &config, &http, pixiv.as_deref())
-                    .await?;
+    dptree::filter_map(|body: RequestBody| {
+        let RequestBody(body) = body;
 
-            Ok(OutgoingResponse {
-                room,
-                content: content
-                    .map(|content| {
-                        OutgoingContent::Event(AnyMessageLikeEventContent::RoomMessage(
-                            content.make_reply_to(&ev, ForwardThread::No, AddMentions::Yes),
-                        ))
-                    })
-                    .unwrap_or_default(),
-            })
+        body.strip_prefix("@Nahida ").map(Url::parse)
+    })
+    .endpoint(
+        |url: Result<Url, url::ParseError>,
+         request: super::IncomingRequest,
+         injected: super::Injected| async move {
+            let IncomingRequest { ev, room } = request;
+            let Injected {
+                config,
+                http,
+                pixiv,
+                ..
+            } = injected;
+
+            let config = {
+                let config = config.0.read().expect("RwLock posioned!");
+                config.clone()
+            };
+
+            if let Some(content) =
+                crate::message::nahida::dispatch(url?, &room, &config, &http, pixiv.as_deref())
+                    .await?
+            {
+                room.send(content.make_reply_to(&ev, ForwardThread::No, AddMentions::Yes))
+                    .await?;
+            }
+
+            Ok(())
         },
     )
 }

@@ -1,66 +1,42 @@
-use std::sync::Arc;
-
 use futures_util::{pin_mut, StreamExt};
-use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
+
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
-use matrix_sdk::ruma::events::{
-    room::message::RoomMessageEventContent, AnyMessageLikeEventContent,
-};
-use matrix_sdk::Room;
 use std::time::Duration;
 
-use crate::Config;
-
-use super::{Event, OutgoingContent, OutgoingResponse};
+use super::RequestType;
 
 pub fn event_handler() -> super::EventHandler {
-    dptree::case![Event::Nixpkgs { pr_number, track }].endpoint(
+    dptree::case![RequestType::Nixpkgs { pr_number, track }].endpoint(
         |(pr_number, track): (i32, bool),
-         ev: Arc<OriginalRoomMessageEvent>,
-         room: Arc<Room>,
-         config: Arc<Config>,
-         http: reqwest::Client| async move {
+        request: super::IncomingRequest, injected: super::Injected| async move {
             use crate::services::github::nixpkgs_pr::fetch_nixpkgs_pr;
 
-            let Some(ref nixpkgs_pr) = config.nixpkgs_pr else {
-                return Ok(OutgoingResponse {
-                    room,
-                    content: OutgoingContent::None,
-                });
+            let Some(nixpkgs_pr) = injected.config.nixpkgs() else {
+                return Ok(());
             };
-
-            let client = &http;
+            let room = &request.room;
+            let client = &injected.http;
             let result = fetch_nixpkgs_pr(client, &nixpkgs_pr.token, pr_number).await?;
 
             if track {
                 if !room.is_direct().await? {
-                    return Ok(
-                        OutgoingResponse {
-                            room,
-                            content: OutgoingContent::Event(AnyMessageLikeEventContent::RoomMessage(
-                                RoomMessageEventContent::text_plain(
-                                    "Tracking Nixpkgs PR is only avaliable in a DM!",
-                                ).make_reply_to(
-                                    &ev,
-                                    ForwardThread::No,
-                                    AddMentions::Yes,
-                                ),
-                            ))
-                        }
-                    );
+                    room.send(RoomMessageEventContent::text_plain(
+                        "Tracking Nixpkgs PR is only avaliable in a DM!",
+                    ).make_reply_to(
+                        &request.ev,
+                        ForwardThread::No,
+                        AddMentions::Yes,
+                    )).await?;
+                    return Ok(());
                 }
                 let pr_info = result.clone();
-                let config = config.clone();
-                let http = http.clone();
+
+                let http = client.clone();
                 let room = room.clone();
                 tokio::spawn(async move {
                     use crate::services::github::nixpkgs_pr::track_nixpkgs_pr;
 
-                    let config = config;
-
-                    let Some(ref nixpkgs_pr) = config.nixpkgs_pr else {
-                        return;
-                    };
                     let Some(ref cron) = nixpkgs_pr.cron else {
                         return;
                     };
@@ -132,29 +108,26 @@ pub fn event_handler() -> super::EventHandler {
                 )
             }).unwrap_or_default();
 
-            Ok(OutgoingResponse {
-                room,
-                content: OutgoingContent::Event(AnyMessageLikeEventContent::RoomMessage(
-                    RoomMessageEventContent::text_html(
-                        format!(
-                            "{track_or_not}PR #{pr_number}: {title} https://github.com/NixOS/nixpkgs/pull/{pr_number}{in_branches}",
-                            track_or_not = if track { "Tracking " } else { "" },
-                            title = result.title,
-                            in_branches = in_branches,
-                        ),
-                        format!(
-                            "<p>{track_or_not}<a href='https://github.com/NixOS/nixpkgs/pull/{pr_number}'>PR #{pr_number}: {title}</a>{in_branches}",
-                            track_or_not = if track { "Tracking " } else { "" },
-                            title = result.title,
-                            in_branches = in_branches_html,
-                        ),
-                    ).make_reply_to(
-                        &ev,
-                        ForwardThread::No,
-                        AddMentions::Yes,
-                    ),
-                ))
-            })
+            room.send(RoomMessageEventContent::text_html(
+                format!(
+                    "{track_or_not}PR #{pr_number}: {title} https://github.com/NixOS/nixpkgs/pull/{pr_number}{in_branches}",
+                    track_or_not = if track { "Tracking " } else { "" },
+                    title = result.title,
+                    in_branches = in_branches,
+                ),
+                format!(
+                    "<p>{track_or_not}<a href='https://github.com/NixOS/nixpkgs/pull/{pr_number}'>PR #{pr_number}: {title}</a>{in_branches}",
+                    track_or_not = if track { "Tracking " } else { "" },
+                    title = result.title,
+                    in_branches = in_branches_html,
+                ),
+            ).make_reply_to(
+                &request.ev,
+                ForwardThread::No,
+                AddMentions::Yes,
+            )).await?;
+
+            Ok(())
          },
     )
 }

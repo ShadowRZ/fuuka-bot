@@ -1,13 +1,7 @@
-use std::sync::Arc;
-
-use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
-use matrix_sdk::ruma::events::{
-    room::message::RoomMessageEventContent, AnyMessageLikeEventContent,
-};
-use matrix_sdk::Room;
 
-use super::{Event, OutgoingContent, OutgoingResponse};
+use super::RequestType;
 
 static HELP_TEXT: &str = concat!(
     "Fuuka Bot\n\nSource: ",
@@ -28,18 +22,18 @@ static HELP_HTML: &str = concat!(
 );
 
 pub fn event_handler() -> super::EventHandler {
-    dptree::case![Event::Help].endpoint(
-        |ev: Arc<OriginalRoomMessageEvent>, room: Arc<Room>| async move {
-            Ok(OutgoingResponse {
-                room,
-                content: OutgoingContent::Event(AnyMessageLikeEventContent::RoomMessage(
-                    RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML).make_reply_to(
-                        &ev,
-                        ForwardThread::No,
-                        AddMentions::Yes,
-                    ),
-                )),
-            })
-        },
-    )
+    dptree::case![RequestType::Help].endpoint(|request: super::IncomingRequest| async move {
+        let super::IncomingRequest { ev, room } = request;
+
+        room.send(
+            RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML).make_reply_to(
+                &ev,
+                ForwardThread::No,
+                AddMentions::Yes,
+            ),
+        )
+        .await?;
+
+        Ok(())
+    })
 }

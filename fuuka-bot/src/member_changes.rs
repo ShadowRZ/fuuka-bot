@@ -70,7 +70,7 @@ impl<'a> MembershipHistory<'a> {
     }
 }
 
-impl<'a> Stream for MembershipHistory<'a> {
+impl Stream for MembershipHistory<'_> {
     type Item = OriginalSyncRoomMemberEvent;
 
     fn poll_next(

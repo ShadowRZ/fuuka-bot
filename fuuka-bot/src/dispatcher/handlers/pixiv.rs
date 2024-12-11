@@ -1,32 +1,23 @@
-use std::sync::Arc;
-
 use futures_util::{pin_mut, StreamExt};
-use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
-use matrix_sdk::ruma::events::{
-    room::message::RoomMessageEventContent, AnyMessageLikeEventContent,
-};
-use matrix_sdk::Room;
 use pixrs::{RankingContent, RankingMode};
 
-use crate::dispatcher::event::PixivCommand;
-use crate::Config;
+use crate::dispatcher::request::pixiv::PixivCommand;
 
-use super::{Event, OutgoingContent, OutgoingResponse};
+use super::RequestType;
 
 pub fn event_handler() -> super::EventHandler {
-    dptree::case![Event::Pixiv(command)].endpoint(|
-        ev: Arc<OriginalRoomMessageEvent>,
-        room: Arc<Room>,
-        config: Arc<Config>,
+    dptree::case![RequestType::Pixiv(command)].endpoint(|
         command: PixivCommand,
-        pixiv: Option<Arc<pixrs::PixivClient>>| async move {
+        request: super::IncomingRequest, injected: super::Injected| async move {
+            let super::IncomingRequest { ev, room } = request;
+            let super::Injected { pixiv, config, .. } = injected;
+
             let Some(pixiv) = pixiv else {
-                return Ok(OutgoingResponse {
-                    room,
-                    content: OutgoingContent::None,
-                });
+                return Ok(());
             };
+
             let content = match command {
                 PixivCommand::Ranking => {
                     let resp = pixiv
@@ -71,6 +62,19 @@ pub fn event_handler() -> super::EventHandler {
                 }
                 PixivCommand::IllustInfo(illust_id) => {
                     let resp = pixiv.illust_info(illust_id).await?;
+
+                    let send_r18 = config.room_pixiv_r18_enabled(room.room_id());
+                    let is_r18 = match resp.restriction {
+                        pixrs::Restriction::General => false,
+                        pixrs::Restriction::R18 => true,
+                        pixrs::Restriction::R18G => true,
+                        _ => true,
+                    };
+
+                    if is_r18 && !send_r18 {
+                        return Ok(())
+                    };
+
                     let tag_str = resp
                         .tags
                         .tags
@@ -87,15 +91,11 @@ pub fn event_handler() -> super::EventHandler {
                         .join(" ");
                     // Specials
                     let specials_str = config
-                        .pixiv
-                        .traps
-                        .check_for_traps(&resp.tags, room.room_id())
+                        .pixiv_check_for_traps(&resp.tags, room.room_id())
                         .map(|s| format!("\n#{s}诱捕器"))
                         .unwrap_or_default();
                     let specials_str_html = config
-                        .pixiv
-                        .traps
-                        .check_for_traps(&resp.tags, room.room_id())
+                        .pixiv_check_for_traps(&resp.tags, room.room_id())
                         .map(|s| format!("<br/><b><font color='#d72b6d'>#{s}诱捕器</font></b>"))
                         .unwrap_or_default();
                     let body = format!(
@@ -119,9 +119,8 @@ pub fn event_handler() -> super::EventHandler {
                 AddMentions::Yes,
             );
 
-            Ok(OutgoingResponse {
-                room,
-                content: OutgoingContent::Event(AnyMessageLikeEventContent::RoomMessage(content)),
-            })
+            room.send(content).await?;
+
+            Ok(())
     })
 }
