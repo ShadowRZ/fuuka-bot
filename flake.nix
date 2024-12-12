@@ -50,15 +50,20 @@
 
               inherit (pkgs) lib;
 
-              craneLib = (crane.mkLib pkgs).overrideToolchain (_: fenix.stable.toolchain);
+              toolchain = (
+                fenix.stable.withComponents [
+                  "cargo"
+                  "clippy"
+                  "rust-src"
+                  "rustc"
+                  "rustfmt"
+                  "llvm-tools"
+                ]
+              );
 
-              src = lib.fileset.toSource {
-                root = ./.;
-                fileset = lib.fileset.unions [
-                  (craneLib.fileset.commonCargoSources ./.)
-                  ./graphql/schemas
-                ];
-              };
+              craneLib = (crane.mkLib pkgs).overrideToolchain (_: toolchain);
+
+              src = craneLib.cleanCargoSource ./.;
 
               # Common arguments can be set here to avoid repeating them later
               commonArgs = {
@@ -76,13 +81,6 @@
                 ];
               };
 
-              individualCrateArgs = commonArgs // {
-                inherit cargoArtifacts;
-                inherit (craneLib.crateNameFromCargoToml { inherit src; }) version;
-                # NB: we disable tests since we'll run them all via cargo-nextest
-                doCheck = false;
-              };
-
               # Build *just* the cargo dependencies (of the entire workspace),
               # so we can reuse all of that work (e.g. via cachix) when running in CI
               # It is *highly* recommended to use something like cargo-hakari to avoid
@@ -90,19 +88,10 @@
               cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
               fuuka-bot = craneLib.buildPackage (
-                individualCrateArgs
+                commonArgs
                 // {
-                  pname = "fuuka-bot";
-                  cargoExtraArgs = "-p fuuka-bot";
-                  src = lib.fileset.toSource {
-                    root = ./.;
-                    fileset = lib.fileset.unions [
-                      ./Cargo.toml
-                      ./Cargo.lock
-                      ./fuuka-bot
-                      ./graphql
-                    ];
-                  };
+                  inherit cargoArtifacts;
+                  doCheck = false;
                 }
               );
             in
@@ -110,6 +99,27 @@
               checks = {
                 # Build the crate as part of `nix flake check` for convenience
                 inherit fuuka-bot;
+
+                # Run clippy (and deny all warnings) on the crate source,
+                # again, reusing the dependency artifacts from above.
+                #
+                # Note that this is done as a separate derivation so that
+                # we can block the CI if there are issues here, but not
+                # prevent downstream consumers from building our crate by itself.
+                fuuka-bot-clippy = craneLib.cargoClippy (
+                  commonArgs
+                  // {
+                    inherit cargoArtifacts;
+                    cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+                  }
+                );
+
+                fuuka-bot-doc = craneLib.cargoDoc (
+                  commonArgs
+                  // {
+                    inherit cargoArtifacts;
+                  }
+                );
 
                 # Check formatting
                 fuuka-bot-fmt = craneLib.cargoFmt {
@@ -120,11 +130,38 @@
                 fuuka-bot-audit = craneLib.cargoAudit {
                   inherit src advisory-db;
                 };
+
+                fuuka-bot-toml-fmt = craneLib.taploFmt {
+                  src = pkgs.lib.sources.sourceFilesBySuffices src [ ".toml" ];
+                  # taplo arguments can be further customized below as needed
+                  # taploExtraArgs = "--config ./taplo.toml";
+                };
+
+                # Run tests with cargo-nextest
+                # Consider setting `doCheck = false` on `my-crate` if you do not want
+                # the tests to run twice
+                fuuka-bot-nextest = craneLib.cargoNextest (
+                  commonArgs
+                  // {
+                    inherit cargoArtifacts;
+                    partitions = 1;
+                    partitionType = "count";
+                  }
+                );
               };
 
-              packages = {
-                default = fuuka-bot;
-              };
+              packages =
+                {
+                  default = fuuka-bot;
+                }
+                // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+                  fuuka-bot-llvm-coverage = craneLib.cargoLlvmCov (
+                    commonArgs
+                    // {
+                      inherit cargoArtifacts;
+                    }
+                  );
+                };
 
               devShells = {
                 default = craneLib.devShell {
@@ -133,8 +170,9 @@
 
                   # Extra inputs can be added here; cargo and rustc are provided by default.
                   packages = [
-                    fenix.stable.rustfmt
-                    fenix.stable.clippy
+                    toolchain.rustfmt
+                    toolchain.clippy
+                    toolchain.llvm-tools
                   ];
 
                   RUST_SRC_PATH = "${fenix.stable.rust-src}/lib/rustlib/src/rust/library";
