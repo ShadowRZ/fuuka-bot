@@ -27,7 +27,6 @@ regex = "1"
 tracing = "0.1"
 imagesize = "0.13"
 file-format = "0.26"
-tokio-util = "0.7"
 toml = "0.8"
 futures-util = "0.3"
 mime = "0.3"
@@ -42,6 +41,7 @@ sha2 = "0.10"
 rpassword = { version = "7", optional = true }
 
 fuuka-bot-query-nixpkgs-pr = { version = "0.1.0", path = "../graphql/query/nixpkgs-pr" }
+gql_client = "1"
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"

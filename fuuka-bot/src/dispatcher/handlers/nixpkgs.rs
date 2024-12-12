@@ -16,8 +16,7 @@ pub fn event_handler() -> super::EventHandler {
                 return Ok(());
             };
             let room = &request.room;
-            let client = &injected.http;
-            let result = fetch_nixpkgs_pr(client, &nixpkgs_pr.token, pr_number).await?;
+            let result = fetch_nixpkgs_pr(&nixpkgs_pr.token, pr_number).await?;
 
             if track {
                 if !room.is_direct().await? {
@@ -32,7 +31,6 @@ pub fn event_handler() -> super::EventHandler {
                 }
                 let pr_info = result.clone();
 
-                let http = client.clone();
                 let room = room.clone();
                 tokio::spawn(async move {
                     use crate::services::github::nixpkgs_pr::track_nixpkgs_pr;
@@ -44,7 +42,7 @@ pub fn event_handler() -> super::EventHandler {
 
                     tokio::time::sleep(Duration::from_secs(1)).await;
 
-                    let stream = track_nixpkgs_pr(&http, cron, token, pr_number, pr_info);
+                    let stream = track_nixpkgs_pr(cron, token, pr_number, pr_info);
                     pin_mut!(stream);
 
                     tracing::debug!(room_id = %room.room_id(), "Start tracking Nixpkgs PR #{pr_number}");

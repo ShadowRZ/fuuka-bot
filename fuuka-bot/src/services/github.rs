@@ -1,15 +1,117 @@
-pub use fuuka_bot_query_nixpkgs_pr::*;
+use std::sync::OnceLock;
+
+//pub use fuuka_bot_query_nixpkgs_pr::*;
+
+static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
+static GQL_CLIENT: OnceLock<gql_client::Client> = OnceLock::new();
 
 pub mod nixpkgs_pr {
+
+    pub mod pull_info {
+        use serde::{Deserialize, Serialize};
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct PullInfo {
+            pub repository: Option<Repository>,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct Repository {
+            pub pull_request: Option<PullRequest>,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct PullRequest {
+            pub title: String,
+            pub state: PullRequestState,
+            pub merge_commit: Option<Commit>,
+        }
+
+        #[derive(Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[serde(rename_all = "UPPERCASE")]
+        pub enum PullRequestState {
+            Closed,
+            Merged,
+            Open,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct Commit {
+            pub head: GitObjectId,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(transparent)]
+        pub struct GitObjectId(pub String);
+
+        #[derive(Serialize, Clone, Debug)]
+        pub struct PullInfoVariables {
+            pub pr_number: i32,
+        }
+    }
+
+    pub mod pull_branches {
+        use serde::{Deserialize, Serialize};
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct PullBranches {
+            pub merged_branches: Option<Repository>,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct Repository {
+            pub staging: Option<Ref>,
+            pub master: Option<Ref>,
+            pub nixos_unstable_small: Option<Ref>,
+            pub nixpkgs_unstable: Option<Ref>,
+            pub nixos_unstable: Option<Ref>,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct Ref {
+            pub compare: Option<Comparison>,
+        }
+
+        #[derive(Deserialize, Clone, Debug)]
+        #[serde(rename_all = "camelCase")]
+        pub struct Comparison {
+            pub status: ComparisonStatus,
+        }
+
+        #[derive(Deserialize, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[serde(rename_all = "UPPERCASE")]
+        pub enum ComparisonStatus {
+            Ahead,
+            Behind,
+            Diverged,
+            Identical,
+        }
+
+        impl ComparisonStatus {
+            pub fn is_included(self) -> bool {
+                self == ComparisonStatus::Identical || self == ComparisonStatus::Behind
+            }
+        }
+
+        #[derive(Serialize, Clone, Debug)]
+        pub struct PullBranchesVariables<'a> {
+            pub head: &'a str,
+        }
+    }
+
     use std::pin::Pin;
 
     use pin_project_lite::pin_project;
 
-    use crate::services::github::pull_info::PullRequestState;
-    use cynic::{http::ReqwestExt, QueryBuilder};
+    use self::pull_info::PullRequestState;
     use futures_util::{stream::BoxStream, Stream, StreamExt};
-
-    static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
 
     #[derive(Debug, Clone)]
     pub struct PrInfo {
@@ -28,15 +130,23 @@ pub mod nixpkgs_pr {
         pub nixos_unstable: bool,
     }
 
-    pub async fn fetch_nixpkgs_pr(
-        client: &reqwest::Client,
-        token: &str,
-        pr_number: i32,
-    ) -> anyhow::Result<PrInfo> {
-        let (title, state, head) = fetch_pr_basic_info(client, token, pr_number).await?;
+    fn get_gql_client(token: &str) -> &gql_client::Client {
+        super::GQL_CLIENT.get_or_init(|| {
+            use std::collections::HashMap;
+
+            let mut headers = HashMap::new();
+            headers.insert("Authorization", format!("Bearer {token}"));
+            headers.insert("User-Agent", crate::APP_USER_AGENT.to_string());
+
+            gql_client::Client::new_with_headers(super::GRAPHQL_ENDPOINT, headers)
+        })
+    }
+
+    pub async fn fetch_nixpkgs_pr(token: &str, pr_number: i32) -> anyhow::Result<PrInfo> {
+        let (title, state, head) = fetch_pr_basic_info(token, pr_number).await?;
 
         let in_branches = match head {
-            Some(ref head) => Some(fetch_head_in_branches(client, token, head).await?),
+            Some(ref head) => Some(fetch_head_in_branches(token, head).await?),
             None => None,
         };
 
@@ -49,28 +159,30 @@ pub mod nixpkgs_pr {
     }
 
     async fn fetch_pr_basic_info(
-        client: &reqwest::Client,
         token: &str,
         pr_number: i32,
     ) -> anyhow::Result<(String, PullRequestState, Option<String>)> {
-        use crate::services::github::pull_info::{PullInfo, PullInfoVariables};
+        use self::pull_info::{PullInfo, PullInfoVariables};
 
-        let operation = PullInfo::build(PullInfoVariables { pr_number });
-        let resp = client
-            .post(GRAPHQL_ENDPOINT)
-            .bearer_auth(token)
-            .run_graphql(operation)
-            .await?;
-        let Some(data) = resp.data else {
-            return Err(crate::Error::GraphQLError {
+        let vars = PullInfoVariables { pr_number };
+        let resp = get_gql_client(token)
+            .query_with_vars::<PullInfo, PullInfoVariables>(
+                include_str!("queries/pr-info.graphql"),
+                vars,
+            )
+            .await
+            .map_err(|e| crate::Error::GraphQLError {
                 service: "github",
-                errors: resp.errors.unwrap_or_default(),
-            }
-            .into());
+                error: e,
+            })?;
+        let Some(data) = resp else {
+            return Err(crate::Error::UnexpectedError("Server returned no valid data!").into());
         };
 
         let Some(repository) = data.repository else {
-            anyhow::bail!("NixOS/nixpkgs repository disappeared!");
+            return Err(
+                crate::Error::UnexpectedError("NixOS/nixpkgs repository disappeared!").into(),
+            );
         };
 
         let Some(pull_request) = repository.pull_request else {
@@ -84,25 +196,22 @@ pub mod nixpkgs_pr {
         Ok((title, state, head))
     }
 
-    async fn fetch_head_in_branches(
-        client: &reqwest::Client,
-        token: &str,
-        head: &str,
-    ) -> anyhow::Result<PrBranchesStatus> {
-        use crate::services::github::pull_branches::{PullBranches, PullBranchesVariables};
+    async fn fetch_head_in_branches(token: &str, head: &str) -> anyhow::Result<PrBranchesStatus> {
+        use self::pull_branches::{PullBranches, PullBranchesVariables};
 
-        let operation = PullBranches::build(PullBranchesVariables { head });
-        let resp = client
-            .post(GRAPHQL_ENDPOINT)
-            .bearer_auth(token)
-            .run_graphql(operation)
-            .await?;
-        let Some(data) = resp.data else {
-            return Err(crate::Error::GraphQLError {
+        let vars = PullBranchesVariables { head };
+        let resp = get_gql_client(token)
+            .query_with_vars::<PullBranches, PullBranchesVariables>(
+                include_str!("queries/branches.graphql"),
+                vars,
+            )
+            .await
+            .map_err(|e| crate::Error::GraphQLError {
                 service: "github",
-                errors: resp.errors.unwrap_or_default(),
-            }
-            .into());
+                error: e,
+            })?;
+        let Some(data) = resp else {
+            return Err(crate::Error::UnexpectedError("Server returned no valid data!").into());
         };
         let Some(merged_branches) = data.merged_branches else {
             anyhow::bail!("NixOS/nixpkgs repository disappeared!");
@@ -175,7 +284,6 @@ pub mod nixpkgs_pr {
     }
 
     pub fn track_nixpkgs_pr<'a>(
-        client: &'a reqwest::Client,
         cron: &'a cronchik::CronSchedule,
         token: &'a str,
         pr_number: i32,
@@ -183,7 +291,7 @@ pub mod nixpkgs_pr {
     ) -> TrackNixpkgsPr<'a> {
         let stream = futures_util::stream::unfold(Some((pr_info, pr_number)), |state| async {
             let (state, pr_number) = state?;
-            fetch_next_pr_track_status(client, cron, token, pr_number, Some(state))
+            fetch_next_pr_track_status(cron, token, pr_number, Some(state))
                 .await
                 .ok()
         })
@@ -192,7 +300,6 @@ pub mod nixpkgs_pr {
     }
 
     async fn fetch_next_pr_track_status<'a>(
-        client: &'a reqwest::Client,
         cron: &'a cronchik::CronSchedule,
         token: &'a str,
         pr_number: i32,
@@ -214,7 +321,7 @@ pub mod nixpkgs_pr {
             Some(pr_info) => match pr_info.state {
                 PullRequestState::Closed => Ok((TrackStatus::Done, Some((pr_info, pr_number)))),
                 PullRequestState::Open => {
-                    let next_pr_info = fetch_nixpkgs_pr(client, token, pr_number).await?;
+                    let next_pr_info = fetch_nixpkgs_pr(token, pr_number).await?;
 
                     let state = next_pr_info.state;
                     let prev_branches = match &pr_info.in_branches {
@@ -246,7 +353,7 @@ pub mod nixpkgs_pr {
                         Some(branches) => branches,
                         None => &PrBranchesStatus::default(),
                     };
-                    let next_branches = fetch_head_in_branches(client, token, head).await?;
+                    let next_branches = fetch_head_in_branches(token, head).await?;
                     let new_branch = new_branch_from_status(&next_branches, prev_branches);
 
                     let mut new_pr_info = pr_info.clone();
@@ -259,7 +366,7 @@ pub mod nixpkgs_pr {
                 }
             },
             None => {
-                let next_pr_info = fetch_nixpkgs_pr(client, token, pr_number).await?;
+                let next_pr_info = fetch_nixpkgs_pr(token, pr_number).await?;
 
                 let state = next_pr_info.state;
 

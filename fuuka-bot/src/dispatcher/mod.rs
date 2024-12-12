@@ -132,8 +132,8 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
         Ok(Error::MissingArgument(arg)) => format!("Missing argument: {arg}"),
         Ok(Error::UnknownCommand(command)) => format!("Unknown command {command}"),
         Ok(Error::UnexpectedError(e)) => e.to_string(),
-        Ok(Error::GraphQLError { service, .. }) => {
-            format!("GraphQL Error response from {service}!")
+        Ok(Error::GraphQLError { service, error }) => {
+            format!("GraphQL Error response from {service}: {error:?}")
         }
         Err(e) => {
             tracing::error!("Unexpected error happened: {e:#}");
