@@ -119,12 +119,12 @@ pub mod nixpkgs {
     pub(super) fn from_args(mut args: impl Iterator<Item = String>) -> anyhow::Result<(i32, bool)> {
         let pr_number: i32 = args
             .next()
-            .ok_or(crate::Error::MissingArgument("user_id"))?
+            .ok_or(crate::Error::MissingArgument("pr_number"))?
             .parse()?;
         let track = args
             .next()
             .map(|arg| &arg == "track")
-            .ok_or(anyhow::anyhow!("Unknown subcommand"))?;
+            .unwrap_or_default();
 
         Ok((pr_number, track))
     }
