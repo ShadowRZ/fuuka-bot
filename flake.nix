@@ -50,18 +50,7 @@
 
               inherit (pkgs) lib;
 
-              toolchain = (
-                fenix.stable.withComponents [
-                  "cargo"
-                  "clippy"
-                  "rust-src"
-                  "rustc"
-                  "rustfmt"
-                  "llvm-tools"
-                ]
-              );
-
-              craneLib = (crane.mkLib pkgs).overrideToolchain (_: toolchain);
+              craneLib = (crane.mkLib pkgs).overrideToolchain (_: fenix.stable.toolchain);
 
               src = craneLib.cleanCargoSource ./.;
 
@@ -170,9 +159,9 @@
 
                   # Extra inputs can be added here; cargo and rustc are provided by default.
                   packages = [
-                    toolchain.rustfmt
-                    toolchain.clippy
-                    toolchain.llvm-tools
+                    fenix.stable.rustfmt
+                    fenix.stable.clippy
+                    fenix.stable.llvm-tools
                   ];
 
                   RUST_SRC_PATH = "${fenix.stable.rust-src}/lib/rustlib/src/rust/library";

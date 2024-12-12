@@ -128,6 +128,52 @@ pub mod nixpkgs_pr {
         pub nixos_unstable: bool,
     }
 
+    static GQL_QUERY_PR_INFO = r#"
+query PullInfo($pr_number: Int!) {
+  repository(owner: "NixOS", name: "nixpkgs") {
+    pullRequest(number: $pr_number) {
+      title
+      state
+      mergeCommit {
+        head: oid
+      }
+    }
+  }
+}
+    "#;
+
+    static GQL_QUERY_PULL_BRANCHES = r#"
+query PRInBranches($head: String!) {
+  mergedBranches: repository(owner: "NixOS", name: "nixpkgs") {
+    staging: ref(qualifiedName: "staging-next") {
+      compare(headRef: $head) {
+        status
+      }
+    }
+    master: ref(qualifiedName: "master") {
+      compare(headRef: $head) {
+        status
+      }
+    }
+    nixosUnstableSmall: ref(qualifiedName: "nixos-unstable-small") {
+      compare(headRef: $head) {
+        status
+      }
+    }
+    nixpkgsUnstable: ref(qualifiedName: "nixpkgs-unstable") {
+      compare(headRef: $head) {
+        status
+      }
+    }
+    nixosUnstable: ref(qualifiedName: "nixos-unstable") {
+      compare(headRef: $head) {
+        status
+      }
+    }
+  }
+}
+    "#;
+
     fn get_gql_client(token: &str) -> &gql_client::Client {
         super::GQL_CLIENT.get_or_init(|| {
             use std::collections::HashMap;
