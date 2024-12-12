@@ -128,7 +128,7 @@ pub mod nixpkgs_pr {
         pub nixos_unstable: bool,
     }
 
-    static GQL_QUERY_PR_INFO = r#"
+    static GQL_QUERY_PR_INFO: &str = r#"
 query PullInfo($pr_number: Int!) {
   repository(owner: "NixOS", name: "nixpkgs") {
     pullRequest(number: $pr_number) {
@@ -142,7 +142,7 @@ query PullInfo($pr_number: Int!) {
 }
     "#;
 
-    static GQL_QUERY_PULL_BRANCHES = r#"
+    static GQL_QUERY_PULL_BRANCHES: &str = r#"
 query PRInBranches($head: String!) {
   mergedBranches: repository(owner: "NixOS", name: "nixpkgs") {
     staging: ref(qualifiedName: "staging-next") {
@@ -210,10 +210,7 @@ query PRInBranches($head: String!) {
 
         let vars = PullInfoVariables { pr_number };
         let resp = get_gql_client(token)
-            .query_with_vars::<PullInfo, PullInfoVariables>(
-                include_str!("queries/pr-info.graphql"),
-                vars,
-            )
+            .query_with_vars::<PullInfo, PullInfoVariables>(GQL_QUERY_PR_INFO, vars)
             .await
             .map_err(|e| crate::Error::GraphQLError {
                 service: "github",
@@ -245,10 +242,7 @@ query PRInBranches($head: String!) {
 
         let vars = PullBranchesVariables { head };
         let resp = get_gql_client(token)
-            .query_with_vars::<PullBranches, PullBranchesVariables>(
-                include_str!("queries/branches.graphql"),
-                vars,
-            )
+            .query_with_vars::<PullBranches, PullBranchesVariables>(GQL_QUERY_PULL_BRANCHES, vars)
             .await
             .map_err(|e| crate::Error::GraphQLError {
                 service: "github",

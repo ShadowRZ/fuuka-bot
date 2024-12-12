@@ -42,7 +42,12 @@ rpassword = { version = "7", optional = true }
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
 default-features = false
-features = ["anyhow", "e2e-encryption", "automatic-room-key-forwarding", "sqlite"]
+features = [
+    "anyhow",
+    "e2e-encryption",
+    "automatic-room-key-forwarding",
+    "sqlite",
+]
 
 [dependencies.reqwest]
 version = "0.12"

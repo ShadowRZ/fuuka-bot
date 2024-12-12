@@ -121,10 +121,7 @@ pub mod nixpkgs {
             .next()
             .ok_or(crate::Error::MissingArgument("pr_number"))?
             .parse()?;
-        let track = args
-            .next()
-            .map(|arg| &arg == "track")
-            .unwrap_or_default();
+        let track = args.next().map(|arg| &arg == "track").unwrap_or_default();
 
         Ok((pr_number, track))
     }
