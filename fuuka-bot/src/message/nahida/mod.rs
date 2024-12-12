@@ -14,7 +14,6 @@
 mod extractors;
 mod link_type;
 
-use link_type::BiliBiliLinkType;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use url::Url;
 
@@ -47,9 +46,6 @@ pub async fn dispatch(
         LinkType::Generic(url) => self::extractors::generic::extract(client, url).await, // TODO
         LinkType::CannotBeABase => {
             Result::Err(crate::Error::UnexpectedError("URL is a cannot-be-a-base!").into())
-        }
-        LinkType::BiliBili(BiliBiliLinkType::Video(url)) => {
-            self::extractors::bilibili::bilibili_video(client, url).await
         }
     }
 }

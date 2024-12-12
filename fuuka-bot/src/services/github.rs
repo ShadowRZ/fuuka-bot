@@ -1,7 +1,5 @@
 use std::sync::OnceLock;
 
-//pub use fuuka_bot_query_nixpkgs_pr::*;
-
 static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
 static GQL_CLIENT: OnceLock<gql_client::Client> = OnceLock::new();
 

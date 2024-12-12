@@ -1,5 +1,5 @@
 [workspace]
-members = ["fuuka-bot", "graphql/schema/*", "graphql/query/*"]
+members = ["fuuka-bot"]
 resolver = "2"
 
 [workspace.package]
@@ -9,3 +9,8 @@ edition = "2021"
 [workspace.metadata.crane]
 name = "fuuka-bot"
 
+[profile.release]
+strip = true
+lto = true
+opt-level = "z"
+codegen-units = 1
