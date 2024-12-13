@@ -1,3 +1,5 @@
+use ruma::events::room::message::{AddMentions, ForwardThread};
+
 use super::RequestBody;
 
 #[derive(Clone, Debug)]
@@ -85,7 +87,8 @@ pub fn event_handler() -> super::EventHandler {
                 if let Some(content) =
                     crate::message::jerryxiao::jerryxiao(&from_member, &to_member, &text.0).await?
                 {
-                    room.send(content).await?;
+                    room.send(content.make_reply_to(&ev, ForwardThread::No, AddMentions::Yes))
+                        .await?;
                 }
 
                 Ok(())
@@ -113,7 +116,8 @@ pub fn event_handler() -> super::EventHandler {
                 crate::message::jerryxiao::jerryxiao_formatted(&from_member, &to_member, &text.0)
                     .await?
             {
-                room.send(content).await?;
+                room.send(content.make_reply_to(&ev, ForwardThread::No, AddMentions::Yes))
+                    .await?;
             }
 
             Ok(())
@@ -130,7 +134,8 @@ pub fn event_handler() -> super::EventHandler {
 
                 let content = crate::message::jerryxiao::fortune(&member, &text.0, prob).await?;
 
-                room.send(content).await?;
+                room.send(content.make_reply_to(&ev, ForwardThread::No, AddMentions::Yes))
+                    .await?;
 
                 Ok(())
             },
