@@ -12,7 +12,6 @@
 //!
 //! Where `<version>` is the running version of the bot.
 pub mod config;
-pub mod de;
 pub mod dispatcher;
 pub mod events;
 pub mod media_proxy;
