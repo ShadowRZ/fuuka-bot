@@ -128,6 +128,7 @@ pub struct Config {
     /// Admin user ID.
     pub admin_user: Option<OwnedUserId>,
     /// Pixiv related configs.
+    #[serde(default)]
     pub pixiv: PixivConfig,
     /// Optional room features.
     #[serde(default)]
@@ -157,10 +158,12 @@ pub struct MatrixConfig {
 }
 
 /// Pixiv feature related configs.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "kebab-case")]
 pub struct PixivConfig {
+    #[serde(default)]
     pub enabled: bool,
+    #[serde(default)]
     pub r18: bool,
     /// Pixiv PHPSESSID.
     /// See <https://pixivfe.pages.dev/obtaining-pixivfe-token/>
