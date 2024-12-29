@@ -297,7 +297,7 @@ mod tests {
 
         let token = "ASk3EMAJGCGQYt0Z6tTslBWDulxqCBiUi8A7W8BwQ32tfRdHxTkNIQrV6iNqCHvltNTlJlUgOgmT2qbdIi_icPxASQAAAAAAAG14YzovL2V4YW1wbGUub3JnL2FiYzEyMw";
 
-        let (mxc, expiry) = MediaProxy::verify_media_token(&secret, &token).unwrap();
+        let (mxc, expiry) = MediaProxy::verify_media_token(&secret, token).unwrap();
 
         assert_eq!(mxc, mxc_uri!("mxc://example.org/abc123"));
         assert_eq!(expiry.whole_milliseconds(), 50);
