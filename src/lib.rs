@@ -527,7 +527,7 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
     if let Some(user_id) = client.user_id() {
         let mut presence = Request::new(user_id.into(), PresenceState::Online);
         presence.status_msg = Some(APP_PRESENCE_TEXT.to_string());
-        if let Err(e) = client.send(presence, None).await {
+        if let Err(e) = client.send(presence).await {
             tracing::warn!("Failed to set presence: {e:#}");
         }
     }
