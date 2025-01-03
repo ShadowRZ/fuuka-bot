@@ -56,7 +56,7 @@ impl MediaProxy {
     pub fn router(&self) -> axum::Router {
         axum::Router::new()
             .route("/health", get(Self::health))
-            .route("/v1/media/download/:token", get(Self::get_media))
+            .route("/v1/media/download/{token}", get(Self::get_media))
             .with_state(self.state.clone())
     }
 

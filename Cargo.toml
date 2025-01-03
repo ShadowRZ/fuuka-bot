@@ -34,7 +34,7 @@ envsubst = "0.2"
 tl = "0.7"
 dptree = "0.3"
 pin-project-lite = "0.2"
-axum = "0.7"
+axum = "0.8"
 hmac = "0.12"
 sha2 = "0.10"
 rpassword = { version = "7", optional = true }
