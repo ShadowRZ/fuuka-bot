@@ -1,5 +1,7 @@
 /target
-credentials.json
-fuuka-bot.toml
 /store
 /result*
+/.direnv
+
+credentials.json
+fuuka-bot.toml
