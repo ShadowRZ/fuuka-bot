@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-01-04
+
+### Added
+
+- Add more size optimizations
+- Add direnv
+
+### Changed
+
+- Update changelog
+
+- Update
+- Update
+- Rewrite command system
+- Update
+- Bump
+- Move GraqhQL to gql_client
+- Cleanup
+- Update
+- Reformat
+- Cleanup
+- Bump dependencies
+- Bump axum
+- Translated tags
+- Updated docs to reflect current commands and configs
+- 0.4.0
+
+
+### Fixed
+
+- Fix nixpkgs command
+- Fix jerryxiao
+- Derive defaults for some config
+- Fix some warnings
+
+### Removed
+
+- Remove workspaces
+
 ## [0.3.4] - 2024-11-27
 
 ### Changed
@@ -602,6 +641,7 @@ This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
 Can't make it work. :(
 
 
+[0.4.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.4..v0.4.0
 [0.3.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.3..v0.3.4
 [0.3.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.2..v0.3.3
 [0.3.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.1..v0.3.2
