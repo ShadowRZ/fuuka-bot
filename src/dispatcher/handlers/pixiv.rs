@@ -79,14 +79,34 @@ pub fn event_handler() -> super::EventHandler {
                         .tags
                         .tags
                         .iter()
-                        .map(|tag| format!("#{tag}", tag = tag.tag))
+                        .map(|tag| {
+                            format!(
+                                "#{tag}{translated}",
+                                tag = tag.tag,
+                                translated = tag
+                                    .translation
+                                    .get("en")
+                                    .map(|s| format!(" ({s})"))
+                                    .unwrap_or_default()
+                            )
+                        })
                         .collect::<Vec<String>>()
                         .join(" ");
                     let tag_html_str = resp
                         .tags
                         .tags
                         .iter()
-                        .map(|tag| format!("<font color='#3771bb'>#{tag}</font>", tag = tag.tag))
+                        .map(|tag| {
+                            format!(
+                                "<font color='#3771bb'>#{tag}</font>{translated}",
+                                tag = tag.tag,
+                                translated = tag
+                                    .translation
+                                    .get("en")
+                                    .map(|s| format!(" ({s})"))
+                                    .unwrap_or_default()
+                            )
+                        })
                         .collect::<Vec<String>>()
                         .join(" ");
                     // Specials

@@ -11,7 +11,7 @@ pub async fn pixiv_illust(
     config: &PixivConfig,
     room_id: &RoomId,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let resp = pixiv.illust_info(artwork_id).await?;
+    let resp = pixiv.illust_info(artwork_id).with_lang("zh").await?;
     // R18 = 1, R18G = 2, General = 0
     let r18 = match resp.restriction {
         Restriction::General => false,
@@ -27,14 +27,34 @@ pub async fn pixiv_illust(
         .tags
         .tags
         .iter()
-        .map(|tag| format!("#{tag}", tag = tag.tag))
+        .map(|tag| {
+            format!(
+                "#{tag}{translated}",
+                tag = tag.tag,
+                translated = tag
+                    .translation
+                    .get("en")
+                    .map(|s| format!(" ({s})"))
+                    .unwrap_or_default()
+            )
+        })
         .collect::<Vec<String>>()
         .join(" ");
     let tag_html_str = resp
         .tags
         .tags
         .iter()
-        .map(|tag| format!("<font color='#3771bb'>#{tag}</font>", tag = tag.tag))
+        .map(|tag| {
+            format!(
+                "<font color='#3771bb'>#{tag}</font>{translated}",
+                tag = tag.tag,
+                translated = tag
+                    .translation
+                    .get("en")
+                    .map(|s| format!(" ({s})"))
+                    .unwrap_or_default()
+            )
+        })
         .collect::<Vec<String>>()
         .join(" ");
     // Specials
