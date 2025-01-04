@@ -2,23 +2,19 @@
 
 **TODO: Still needs to be written.**
 
+**WARN: May not reflect the current configuration.**
+
 ## `help`
 
 Sends the help message link and source code repo.
 
-## `info`
-
-**TODO: Might change**
-
-Sends the info of the running user and server version.
-
-## `avatar_changes`
+## `profile avatar history`
 
 Get the target user's avatar change history.
 
 _Requires replying to a message._
 
-## `name_changes`
+## `profile name history`
 
 Get the target user's name change history.
 
@@ -46,7 +42,7 @@ Ping the admin user for convenience of bridged users.
 
 _Requires a defined admin user._
 
-## `send_avatar`
+## `profile avatar`
 
 In a reply, send the avatar of the person being replied to.
 
