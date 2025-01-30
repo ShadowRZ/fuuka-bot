@@ -13,7 +13,6 @@
 //! Where `<version>` is the running version of the bot.
 pub mod config;
 pub mod dispatcher;
-pub mod events;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
@@ -30,7 +29,7 @@ pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
 pub use crate::types::Error;
 
-use matrix_sdk::matrix_auth::MatrixSession;
+use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
