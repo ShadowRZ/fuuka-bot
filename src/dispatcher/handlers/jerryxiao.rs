@@ -16,7 +16,11 @@ pub fn event_handler() -> super::EventHandler {
     dptree::filter_map(|body: RequestBody| {
         let RequestBody(body) = body;
 
-        if let Some(remaining) = body.strip_prefix('/') {
+        if let Some(remaining) = body.strip_prefix("//") {
+            Some(ResponseType::Formatted {
+                text: Remaining(remaining.to_string()),
+            })
+        } else if let Some(remaining) = body.strip_prefix('/') {
             Some(ResponseType::Normal {
                 text: Remaining(remaining.to_string()),
                 reverse: false,
@@ -35,10 +39,6 @@ pub fn event_handler() -> super::EventHandler {
             Some(ResponseType::Normal {
                 text: Remaining(remaining.to_string()),
                 reverse: true,
-            })
-        } else if let Some(remaining) = body.strip_prefix("//") {
-            Some(ResponseType::Formatted {
-                text: Remaining(remaining.to_string()),
             })
         } else if let Some(remaining) = body.strip_prefix("@@") {
             Some(ResponseType::Fortune {
