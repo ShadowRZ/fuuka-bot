@@ -7,6 +7,8 @@ pub(super) mod nixpkgs;
 pub(super) mod ping;
 pub(super) mod pixiv;
 pub(super) mod profile;
+pub(super) mod room_id;
 pub(super) mod unignore;
+pub(super) mod user_id;
 
 use super::{request::RequestType, EventHandler, IncomingRequest, Injected, RequestBody};

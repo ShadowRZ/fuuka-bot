@@ -81,7 +81,9 @@ pub static DISPATCHER: LazyLock<Handler<'static, DependencyMap, anyhow::Result<(
             .branch(self::handlers::hitokoto::event_handler())
             .branch(self::handlers::pixiv::event_handler())
             .branch(self::handlers::nixpkgs::event_handler())
-            .branch(self::handlers::profile::event_handler()),
+            .branch(self::handlers::profile::event_handler())
+            .branch(self::handlers::room_id::event_handler())
+            .branch(self::handlers::user_id::event_handler()),
         )
         .branch(self::handlers::jerryxiao::event_handler())
         .branch(self::handlers::nahida::event_handler())

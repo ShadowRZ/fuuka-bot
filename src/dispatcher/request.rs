@@ -21,6 +21,8 @@ pub enum RequestType {
     },
     Info,
     Help,
+    RoomId,
+    UserId,
 }
 
 pub(super) fn from_args(
@@ -51,6 +53,8 @@ pub(super) fn from_args(
             .map(|(pr_number, track)| Some(RequestType::Nixpkgs { pr_number, track })),
         "info" => Ok(Some(RequestType::Info)),
         "help" => Ok(Some(RequestType::Help)),
+        "room_id" => Ok(Some(RequestType::RoomId)),
+        "user_id" => Ok(Some(RequestType::UserId)),
         _ => Result::Err(crate::Error::UnknownCommand(command).into()),
     }
 }
