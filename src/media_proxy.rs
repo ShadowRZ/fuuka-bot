@@ -37,7 +37,12 @@ struct MediaProxyState {
 }
 
 impl MediaProxy {
-    pub fn new(server: Url, access_token: String, jwk: Jwk, client: &reqwest::Client) -> anyhow::Result<Self> {
+    pub fn new(
+        server: Url,
+        access_token: String,
+        jwk: Jwk,
+        client: &reqwest::Client,
+    ) -> anyhow::Result<Self> {
         let client = client.clone();
 
         let Some(hmac_key) = Self::extract_jwk_hmac_key(jwk) else {

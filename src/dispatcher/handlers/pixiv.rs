@@ -62,7 +62,7 @@ pub fn event_handler() -> super::EventHandler {
                     RoomMessageEventContent::text_html(body, html_body)
                 }
                 PixivCommand::IllustInfo(illust_id) => {
-                    let resp = pixiv.illust_info(illust_id).await?;
+                    let resp = pixiv.illust_info(illust_id).with_lang("zh").await?;
                     let room_id = room.room_id();
                     let send_r18 = config.room_pixiv_r18_enabled(room.room_id());
 
@@ -71,7 +71,7 @@ pub fn event_handler() -> super::EventHandler {
                         let config = config.as_ref().read().expect("RwLock posioned!");
                         let pixiv = &config.pixiv;
                         match crate::services::pixiv::illust::format(
-                            resp, pixiv, send_r18, room_id, true,
+                            resp, pixiv, send_r18, room_id, false,
                         ) {
                             Some(msg) => msg,
                             None => return  Ok(()),
