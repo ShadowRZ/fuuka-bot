@@ -7,12 +7,12 @@ use std::sync::Arc;
 
 use crate::MediaProxy;
 use crate::ReloadableConfig;
+use matrix_sdk::Room;
+use matrix_sdk::RoomState;
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::ruma::events::room::message::{
     OriginalRoomMessageEvent, OriginalSyncRoomMessageEvent, RoomMessageEventContent,
 };
-use matrix_sdk::Room;
-use matrix_sdk::RoomState;
 
 mod handlers;
 mod request;

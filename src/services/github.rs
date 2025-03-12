@@ -109,7 +109,7 @@ pub mod nixpkgs_pr {
     use pin_project_lite::pin_project;
 
     use self::pull_info::PullRequestState;
-    use futures_util::{stream::BoxStream, Stream, StreamExt};
+    use futures_util::{Stream, StreamExt, stream::BoxStream};
 
     #[derive(Debug, Clone)]
     pub struct PrInfo {

@@ -4,10 +4,10 @@ use std::collections::HashMap;
 
 use crate::RoomMemberExt;
 use matrix_sdk::room::RoomMember;
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::Mentions;
-use time::macros::format_description;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use time::OffsetDateTime;
+use time::macros::format_description;
 
 /// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room, two senders and text.
 #[tracing::instrument(

@@ -1,23 +1,23 @@
 use axum::{
+    Json,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
-    Json,
 };
 use bytes::{BufMut, Bytes, BytesMut};
 use core::str;
 use hmac::{Hmac, Mac};
 use jose_jwk::{
+    Jwk,
     jose_b64::{base64ct::Encoding, serde::Secret},
     jose_jwa::{Algorithm, Signing},
-    Jwk,
 };
 use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, MxcUri, OwnedMxcUri};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::Sha512;
 use std::sync::Arc;
-use time::{ext::NumericalDuration, Duration};
+use time::{Duration, ext::NumericalDuration};
 use url::Url;
 // Node.js Buffer emits unpadded URL safe Base64
 use jose_jwk::jose_b64::base64ct::Base64UrlUnpadded;
@@ -249,7 +249,7 @@ mod tests {
     pub fn test_encode() {
         use super::MediaProxy;
         use jose_jwk::Jwk;
-        use matrix_sdk::ruma::{mxc_uri, MilliSecondsSinceUnixEpoch, UInt};
+        use matrix_sdk::ruma::{MilliSecondsSinceUnixEpoch, UInt, mxc_uri};
         use pretty_assertions::assert_eq;
 
         let data = serde_json::json!({
@@ -272,7 +272,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(token, "ASk3EMAJGCGQYt0Z6tTslBWDulxqCBiUi8A7W8BwQ32tfRdHxTkNIQrV6iNqCHvltNTlJlUgOgmT2qbdIi_icPxASQAAAAAAAG14YzovL2V4YW1wbGUub3JnL2FiYzEyMw")
+        assert_eq!(
+            token,
+            "ASk3EMAJGCGQYt0Z6tTslBWDulxqCBiUi8A7W8BwQ32tfRdHxTkNIQrV6iNqCHvltNTlJlUgOgmT2qbdIi_icPxASQAAAAAAAG14YzovL2V4YW1wbGUub3JnL2FiYzEyMw"
+        )
     }
 
     #[test]

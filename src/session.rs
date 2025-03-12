@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use matrix_sdk::{matrix_auth::MatrixSession, Client};
+use matrix_sdk::{Client, matrix_auth::MatrixSession};
 use rpassword::read_password;
 use url::Url;
 

@@ -33,7 +33,7 @@ use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
-use matrix_sdk::{config::SyncSettings, Client};
+use matrix_sdk::{Client, config::SyncSettings};
 use pixrs::PixivClient;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
@@ -560,7 +560,7 @@ pub async fn on_stripped_member(
         tracing::info!("Autojoining room {}", room_id);
         let mut delay = 2;
         while let Err(e) = room.join().await {
-            use tokio::time::{sleep, Duration};
+            use tokio::time::{Duration, sleep};
             tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
             sleep(Duration::from_secs(delay)).await;
             delay *= 2;
@@ -584,7 +584,7 @@ pub async fn on_room_replace(
         tracing::info!("Room replaced, Autojoining new room {}", room_id);
         let mut delay = 2;
         while let Err(e) = client.join_room_by_id(&room_id).await {
-            use tokio::time::{sleep, Duration};
+            use tokio::time::{Duration, sleep};
             tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
             sleep(Duration::from_secs(delay)).await;
             delay *= 2;

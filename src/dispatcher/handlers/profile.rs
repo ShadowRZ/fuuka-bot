@@ -15,11 +15,11 @@ pub mod avatar {
     pub mod current {
         use file_format::FileFormat;
         use matrix_sdk::ruma::{
-            events::room::{
-                message::{ImageMessageEventContent, MessageType},
-                ImageInfo, MediaSource, ThumbnailInfo,
-            },
             MxcUri, UInt,
+            events::room::{
+                ImageInfo, MediaSource, ThumbnailInfo,
+                message::{ImageMessageEventContent, MessageType},
+            },
         };
         use matrix_sdk::{
             media::{MediaFormat, MediaRequestParameters},
@@ -101,12 +101,12 @@ pub mod avatar {
 
     pub mod changes {
         use futures_util::pin_mut;
+        use matrix_sdk::ruma::UInt;
         use matrix_sdk::ruma::events::room::member::MembershipChange;
         use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
         use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
-        use matrix_sdk::ruma::UInt;
-        use time::format_description::well_known::Rfc3339;
         use time::OffsetDateTime;
+        use time::format_description::well_known::Rfc3339;
 
         use crate::dispatcher::request::profile::{Category, ResponseType};
         use crate::dispatcher::{EventHandler, IncomingRequest, Injected};
@@ -289,12 +289,12 @@ pub mod name {
 
     pub mod changes {
         use futures_util::pin_mut;
+        use matrix_sdk::ruma::UInt;
         use matrix_sdk::ruma::events::room::member::MembershipChange;
         use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
         use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
-        use matrix_sdk::ruma::UInt;
-        use time::format_description::well_known::Rfc3339;
         use time::OffsetDateTime;
+        use time::format_description::well_known::Rfc3339;
 
         use crate::dispatcher::request::profile::{Category, ResponseType};
         use crate::dispatcher::{EventHandler, IncomingRequest};

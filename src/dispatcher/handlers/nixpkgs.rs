@@ -1,4 +1,4 @@
-use futures_util::{pin_mut, StreamExt};
+use futures_util::{StreamExt, pin_mut};
 
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};

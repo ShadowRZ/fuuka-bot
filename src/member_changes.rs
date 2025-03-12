@@ -1,11 +1,11 @@
 use std::pin::Pin;
 
 use futures_util::stream::BoxStream;
-use futures_util::{stream::unfold, Stream, StreamExt};
-use matrix_sdk::ruma::events::room::member::OriginalSyncRoomMemberEvent;
+use futures_util::{Stream, StreamExt, stream::unfold};
 use matrix_sdk::ruma::events::AnySyncStateEvent;
 use matrix_sdk::ruma::events::AnySyncTimelineEvent;
 use matrix_sdk::ruma::events::SyncStateEvent;
+use matrix_sdk::ruma::events::room::member::OriginalSyncRoomMemberEvent;
 
 use pin_project_lite::pin_project;
 

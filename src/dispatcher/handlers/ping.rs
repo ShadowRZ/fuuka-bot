@@ -1,7 +1,7 @@
+use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::ruma::events::room::message::{
     AddMentions, ForwardThread, RoomMessageEventContent,
 };
-use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use time::Duration;
 
 use super::RequestType;

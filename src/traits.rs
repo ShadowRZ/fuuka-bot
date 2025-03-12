@@ -1,9 +1,9 @@
 use std::future::Future;
 
+use matrix_sdk::ruma::OwnedUserId;
+use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
-use matrix_sdk::ruma::events::AnyTimelineEvent;
-use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::{room::RoomMember, ruma::MxcUri};
 use url::Url;
 
@@ -87,7 +87,7 @@ pub trait RoomExt {
         ev: &OriginalRoomMessageEvent,
     ) -> impl Future<Output = anyhow::Result<OwnedUserId>> + Send;
     fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember)
-        -> MembershipHistory<'a>;
+    -> MembershipHistory<'a>;
 }
 
 impl RoomExt for matrix_sdk::Room {

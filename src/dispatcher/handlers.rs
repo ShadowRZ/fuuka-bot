@@ -11,4 +11,4 @@ pub(super) mod room_id;
 pub(super) mod unignore;
 pub(super) mod user_id;
 
-use super::{request::RequestType, EventHandler, IncomingRequest, Injected, RequestBody};
+use super::{EventHandler, IncomingRequest, Injected, RequestBody, request::RequestType};

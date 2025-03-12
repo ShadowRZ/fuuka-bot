@@ -46,6 +46,8 @@ pub async fn crates_crate(
 
     Ok(Some(RoomMessageEventContent::text_html(
         format!("[Rust/Crate] {name} v{version}: {desc}\n{msrv_str}{docs}{repo}"),
-        format!("<p><b>[Rust/Crate]</b> {name} v{version}: {desc}</p><p>{msrv_str}<br/>{docs}<br/>{repo}</p>")
+        format!(
+            "<p><b>[Rust/Crate]</b> {name} v{version}: {desc}</p><p>{msrv_str}<br/>{docs}<br/>{repo}</p>"
+        ),
     )))
 }
