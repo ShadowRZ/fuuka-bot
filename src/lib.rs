@@ -111,11 +111,12 @@ impl FuukaBot {
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
             .build()?;
-        let pixiv = self.pixiv_client().await?;
-        let media_proxy = self.media_proxy().await?;
+        let pixiv = self.pixiv_client(&http).await?;
+        let media_proxy = self.media_proxy(&http).await?;
 
         let store_path = get_store_path()?;
         let builder = Client::builder()
+            .http_client(http.clone())
             .homeserver_url(&self.config.matrix.homeserver)
             .sqlite_store(store_path, None);
         let client = builder.build().await?;
@@ -182,14 +183,17 @@ impl FuukaBot {
         Ok(task.await?)
     }
 
-    async fn pixiv_client(&self) -> anyhow::Result<Option<Arc<PixivClient>>> {
+    async fn pixiv_client(
+        &self,
+        http: &reqwest::Client,
+    ) -> anyhow::Result<Option<Arc<PixivClient>>> {
         let Some(ref token) = self.config.pixiv.token else {
             return Ok(None);
         };
-        Ok(Some(Arc::new(PixivClient::new(token).await?)))
+        Ok(Some(Arc::new(PixivClient::from_client(token, http).await?)))
     }
 
-    async fn media_proxy(&self) -> anyhow::Result<Option<Arc<MediaProxy>>> {
+    async fn media_proxy(&self, http: &reqwest::Client) -> anyhow::Result<Option<Arc<MediaProxy>>> {
         if !self.enable_media_proxy_if_enabled {
             return Ok(None);
         }
@@ -203,6 +207,7 @@ impl FuukaBot {
                     self.config.matrix.homeserver.clone(),
                     self.session.tokens.access_token.clone(),
                     jwk,
+                    http,
                 )?;
 
                 let addr = &config.listen;

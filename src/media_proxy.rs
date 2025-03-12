@@ -37,8 +37,8 @@ struct MediaProxyState {
 }
 
 impl MediaProxy {
-    pub fn new(server: Url, access_token: String, jwk: Jwk) -> anyhow::Result<Self> {
-        let client = reqwest::Client::new();
+    pub fn new(server: Url, access_token: String, jwk: Jwk, client: &reqwest::Client) -> anyhow::Result<Self> {
+        let client = client.clone();
 
         let Some(hmac_key) = Self::extract_jwk_hmac_key(jwk) else {
             anyhow::bail!("No valid HMAC-SHA512 JWK token provided!");
