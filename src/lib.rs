@@ -109,6 +109,7 @@ impl FuukaBot {
     pub async fn run(self) -> anyhow::Result<()> {
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
+            .hickory_dns(true)
             .build()?;
         let pixiv = self.pixiv_client(&http).await?;
         let media_proxy = self.media_proxy(&http).await?;

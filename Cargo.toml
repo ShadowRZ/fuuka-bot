@@ -51,7 +51,7 @@ features = [
 [dependencies.reqwest]
 version = "0.12"
 default-features = false
-features = ["gzip", "brotli", "deflate", "json"]
+features = ["gzip", "brotli", "deflate", "json", "hickory-dns"]
 
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
@@ -67,12 +67,16 @@ default-features = false
 pretty_assertions = "1"
 
 [features]
-default = ["native-tls"]
+default = ["rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
 interactive-login = ["dep:rpassword"]
 
-native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls", "pixrs/native-tls"]
-rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "pixrs/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+rustls-tls = ["rustls-tls-native-roots"]
+
+# Rustls
+rustls-tls-webpki-roots = ["reqwest/rustls-tls-webpki-roots"]
+rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
 
 [profile.release]
 strip = true
