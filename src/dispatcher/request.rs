@@ -1,5 +1,5 @@
 use matrix_sdk::ruma::OwnedUserId;
-use ruma::UserId;
+use matrix_sdk::ruma::UserId;
 
 /// A type of events.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]

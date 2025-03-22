@@ -1,4 +1,4 @@
-use ruma::events::room::message::{AddMentions, ForwardThread};
+use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
 
 use super::RequestBody;
 
