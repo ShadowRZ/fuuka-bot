@@ -19,10 +19,12 @@ pub async fn process(
 ) -> anyhow::Result<()> {
     use crate::services::github::nixpkgs_pr::fetch_nixpkgs_pr;
 
+    let Ctx(Injected { http, .. }) = injected;
+
     let Some(nixpkgs_pr) = injected.config.nixpkgs() else {
         return Ok(());
     };
-    let result = fetch_nixpkgs_pr(&nixpkgs_pr.token, pr_number).await?;
+    let result = fetch_nixpkgs_pr(http, &nixpkgs_pr.token, pr_number).await?;
 
     if track {
         if !room.is_direct().await? {
@@ -38,6 +40,7 @@ pub async fn process(
         let pr_info = result.clone();
 
         let room = room.clone();
+        let client = http.clone();
         tokio::spawn(async move {
             use crate::services::github::nixpkgs_pr::track_nixpkgs_pr;
 
@@ -48,7 +51,7 @@ pub async fn process(
 
             tokio::time::sleep(Duration::from_secs(1)).await;
 
-            let stream = track_nixpkgs_pr(cron, token, pr_number, pr_info);
+            let stream = track_nixpkgs_pr(&client, cron, token, pr_number, pr_info);
             pin_mut!(stream);
 
             tracing::debug!(room_id = %room.room_id(), "Start tracking Nixpkgs PR #{pr_number}");

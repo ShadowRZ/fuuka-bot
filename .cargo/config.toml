@@ -1,0 +1,2 @@
+[env]
+CARGO_FEATURE_RUSTLS_TLS = "1" # Workaround

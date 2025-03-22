@@ -1,6 +1,5 @@
 //! Types for external API.
 
-use gql_client::GraphQLError;
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -71,6 +70,6 @@ pub enum Error {
     #[error("Error response from {service}: {error:?}")]
     GraphQLError {
         service: &'static str,
-        error: GraphQLError,
+        error: Vec<graphql_client::Error>,
     },
 }

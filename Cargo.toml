@@ -22,7 +22,6 @@ crc32fast = "1"
 thiserror = "2"
 shell-words = "1"
 fastrand = "2"
-gql_client = "1"
 bytes = "1"
 tracing = "0.1"
 imagesize = "0.13"
@@ -37,6 +36,7 @@ axum = "0.8"
 hmac = "0.12"
 sha2 = "0.10"
 rpassword = { version = "7", optional = true }
+graphql_client = { version = "0.14", default-features = false }
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
@@ -71,7 +71,7 @@ default = ["rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
 interactive-login = ["dep:rpassword"]
 
-native-tls = ["reqwest/native-tls"]
+native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls"]
 rustls-tls = ["rustls-tls-native-roots"]
 
 # Rustls
