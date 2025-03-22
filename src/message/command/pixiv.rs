@@ -1,25 +1,30 @@
+use crate::{
+    ReloadableConfig,
+    message::{Injected, pixiv::PixivCommand},
+};
 use futures_util::{StreamExt, pin_mut};
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
-use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
+use matrix_sdk::{
+    Room,
+    event_handler::Ctx,
+    ruma::events::room::message::{
+        AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
+    },
+};
 use pixrs::{RankingContent, RankingMode};
 
-use crate::ReloadableConfig;
-use crate::dispatcher::request::pixiv::PixivCommand;
+pub async fn process(
+    ev: &OriginalRoomMessageEvent,
+    room: &Room,
+    injected: &Ctx<Injected>,
+    command: PixivCommand,
+) -> anyhow::Result<()> {
+    let Ctx(Injected { pixiv, config, .. }) = injected;
 
-use super::RequestType;
+    let Some(pixiv) = pixiv else {
+        return Ok(());
+    };
 
-pub fn event_handler() -> super::EventHandler {
-    dptree::case![RequestType::Pixiv(command)].endpoint(|
-        command: PixivCommand,
-        request: super::IncomingRequest, injected: super::Injected| async move {
-            let super::IncomingRequest { ev, room } = request;
-            let super::Injected { pixiv, config, .. } = injected;
-
-            let Some(pixiv) = pixiv else {
-                return Ok(());
-            };
-
-            let content = match command {
+    let content = match command {
                 PixivCommand::Ranking => {
                     let resp = pixiv
                         .ranking_stream(RankingMode::Daily, RankingContent::Illust, None)
@@ -79,13 +84,12 @@ pub fn event_handler() -> super::EventHandler {
                     }
                 }
             }.make_reply_to(
-                &ev,
+                ev,
                 ForwardThread::No,
                 AddMentions::Yes,
             );
 
-            room.send(content).await?;
+    room.send(content).await?;
 
-            Ok(())
-    })
+    Ok(())
 }

@@ -14,13 +14,49 @@
 mod extractors;
 mod link_type;
 
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::{
+    Room,
+    event_handler::Ctx,
+    ruma::events::room::message::{
+        AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
+    },
+};
 use url::Url;
 
 use self::link_type::{CrateLinkType, LinkType, PixivLinkType};
 
+use super::Injected;
+
+pub async fn process(
+    ev: &OriginalRoomMessageEvent,
+    room: &Room,
+    injected: &Ctx<Injected>,
+    url: Url,
+) -> anyhow::Result<()> {
+    let Ctx(Injected {
+        config,
+        http,
+        pixiv,
+        ..
+    }) = injected;
+
+    let config = {
+        let config = config.0.read().expect("RwLock posioned!");
+        config.clone()
+    };
+
+    if let Some(content) =
+        crate::message::nahida::dispatch(url, room, &config, http, pixiv.as_deref()).await?
+    {
+        room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
+            .await?;
+    }
+
+    Ok(())
+}
+
 /// Dispatch prefixed messages that starts with `@Nahida`.
-pub async fn dispatch(
+async fn dispatch(
     url: Url,
     room: &matrix_sdk::Room,
     config: &crate::Config,

@@ -3,11 +3,144 @@
 use std::collections::HashMap;
 
 use crate::RoomMemberExt;
+use matrix_sdk::Room;
+use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::RoomMember;
 use matrix_sdk::ruma::events::Mentions;
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use matrix_sdk::ruma::events::room::message::{
+    AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
+};
 use time::OffsetDateTime;
 use time::macros::format_description;
+
+use super::Injected;
+
+#[derive(Clone, Debug)]
+enum Type {
+    Normal { text: Remaining, reverse: bool },
+    Formatted { text: Remaining },
+    Fortune { text: Remaining, prob: bool },
+}
+
+#[derive(Clone, Debug)]
+struct Remaining(String);
+
+pub async fn process(
+    ev: &OriginalRoomMessageEvent,
+    room: &Room,
+    injected: &Ctx<Injected>,
+    body: &str,
+) -> anyhow::Result<()> {
+    if !injected.config.room_jerryxiao_enabled(room.room_id()) {
+        return Ok(());
+    }
+
+    let result = if let Some(remaining) = body.strip_prefix("//") {
+        Some(Type::Formatted {
+            text: Remaining(remaining.to_string()),
+        })
+    } else if let Some(remaining) = body.strip_prefix('/') {
+        Some(Type::Normal {
+            text: Remaining(remaining.to_string()),
+            reverse: false,
+        })
+    } else if let Some(remaining) = body.strip_prefix("!!") {
+        Some(Type::Normal {
+            text: Remaining(remaining.to_string()),
+            reverse: false,
+        })
+    } else if let Some(remaining) = body.strip_prefix('\\') {
+        Some(Type::Normal {
+            text: Remaining(remaining.to_string()),
+            reverse: true,
+        })
+    } else if let Some(remaining) = body.strip_prefix("¡¡") {
+        Some(Type::Normal {
+            text: Remaining(remaining.to_string()),
+            reverse: true,
+        })
+    } else if let Some(remaining) = body.strip_prefix("@@") {
+        Some(Type::Fortune {
+            text: Remaining(remaining.to_string()),
+            prob: false,
+        })
+    } else {
+        body.strip_prefix("@%").map(|remaining| Type::Fortune {
+            text: Remaining(remaining.to_string()),
+            prob: true,
+        })
+    };
+
+    match result {
+        Some(result) => match result {
+            Type::Normal { text, reverse } => {
+                use crate::RoomExt as _;
+
+                let from_sender = &ev.sender;
+                let Some(to_sender) = room.in_reply_to_target(ev).await? else {
+                    return Ok(());
+                };
+                let Some(from_member) = room
+                    .get_member(if reverse { &to_sender } else { from_sender })
+                    .await?
+                else {
+                    return Ok(());
+                };
+                let Some(to_member) = room
+                    .get_member(if reverse { from_sender } else { &to_sender })
+                    .await?
+                else {
+                    return Ok(());
+                };
+
+                if let Some(content) =
+                    crate::message::jerryxiao::jerryxiao(&from_member, &to_member, &text.0).await?
+                {
+                    room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
+                        .await?;
+                }
+            }
+            Type::Formatted { text } => {
+                use crate::RoomExt as _;
+
+                let from_sender = &ev.sender;
+                let Some(to_sender) = room.in_reply_to_target(ev).await? else {
+                    return Ok(());
+                };
+                let Some(from_member) = room.get_member(from_sender).await? else {
+                    return Ok(());
+                };
+                let Some(to_member) = room.get_member(&to_sender).await? else {
+                    return Ok(());
+                };
+
+                if let Some(content) = crate::message::jerryxiao::jerryxiao_formatted(
+                    &from_member,
+                    &to_member,
+                    &text.0,
+                )
+                .await?
+                {
+                    room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
+                        .await?;
+                }
+            }
+            Type::Fortune { text, prob } => {
+                let Some(member) = room.get_member(&ev.sender).await? else {
+                    return Ok(());
+                };
+
+                let content = crate::message::jerryxiao::fortune(&member, &text.0, prob).await?;
+
+                room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
+                    .await?;
+            }
+        },
+        None => return Ok(()),
+    }
+
+    Ok(())
+}
 
 /// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room, two senders and text.
 #[tracing::instrument(
@@ -18,7 +151,7 @@ use time::macros::format_description;
     ),
     err
 )]
-pub async fn jerryxiao(
+async fn jerryxiao(
     from_member: &RoomMember,
     to_member: &RoomMember,
     text: &str,
@@ -117,7 +250,7 @@ pub async fn jerryxiao(
     ),
     err
 )]
-pub async fn jerryxiao_formatted(
+async fn jerryxiao_formatted(
     from_member: &RoomMember,
     to_member: &RoomMember,
     text: &str,
@@ -155,7 +288,7 @@ pub async fn jerryxiao_formatted(
     ),
     err
 )]
-pub async fn fortune(
+async fn fortune(
     member: &RoomMember,
     query: &str,
     prob: bool,

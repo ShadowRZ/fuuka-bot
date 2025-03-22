@@ -12,7 +12,6 @@
 //!
 //! Where `<version>` is the running version of the bot.
 pub mod config;
-pub mod dispatcher;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
@@ -156,12 +155,12 @@ impl FuukaBot {
         let prefix = self.config.command.prefix.clone();
         let config = ReloadableConfig(Arc::new(RwLock::new(self.config)));
 
-        let injected = self::dispatcher::Injected {
+        let injected = self::message::Injected {
             config,
             prefix,
-            http: http.clone(),
-            pixiv: pixiv.clone(),
-            media_proxy: media_proxy.clone(),
+            http,
+            pixiv,
+            media_proxy,
         };
 
         client.add_event_handler_context(injected);
@@ -536,7 +535,7 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         }
     }
 
-    let h1 = client.add_event_handler(crate::dispatcher::on_sync_message);
+    let h1 = client.add_event_handler(crate::message::on_sync_message);
     let h2 = client.add_event_handler(crate::on_stripped_member);
     let h3 = client.add_event_handler(crate::on_room_replace);
 

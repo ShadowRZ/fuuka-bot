@@ -88,6 +88,10 @@ pub trait RoomExt {
     ) -> impl Future<Output = anyhow::Result<OwnedUserId>> + Send;
     fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember)
     -> MembershipHistory<'a>;
+    fn run_with_typing<F>(&self, fut: F) -> impl Future<Output = anyhow::Result<()>> + Send
+    where
+        F: IntoFuture<Output = anyhow::Result<()>> + Send,
+        <F as IntoFuture>::IntoFuture: Send;
 }
 
 impl RoomExt for matrix_sdk::Room {
@@ -148,5 +152,16 @@ impl RoomExt for matrix_sdk::Room {
         member: &'a RoomMember,
     ) -> MembershipHistory<'a> {
         MembershipHistory::new(self, member)
+    }
+
+    async fn run_with_typing<F>(&self, fut: F) -> anyhow::Result<()>
+    where
+        F: IntoFuture<Output = anyhow::Result<()>> + Send,
+        <F as IntoFuture>::IntoFuture: Send,
+    {
+        self.typing_notice(true).await?;
+        fut.await?;
+        self.typing_notice(false).await?;
+        Ok(())
     }
 }
