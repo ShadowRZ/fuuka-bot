@@ -35,8 +35,24 @@ pin-project-lite = "0.2"
 axum = "0.8"
 hmac = "0.12"
 sha2 = "0.10"
+cosmic-text = "0.13"
+image = { version = "0.25", default-features = false, features = [
+  "avif",
+  "bmp",
+  "gif",
+  "ico",
+  "jpeg",
+  "png",
+  "webp",
+] }
+tiny-skia = { version = "0.11", default-features = false, features = [
+  "simd",
+  "std",
+  "png-format",
+] }
 rpassword = { version = "7", optional = true }
 graphql_client = { version = "0.14", default-features = false }
+
 
 [dependencies.matrix-sdk]
 git = "https://github.com/matrix-org/matrix-rust-sdk"

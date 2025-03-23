@@ -15,6 +15,7 @@ pub mod config;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
+pub mod render;
 pub mod services;
 #[doc(hidden)]
 #[cfg(feature = "interactive-login")]

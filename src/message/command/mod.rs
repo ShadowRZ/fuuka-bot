@@ -5,6 +5,7 @@ pub(super) mod nixpkgs;
 pub(super) mod ping;
 pub(super) mod pixiv;
 pub(super) mod profile;
+pub(super) mod quote;
 pub(super) mod room_id;
 pub(super) mod rooms;
 pub(super) mod unignore;
