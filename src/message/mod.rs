@@ -121,6 +121,7 @@ async fn process(
                 CommandType::Help => self::command::help::process(ev, room, injected).await?,
                 CommandType::RoomId => self::command::room_id::process(ev, room, injected).await?,
                 CommandType::UserId => self::command::user_id::process(ev, room, injected).await?,
+                CommandType::Rooms => self::command::rooms::process(ev, room, injected).await?,
             },
             None => return Ok(()),
         }
@@ -160,6 +161,7 @@ pub(super) enum CommandType {
     Help,
     RoomId,
     UserId,
+    Rooms,
 }
 
 pub(super) fn from_args(
@@ -192,6 +194,7 @@ pub(super) fn from_args(
         "help" => Ok(Some(CommandType::Help)),
         "room_id" => Ok(Some(CommandType::RoomId)),
         "user_id" => Ok(Some(CommandType::UserId)),
+        "rooms" => Ok(Some(CommandType::Rooms)),
         _ => Result::Err(crate::Error::UnknownCommand(command).into()),
     }
 }
