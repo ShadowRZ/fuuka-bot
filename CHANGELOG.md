@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add back commands
+- Add rooms command
+- Add quote command
 
 ### Changed
 
@@ -21,10 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update
 - Bump cargo crates
 - Opt in to Rust 2024 Edition
+- Update changelog
+
+- Bump cargo packages
+- Update pixiv fomatters + Reformat
+- Bump Cargo.lock
+- Reuse reqwest::Client across libs
+- Update
+- Bump packages
+- Use manual dispatch instead
+- Rustls + Hickory DNS
+- Use graphql_client
+- Also add a profile to abort on panic
+- Reformat
 
 ### Fixed
 
 - Fix JerryXiao
+- Use more accurate emoji for branch status
+- Fix pixiv command
 
 ## [0.4.0] - 2025-01-04
 
