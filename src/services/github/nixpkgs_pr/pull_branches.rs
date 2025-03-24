@@ -4,7 +4,7 @@ pub mod pull_branches {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "PullBranches";
-    pub const QUERY : & str = "query PullBranches($head: String!) {\n  mergedBranches: repository(owner: \"NixOS\", name: \"nixpkgs\") {\n    staging: ref(qualifiedName: \"staging-next\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    master: ref(qualifiedName: \"master\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    nixosUnstableSmall: ref(qualifiedName: \"nixos-unstable-small\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    nixpkgsUnstable: ref(qualifiedName: \"nixpkgs-unstable\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    nixosUnstable: ref(qualifiedName: \"nixos-unstable\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n  }\n}\n" ;
+    pub const QUERY: &str = "query PullBranches($head: String!) {\n  mergedBranches: repository(owner: \"NixOS\", name: \"nixpkgs\") {\n    staging: ref(qualifiedName: \"staging-next\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    master: ref(qualifiedName: \"master\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    nixosUnstableSmall: ref(qualifiedName: \"nixos-unstable-small\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    nixpkgsUnstable: ref(qualifiedName: \"nixpkgs-unstable\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n    nixosUnstable: ref(qualifiedName: \"nixos-unstable\") {\n      compare(headRef: $head) {\n        status\n      }\n    }\n  }\n}\n";
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]

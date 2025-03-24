@@ -5,7 +5,7 @@ pub mod pull_info {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "PullInfo";
-    pub const QUERY : & str = "query PullInfo($pr_number: Int!) {\n  repository(owner: \"NixOS\", name: \"nixpkgs\") {\n    pullRequest(number: $pr_number) {\n      title\n      state\n      mergeCommit {\n        head: oid\n      }\n    }\n  }\n}\n" ;
+    pub const QUERY: &str = "query PullInfo($pr_number: Int!) {\n  repository(owner: \"NixOS\", name: \"nixpkgs\") {\n    pullRequest(number: $pr_number) {\n      title\n      state\n      mergeCommit {\n        head: oid\n      }\n    }\n  }\n}\n";
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]
