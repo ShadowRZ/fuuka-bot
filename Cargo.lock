@@ -1276,6 +1276,7 @@ dependencies = [
  "jose-jwk",
  "matrix-sdk",
  "mime",
+ "parking_lot",
  "pin-project-lite",
  "pixrs",
  "pretty_assertions",

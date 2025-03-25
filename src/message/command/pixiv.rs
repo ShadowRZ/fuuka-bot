@@ -73,7 +73,7 @@ pub async fn process(
 
                     {
                         let ReloadableConfig(config) = config;
-                        let config = config.as_ref().read().expect("RwLock posioned!");
+                        let config = config.as_ref().read();
                         let pixiv = &config.pixiv;
                         match crate::services::pixiv::illust::format(
                             resp, pixiv, send_r18, room_id, false,

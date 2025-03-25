@@ -1,5 +1,5 @@
 use std::io::Cursor;
-use std::sync::{LazyLock, Mutex};
+use std::sync::LazyLock;
 
 use cosmic_text::{Attrs, Buffer, FontSystem, Metrics, Shaping, SwashCache, Weight, Wrap};
 use image::imageops::FilterType;
@@ -11,6 +11,7 @@ use matrix_sdk::{
     room::RoomMember,
     ruma::media::Method,
 };
+use parking_lot::Mutex;
 use tiny_skia::{
     FillRule, IntSize, Mask, Paint, PathBuilder, Pixmap, PixmapPaint, Rect, Transform,
 };
@@ -69,8 +70,8 @@ pub async fn render(
 
         let textbox = {
             let metrics = Metrics::new(16.0, 20.0);
-            let mut font_system = FONT_SYSTEM.lock().expect("Mutex posioned!");
-            let mut swash_cache = SWASH_CACHE.lock().expect("Mutex posioned!");
+            let mut font_system = FONT_SYSTEM.lock();
+            let mut swash_cache = SWASH_CACHE.lock();
             let mut buffer = Buffer::new(&mut font_system, metrics);
             let mut buffer = buffer.borrow_with(&mut font_system);
             buffer.set_size(Some(500.0), None);

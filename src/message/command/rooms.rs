@@ -13,7 +13,7 @@ pub async fn process(
     injected: &Ctx<Injected>,
 ) -> anyhow::Result<()> {
     let admin = {
-        let config = injected.config.0.read().expect("RwLock posioned!");
+        let config = injected.config.0.read();
         let admin = &config.admin_user;
 
         *admin == Some(ev.sender.clone())

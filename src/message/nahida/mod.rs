@@ -41,7 +41,7 @@ pub async fn process(
     }) = injected;
 
     let config = {
-        let config = config.0.read().expect("RwLock posioned!");
+        let config = config.0.read();
         config.clone()
     };
 

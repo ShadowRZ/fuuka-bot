@@ -2,10 +2,11 @@
 
 use cronchik::CronSchedule;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId, RoomId};
+use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::Arc,
 };
 use url::Url;
 
@@ -18,14 +19,14 @@ pub struct ReloadableConfig(pub Arc<RwLock<Config>>);
 impl ReloadableConfig {
     pub fn homeserver(&self) -> Url {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let homeserver = &config.matrix.homeserver;
         homeserver.clone()
     }
 
     pub fn media_proxy_config(&self) -> (Option<Url>, Option<u32>) {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
 
         let public_url = config
             .media_proxy
@@ -38,7 +39,7 @@ impl ReloadableConfig {
 
     pub fn room_jerryxiao_enabled(&self, room_id: &RoomId) -> bool {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let features = &config.features;
         features
             .0
@@ -49,7 +50,7 @@ impl ReloadableConfig {
 
     pub fn room_fortune_enabled(&self, room_id: &RoomId) -> bool {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let features = &config.features;
         features
             .0
@@ -60,7 +61,7 @@ impl ReloadableConfig {
 
     pub fn room_pixiv_enabled(&self, room_id: &RoomId) -> bool {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let features = &config.features;
         features
             .0
@@ -71,7 +72,7 @@ impl ReloadableConfig {
 
     pub fn room_pixiv_r18_enabled(&self, room_id: &RoomId) -> bool {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let features = &config.features;
         features
             .0
@@ -82,7 +83,7 @@ impl ReloadableConfig {
 
     pub fn reload(&self) -> anyhow::Result<()> {
         let Self(config) = self;
-        let mut config = config.as_ref().write().expect("RwLock posioned!");
+        let mut config = config.as_ref().write();
         *config = crate::get_config()?;
 
         Ok(())
@@ -90,14 +91,14 @@ impl ReloadableConfig {
 
     pub fn hitokoto(&self) -> Option<Url> {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let hitokoto = config.services.as_ref().and_then(|c| c.hitokoto.clone());
         hitokoto.clone()
     }
 
     pub fn nixpkgs(&self) -> Option<NixpkgsPrConfig> {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         config.nixpkgs_pr.clone()
     }
 
@@ -107,7 +108,7 @@ impl ReloadableConfig {
         room_id: &RoomId,
     ) -> Option<String> {
         let Self(config) = self;
-        let config = config.as_ref().read().expect("RwLock posioned!");
+        let config = config.as_ref().read();
         let pixiv = &config.pixiv;
 
         pixiv
