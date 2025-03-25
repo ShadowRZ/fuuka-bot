@@ -31,7 +31,12 @@ pub async fn process(
     injected: &Ctx<Injected>,
     body: &str,
 ) -> anyhow::Result<()> {
-    if !injected.config.room_jerryxiao_enabled(room.room_id()) {
+    if !injected
+        .config
+        .borrow()
+        .features
+        .room_jerryxiao_enabled(room.room_id())
+    {
         return Ok(());
     }
 

@@ -16,7 +16,7 @@ pub mod nahida;
 /// Injected dependencies.
 #[derive(Clone)]
 pub struct Injected {
-    pub config: ReloadableConfig,
+    pub config: tokio::sync::watch::Receiver<crate::Config>,
     pub prefix: String,
     pub http: reqwest::Client,
     pub pixiv: Option<Arc<pixrs::PixivClient>>,
@@ -139,7 +139,7 @@ async fn process(
 use matrix_sdk::ruma::{OwnedUserId, UserId};
 use url::Url;
 
-use crate::{MediaProxy, ReloadableConfig};
+use crate::MediaProxy;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub(super) enum CommandType {

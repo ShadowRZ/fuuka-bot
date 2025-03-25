@@ -21,7 +21,7 @@ pub async fn process(
 
     let Ctx(Injected { http, .. }) = injected;
 
-    let Some(nixpkgs_pr) = injected.config.nixpkgs() else {
+    let Some(nixpkgs_pr) = ({ injected.config.borrow().nixpkgs_pr.clone() }) else {
         return Ok(());
     };
     let result = fetch_nixpkgs_pr(http, &nixpkgs_pr.token, pr_number).await?;

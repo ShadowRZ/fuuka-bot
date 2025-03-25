@@ -148,8 +148,20 @@ pub mod avatar {
             };
 
             let media_proxy = &injected.media_proxy;
-            let homeserver = &injected.config.homeserver();
-            let (public_url, ttl_seconds) = injected.config.media_proxy_config();
+            let homeserver = {
+                injected.config.borrow().matrix.homeserver.clone()
+            };
+            let (public_url, ttl_seconds) = {
+                let config = injected.config.borrow();
+
+                let public_url = config
+                    .media_proxy
+                    .as_ref()
+                    .map(|cfg| cfg.public_url.clone());
+                let ttl_seconds = config.media_proxy.as_ref().map(|cfg| cfg.ttl_seconds);
+
+                (public_url, ttl_seconds)
+            };
             let public_url = public_url.as_ref();
 
             let mut body = String::new();
@@ -161,7 +173,7 @@ pub mod avatar {
                     {
                         media_proxy.create_media_url(public_url, uri, ttl_seconds)
                     } else {
-                        uri.http_url(homeserver)
+                        uri.http_url(&homeserver)
                     }
                 })
                 .transpose()?
@@ -214,7 +226,7 @@ pub mod avatar {
                                             ttl_seconds,
                                         )?
                                     } else {
-                                        avatar_url.http_url(homeserver)?
+                                        avatar_url.http_url(&homeserver)?
                                     };
                                     let result = format!(
                                         "{count}: Changed to {avatar_link} ({timestamp})\n"
@@ -241,7 +253,7 @@ pub mod avatar {
                                     {
                                         media_proxy.create_media_url(public_url, &uri, ttl_seconds)
                                     } else {
-                                        uri.http_url(homeserver)
+                                        uri.http_url(&homeserver)
                                     }
                                 })
                                 .transpose()?;

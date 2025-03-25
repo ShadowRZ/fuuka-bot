@@ -23,7 +23,7 @@ pub mod session;
 pub mod traits;
 pub mod types;
 
-pub use crate::config::{Config, ReloadableConfig};
+pub use crate::config::Config;
 pub use crate::media_proxy::MediaProxy;
 pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
@@ -34,7 +34,6 @@ use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
 use matrix_sdk::{Client, config::SyncSettings};
-use parking_lot::RwLock;
 use pixrs::PixivClient;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -156,7 +155,7 @@ impl FuukaBot {
         }
 
         let prefix = self.config.command.prefix.clone();
-        let config = ReloadableConfig(Arc::new(RwLock::new(self.config)));
+        let (_, config) = tokio::sync::watch::channel(self.config);
 
         let injected = self::message::Injected {
             config,

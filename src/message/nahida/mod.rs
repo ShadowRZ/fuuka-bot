@@ -41,7 +41,7 @@ pub async fn process(
     }) = injected;
 
     let config = {
-        let config = config.0.read();
+        let config = config.borrow();
         config.clone()
     };
 

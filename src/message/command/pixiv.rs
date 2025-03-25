@@ -1,7 +1,4 @@
-use crate::{
-    ReloadableConfig,
-    message::{Injected, pixiv::PixivCommand},
-};
+use crate::message::{Injected, pixiv::PixivCommand};
 use futures_util::{StreamExt, pin_mut};
 use matrix_sdk::{
     Room,
@@ -69,11 +66,12 @@ pub async fn process(
                 PixivCommand::IllustInfo(illust_id) => {
                     let resp = pixiv.illust_info(illust_id).with_lang("zh").await?;
                     let room_id = room.room_id();
-                    let send_r18 = config.room_pixiv_r18_enabled(room.room_id());
+                    let send_r18 = {
+                        config.borrow().features.room_pixiv_r18_enabled(room_id)
+                    };
 
                     {
-                        let ReloadableConfig(config) = config;
-                        let config = config.as_ref().read();
+                        let config = config.borrow();
                         let pixiv = &config.pixiv;
                         match crate::services::pixiv::illust::format(
                             resp, pixiv, send_r18, room_id, false,

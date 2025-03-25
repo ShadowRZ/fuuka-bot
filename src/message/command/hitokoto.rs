@@ -12,7 +12,14 @@ pub async fn process(
     room: &Room,
     injected: &Ctx<Injected>,
 ) -> anyhow::Result<()> {
-    if let Some(hitokoto) = injected.config.hitokoto() {
+    if let Some(hitokoto) = {
+        injected
+            .config
+            .borrow()
+            .services
+            .as_ref()
+            .and_then(|s| s.hitokoto.clone())
+    } {
         let raw_resp = injected
             .http
             .get(hitokoto)
