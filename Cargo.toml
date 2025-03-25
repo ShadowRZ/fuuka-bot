@@ -88,10 +88,9 @@ bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
 interactive-login = ["dep:rpassword"]
 
 native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls"]
-rustls-tls = ["rustls-tls-native-roots"]
+rustls-tls = ["reqwest/rustls-tls", "matrix-sdk/rustls-tls", "rustls-tls-native-roots"]
 
 # Rustls
-rustls-tls-webpki-roots = ["reqwest/rustls-tls-webpki-roots"]
 rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
 
 [profile.release]
