@@ -34,6 +34,22 @@ pub async fn render(
         }))
         .await?;
 
+    let name = room_member.name_or_id().to_string();
+
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    tokio::task::spawn_blocking(move || {
+        let res = render_inner(content, name, avatar);
+        let _ = tx.send(res);
+    });
+
+    rx.await?
+}
+
+fn render_inner(
+    content: TextMessageEventContent,
+    name: String,
+    avatar: Option<Vec<u8>>,
+) -> anyhow::Result<DynamicImage> {
     let avatar_pixmap = match avatar {
         Some(data) => {
             let mut bg = Pixmap::new(48, 48).unwrap();
@@ -64,7 +80,7 @@ pub async fn render(
                 Some(body) => Document::from_html(ruma::html::Html::parse(&body.body)),
                 None => Document::from_text(content.body),
             };
-            let image = doc.render(room_member.name());
+            let image = doc.render(&name);
 
             let (width, height) = (image.width(), image.height());
             let mut pixmap = Pixmap::new(width, height).unwrap();
@@ -192,6 +208,8 @@ use swash::{
     scale::{Render, ScaleContext, Scaler, Source, StrikeWith, image::Content},
     zeno::{Format, Vector},
 };
+
+use crate::RoomMemberExt;
 
 static FONT_CONTEXT: LazyLock<Mutex<FontContext>> = LazyLock::new(|| FontContext::new().into());
 
