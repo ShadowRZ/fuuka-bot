@@ -148,9 +148,7 @@ pub mod avatar {
             };
 
             let media_proxy = &injected.media_proxy;
-            let homeserver = {
-                injected.config.borrow().matrix.homeserver.clone()
-            };
+            let homeserver = { injected.config.borrow().matrix.homeserver.clone() };
             let (public_url, ttl_seconds) = {
                 let config = injected.config.borrow();
 

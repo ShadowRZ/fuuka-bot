@@ -11,7 +11,6 @@ repository = "https://github.com/ShadowRZ/fuuka-bot"
 anyhow = "1"
 axum = "0.8"
 bytes = "1"
-cosmic-text = "0.13"
 crc32fast = "1"
 cronchik = { version = "2", features = ["time", "serde"] }
 envsubst = "0.2"
@@ -29,16 +28,19 @@ image = { version = "0.25", default-features = false, features = [
   "png",
   "webp",
 ] }
+imageproc = { version = "0.25", default-features = false }
 imagesize = "0.13"
 jose-jwk = { version = "0.1", default-features = false }
 mime = "0.3"
 parking_lot = "0.12"
+parley = "0.3"
 pin-project-lite = "0.2"
 rpassword = { version = "7", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 shell-words = "1"
+swash = "0.2"
 thiserror = "2"
 time = { version = "0.3", features = ["macros", "formatting"] }
 tiny-skia = { version = "0.11", default-features = false, features = [
@@ -71,7 +73,7 @@ version = "0.12"
 
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
-features = ["html"]
+features = ["html-matrix"]
 git = "https://github.com/ruma/ruma"
 rev = "b1cb83544faafaef92be56c53cd98af4c51da85"
 

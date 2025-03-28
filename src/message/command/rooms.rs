@@ -51,8 +51,11 @@ pub async fn process(
     }
 
     room.send(
-        RoomMessageEventContent::text_html(body, html_body)
-            .make_reply_to(ev, ForwardThread::No, AddMentions::Yes),
+        RoomMessageEventContent::text_html(body, html_body).make_reply_to(
+            ev,
+            ForwardThread::No,
+            AddMentions::Yes,
+        ),
     )
     .await?;
 
