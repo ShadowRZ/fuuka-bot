@@ -340,6 +340,7 @@ impl Document {
         let mut images = self
             .inner
             .iter_mut()
+            .filter(|block| !block.inner.is_empty())
             .map(Self::render_single_block)
             .collect::<Vec<_>>();
 
@@ -356,7 +357,6 @@ impl Document {
         let mut y = 0;
         for img in images.into_iter() {
             use image::GenericImage;
-            println!("{width}, {height}, {y}");
             res.copy_from(&img, 0, y).unwrap();
             y += img.height();
         }
@@ -396,7 +396,7 @@ impl Document {
             for item in line.items() {
                 match item {
                     PositionedLayoutItem::GlyphRun(glyph_run) => {
-                        render_glyph_run(&mut SCALE_CONTEXT.lock(), &glyph_run, &mut img, 0);
+                        render_glyph_run(&mut SCALE_CONTEXT.lock(), &glyph_run, &mut img);
                     }
                     PositionedLayoutItem::InlineBox(_) => {}
                 }
@@ -455,7 +455,7 @@ impl Document {
             for item in line.items() {
                 match item {
                     PositionedLayoutItem::GlyphRun(glyph_run) => {
-                        render_glyph_run(&mut SCALE_CONTEXT.lock(), &glyph_run, &mut img, 0);
+                        render_glyph_run(&mut SCALE_CONTEXT.lock(), &glyph_run, &mut img);
                     }
                     PositionedLayoutItem::InlineBox(_) => {}
                 }
@@ -608,7 +608,6 @@ fn render_glyph_run(
     context: &mut ScaleContext,
     glyph_run: &GlyphRun<'_, Brush>,
     img: &mut RgbaImage,
-    padding: u32,
 ) {
     // Resolve properties of the GlyphRun
     let mut run_x = glyph_run.offset();
@@ -638,8 +637,8 @@ fn render_glyph_run(
 
     // Iterates over the glyphs in the GlyphRun
     for glyph in glyph_run.glyphs() {
-        let glyph_x = run_x + glyph.x + (padding as f32);
-        let glyph_y = run_y - glyph.y + (padding as f32);
+        let glyph_x = run_x + glyph.x;
+        let glyph_y = run_y - glyph.y;
         run_x += glyph.advance;
 
         render_glyph(img, &mut scaler, color, glyph, glyph_x, glyph_y);
@@ -651,14 +650,14 @@ fn render_glyph_run(
     if let Some(decoration) = &style.underline {
         let offset = decoration.offset.unwrap_or(run_metrics.underline_offset);
         let size = decoration.size.unwrap_or(run_metrics.underline_size);
-        render_decoration(img, glyph_run, decoration.brush, offset, size, padding);
+        render_decoration(img, glyph_run, decoration.brush, offset, size);
     }
     if let Some(decoration) = &style.strikethrough {
         let offset = decoration
             .offset
             .unwrap_or(run_metrics.strikethrough_offset);
         let size = decoration.size.unwrap_or(run_metrics.strikethrough_size);
-        render_decoration(img, glyph_run, decoration.brush, offset, size, padding);
+        render_decoration(img, glyph_run, decoration.brush, offset, size);
     }
 }
 
@@ -668,14 +667,15 @@ fn render_decoration(
     brush: Brush,
     offset: f32,
     width: f32,
-    padding: u32,
 ) {
     let y = glyph_run.baseline() - offset;
     for pixel_y in y as u32..(y + width) as u32 {
         for pixel_x in glyph_run.offset() as u32..(glyph_run.offset() + glyph_run.advance()) as u32
         {
-            img.get_pixel_mut(pixel_x + padding, pixel_y + padding)
-                .blend(&brush.foreground);
+            match img.get_pixel_mut_checked(pixel_x, pixel_y) {
+                Some(pixel) => pixel.blend(&brush.foreground),
+                None => {}
+            }
         }
     }
 }
@@ -712,9 +712,9 @@ fn render_glyph(
     let glyph_width = rendered_glyph.placement.width;
     let glyph_height = rendered_glyph.placement.height;
     let glyph_x = glyph_x.floor() as i32 + rendered_glyph.placement.left;
-    let glyph_x = if glyph_x < 0 { 0 } else { glyph_x as u32 };
+    let glyph_x = if glyph_x <= 0 { 0 } else { glyph_x as u32 };
     let glyph_y = glyph_y.floor() as i32 - rendered_glyph.placement.top;
-    let glyph_y = if glyph_y < 0 { 0 } else { glyph_y as u32 };
+    let glyph_y = if glyph_y <= 0 { 0 } else { glyph_y as u32 };
 
     match rendered_glyph.content {
         Content::Mask => {
@@ -726,7 +726,10 @@ fn render_glyph(
                     let y = glyph_y + pixel_y;
                     let alpha = rendered_glyph.data[i];
                     let color = Rgba([bc[0], bc[1], bc[2], alpha]);
-                    img.get_pixel_mut(x, y).blend(&color);
+                    match img.get_pixel_mut_checked(x, y) {
+                        Some(pixel) => pixel.blend(&color),
+                        None => {}
+                    }
                     i += 1;
                 }
             }
@@ -739,7 +742,10 @@ fn render_glyph(
                     let x = glyph_x + pixel_x as u32;
                     let y = glyph_y + pixel_y as u32;
                     let color = Rgba(pixel.try_into().expect("Not RGBA"));
-                    img.get_pixel_mut(x, y).blend(&color);
+                    match img.get_pixel_mut_checked(x, y) {
+                        Some(pixel) => pixel.blend(&color),
+                        None => {}
+                    }
                 }
             }
         }
