@@ -672,9 +672,8 @@ fn render_decoration(
     for pixel_y in y as u32..(y + width) as u32 {
         for pixel_x in glyph_run.offset() as u32..(glyph_run.offset() + glyph_run.advance()) as u32
         {
-            match img.get_pixel_mut_checked(pixel_x, pixel_y) {
-                Some(pixel) => pixel.blend(&brush.foreground),
-                None => {}
+            if let Some(pixel) = img.get_pixel_mut_checked(pixel_x, pixel_y) {
+                pixel.blend(&brush.foreground)
             }
         }
     }
@@ -726,9 +725,8 @@ fn render_glyph(
                     let y = glyph_y + pixel_y;
                     let alpha = rendered_glyph.data[i];
                     let color = Rgba([bc[0], bc[1], bc[2], alpha]);
-                    match img.get_pixel_mut_checked(x, y) {
-                        Some(pixel) => pixel.blend(&color),
-                        None => {}
+                    if let Some(pixel) = img.get_pixel_mut_checked(x, y) {
+                        pixel.blend(&color)
                     }
                     i += 1;
                 }
@@ -742,9 +740,8 @@ fn render_glyph(
                     let x = glyph_x + pixel_x as u32;
                     let y = glyph_y + pixel_y as u32;
                     let color = Rgba(pixel.try_into().expect("Not RGBA"));
-                    match img.get_pixel_mut_checked(x, y) {
-                        Some(pixel) => pixel.blend(&color),
-                        None => {}
+                    if let Some(pixel) = img.get_pixel_mut_checked(x, y) {
+                        pixel.blend(&color)
                     }
                 }
             }
