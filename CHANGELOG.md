@@ -36,12 +36,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use graphql_client
 - Also add a profile to abort on panic
 - Reformat
+- Update changelog
+
+- Refactor to use parking_lot atomics
+- Use watch channels
+- Update Cargo.toml
+- Reformat
+- Rewrite quote renderer to use parley instead
+- Bump dependencies
+- Allow quote renderer process to spawn on a blocking thread
 
 ### Fixed
 
 - Fix JerryXiao
 - Use more accurate emoji for branch status
 - Fix pixiv command
+- Fix quote function
+- Fix clippy warnings
 
 ## [0.4.0] - 2025-01-04
 
