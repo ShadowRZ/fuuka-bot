@@ -79,6 +79,7 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
 }
 
 #[tracing::instrument(
+    name = "message",
     skip_all,
     fields(
         event_id = %ev.event_id,
