@@ -24,7 +24,6 @@ pub struct Injected {
 }
 
 /// Called when a message is sent.
-#[tracing::instrument(skip_all)]
 pub async fn on_sync_message(
     ev: OriginalSyncRoomMessageEvent,
     room: Room,
@@ -79,6 +78,14 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
     }
 }
 
+#[tracing::instrument(
+    skip_all,
+    fields(
+        event_id = %ev.event_id,
+        room_id = %room.room_id()
+    )
+    err
+)]
 async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
@@ -89,6 +96,7 @@ async fn process(
     let body = remove_plain_reply_fallback(ev.content.body()).trim();
 
     if let Some(content) = body.strip_prefix(prefix) {
+        tracing::debug!(content, "Received a command request");
         let args = shell_words::split(content)?;
         let ty = self::from_args(args.into_iter())?;
         use self::CommandType;
@@ -127,6 +135,7 @@ async fn process(
             None => return Ok(()),
         }
     } else if let Some(content) = body.strip_prefix("@Nahida ") {
+        tracing::debug!(content, "Received a @Nahida request");
         let url = Url::parse(content)?;
         self::nahida::process(ev, room, injected, url).await?;
     } else {

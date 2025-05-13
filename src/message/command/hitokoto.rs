@@ -1,9 +1,9 @@
-use crate::{message::Injected, types::HitokotoResult};
+use crate::message::Injected;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
     ruma::events::room::message::{
-        AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
+        AddMentions, ForwardThread, OriginalRoomMessageEvent,
     },
 };
 
@@ -20,30 +20,10 @@ pub async fn process(
             .as_ref()
             .and_then(|s| s.hitokoto.clone())
     } {
-        let raw_resp = injected
-            .http
-            .get(hitokoto)
-            .send()
-            .await?
-            .error_for_status()?;
-        let resp: HitokotoResult = raw_resp.json().await?;
-
-        let from_who = resp.from_who.unwrap_or_default();
-
-        room.send(RoomMessageEventContent::text_html(
-                format!(
-                    "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
-                    resp.hitokoto, from_who, resp.from, resp.uuid
-                ),
-                format!(
-                "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
-                resp.hitokoto, from_who, resp.from, resp.uuid
-                ),
-            ).make_reply_to(
-                ev,
-                ForwardThread::No,
-                AddMentions::Yes,
-            )).await?;
+        let resp = crate::services::hitokoto::request(&injected.http, hitokoto).await?;
+        let content = crate::services::hitokoto::format(resp);
+        room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
+            .await?;
     }
 
     Ok(())
