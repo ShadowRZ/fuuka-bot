@@ -47,10 +47,12 @@
               crane = inputs.crane;
               advisory-db = inputs.advisory-db;
               fenix = inputs'.fenix.packages;
+              toolchain = fenix.fromToolchainFile {
+                dir = ./.;
+                sha256 = "sha256-X/4ZBHO3iW0fOenQ3foEvscgAPJYl2abspaBThDOukI=";
+              };
 
-              inherit (pkgs) lib;
-
-              craneLib = (crane.mkLib pkgs).overrideToolchain (_: fenix.stable.toolchain);
+              craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
               src = craneLib.cleanCargoSource ./.;
 
@@ -140,32 +142,16 @@
                 );
               };
 
-              packages =
-                {
-                  default = fuuka-bot;
-                }
-                // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
-                  fuuka-bot-llvm-coverage = craneLib.cargoLlvmCov (
-                    commonArgs
-                    // {
-                      inherit cargoArtifacts;
-                    }
-                  );
-                };
+              packages = {
+                default = fuuka-bot;
+              };
 
               devShells = {
                 default = craneLib.devShell {
                   # Inherit inputs from checks.
                   inherit (self') checks;
 
-                  # Extra inputs can be added here; cargo and rustc are provided by default.
-                  packages = [
-                    fenix.stable.rustfmt
-                    fenix.stable.clippy
-                    fenix.stable.llvm-tools
-                  ];
-
-                  RUST_SRC_PATH = "${fenix.stable.rust-src}/lib/rustlib/src/rust/library";
+                  RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
                 };
               };
             }
