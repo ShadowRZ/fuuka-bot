@@ -49,7 +49,7 @@
               fenix = inputs'.fenix.packages;
               toolchain = fenix.fromToolchainFile {
                 dir = ./.;
-                sha256 = "sha256-X/4ZBHO3iW0fOenQ3foEvscgAPJYl2abspaBThDOukI=";
+                sha256 = "sha256-KUm16pHj+cRedf8vxs/Hd2YWxpOrWZ7UOrwhILdSJBU=";
               };
 
               craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
