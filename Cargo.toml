@@ -54,7 +54,7 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "4", default-features = false, features = ["deflate"] }
 
 [dependencies.matrix-sdk]
 default-features = false
@@ -74,8 +74,7 @@ version = "0.12"
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
 features = ["html-matrix"]
-git = "https://github.com/ruma/ruma"
-rev = "689d9613a985edc089b5b729e6d9362f09b5df4f"
+version = "0.12.3"
 
 [dependencies.pixrs]
 default-features = false
