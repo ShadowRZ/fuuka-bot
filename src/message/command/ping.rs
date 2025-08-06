@@ -25,7 +25,7 @@ pub async fn process(
     let body = if delta_ms >= 2000 {
         format!("Pong after {delta:.3}")
     } else {
-        format!("Pong after {}ms", delta_ms)
+        format!("Pong after {delta_ms}ms")
     };
 
     room.send(RoomMessageEventContent::text_plain(body).make_reply_to(

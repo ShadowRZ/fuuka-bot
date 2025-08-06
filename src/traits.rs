@@ -45,14 +45,14 @@ impl MxcUriExt for MxcUri {
         let (server_name, media_id) = self.parts()?;
         Ok(homeserver
             .join("/_matrix/media/r0/download/")?
-            .join(format!("{}/{}", server_name, media_id).as_str())?)
+            .join(format!("{server_name}/{media_id}").as_str())?)
     }
 
     fn authed_http_url(&self, homeserver: &Url) -> anyhow::Result<Url> {
         let (server_name, media_id) = self.parts()?;
         Ok(homeserver
             .join("/_matrix/client/v1/media/download/")?
-            .join(format!("{}/{}", server_name, media_id).as_str())?)
+            .join(format!("{server_name}/{media_id}").as_str())?)
     }
 }
 

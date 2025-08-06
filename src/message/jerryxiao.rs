@@ -186,9 +186,7 @@ async fn jerryxiao(
                             to = to_member.name(),
                         ),
                         format!(
-                            "{from} {arg0} {to} {arg1}了{arg2}",
-                            from = from_pill,
-                            to = to_pill,
+                            "{from_pill} {arg0} {to_pill} {arg1}了{arg2}",
                         ),
                     )
                     .add_mentions(Mentions::with_user_ids([
@@ -230,7 +228,7 @@ async fn jerryxiao(
                                 from_member.name(),
                                 to_member.name(),
                             ),
-                            format!("{} {arg0}了 {}{arg1}", from_pill, to_pill),
+                            format!("{from_pill} {arg0}了 {to_pill}{arg1}"),
                         )
                         .add_mentions(Mentions::with_user_ids([
                             from_member.user_id().to_owned(),
@@ -358,14 +356,13 @@ async fn fortune(
                     result
                 ),
                 format!(
-                    "你好, {}<br/>汝今天{}概率是 {}",
-                    user_pill, luck_string, result
+                    "你好, {user_pill}<br/>汝今天{luck_string}概率是 {result}"
                 ),
             )
         } else {
             RoomMessageEventContent::text_html(
                 format!("你好, @{}\n汝的今日运势: {}", member.name(), result),
-                format!("你好, {}<br/>汝的今日运势: {}", user_pill, result),
+                format!("你好, {user_pill}<br/>汝的今日运势: {result}"),
             )
         }
     } else if prob {
@@ -379,8 +376,7 @@ async fn fortune(
                 happen_or_not_string
             ),
             format!(
-                "你好, {}<br/>所求事项: {}<br/>结果: 此事有 {} 的概率{}",
-                user_pill, query, result, happen_or_not_string
+                "你好, {user_pill}<br/>所求事项: {query}<br/>结果: 此事有 {result} 的概率{happen_or_not_string}"
             ),
         )
     } else {
@@ -392,8 +388,7 @@ async fn fortune(
                 result
             ),
             format!(
-                "你好, {}<br/>所求事项: {}<br/>结果: {}",
-                user_pill, query, result
+                "你好, {user_pill}<br/>所求事项: {query}<br/>结果: {result}"
             ),
         )
     };

@@ -35,8 +35,8 @@ pub async fn extract(
                 })
             } else {
                 Ok(Some(RoomMessageEventContent::text_html(
-                    format!("[Generic] Content Type: {c_ty}", c_ty = content_type),
-                    format!("<b>[Generic]</b> Content Type: {c_ty}", c_ty = content_type),
+                    format!("[Generic] Content Type: {content_type}"),
+                    format!("<b>[Generic]</b> Content Type: {content_type}"),
                 )))
             }
         }
