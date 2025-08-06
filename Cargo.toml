@@ -74,7 +74,8 @@ version = "0.12"
 [dependencies.ruma]
 # Flattens with the features used by matrix-rust-sdk
 features = ["html-matrix"]
-version = "0.12.3"
+git = "https://github.com/ruma/ruma"
+rev = "a626e6b8521bcaa01bf8b7c4161b26b361b72aff"
 
 [dependencies.pixrs]
 default-features = false
