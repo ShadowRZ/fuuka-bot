@@ -4,6 +4,7 @@ license = "Apache-2.0"
 version = "0.4.1"
 edition = "2024"
 repository = "https://github.com/ShadowRZ/fuuka-bot"
+rust-version = "1.88.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
