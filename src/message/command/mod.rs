@@ -1,3 +1,4 @@
+pub(super) mod bilibili;
 pub(super) mod help;
 pub(super) mod hitokoto;
 pub(super) mod ignore;

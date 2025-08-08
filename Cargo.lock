@@ -1369,6 +1369,7 @@ dependencies = [
  "pin-project-lite",
  "pixrs",
  "pretty_assertions",
+ "regex",
  "reqwest",
  "rpassword",
  "ruma",

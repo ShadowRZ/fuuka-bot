@@ -111,11 +111,9 @@ async fn process(
                         .await?
                 }
                 CommandType::Ping => self::command::ping::process(ev, room, injected).await?,
-                //CommandType::Divergence => todo!(),
                 CommandType::Hitokoto => {
                     self::command::hitokoto::process(ev, room, injected).await?
                 }
-                //CommandType::Sticker => todo!(),
                 CommandType::Ignore => self::command::ignore::process(ev, room, injected).await?,
                 CommandType::Unignore(user_id) => {
                     self::command::unignore::process(ev, room, injected, user_id).await?
@@ -126,12 +124,12 @@ async fn process(
                 CommandType::Nixpkgs { pr_number, track } => {
                     self::command::nixpkgs::process(ev, room, injected, pr_number, track).await?
                 }
-                //CommandType::Info => todo!(),
                 CommandType::Help => self::command::help::process(ev, room, injected).await?,
                 CommandType::RoomId => self::command::room_id::process(ev, room, injected).await?,
                 CommandType::UserId => self::command::user_id::process(ev, room, injected).await?,
                 CommandType::Rooms => self::command::rooms::process(ev, room, injected).await?,
                 CommandType::Quote => self::command::quote::process(ev, room, injected).await?,
+                CommandType::BiliBili(id) => self::command::bilibili::process(ev, room, injected, &id).await?,
             },
             None => return Ok(()),
         }
@@ -174,6 +172,7 @@ pub(super) enum CommandType {
     UserId,
     Rooms,
     Quote,
+    BiliBili(String),
 }
 
 pub(super) fn from_args(
@@ -208,6 +207,10 @@ pub(super) fn from_args(
         "user_id" => Ok(Some(CommandType::UserId)),
         "rooms" => Ok(Some(CommandType::Rooms)),
         "quote" => Ok(Some(CommandType::Quote)),
+        "bilibili" => Ok(Some(CommandType::BiliBili(
+            args.next()
+                .ok_or(crate::Error::MissingArgument("user_id"))?,
+        ))),
         _ => Result::Err(crate::Error::UnknownCommand(command).into()),
     }
 }
