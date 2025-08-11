@@ -1,6 +1,6 @@
 {
   "recommendations": [
-    "tamasfe.even-better-toml",
+    "tombi-toml.tombi",
     "rust-lang.rust-analyzer",
     "dustypomerleau.rust-syntax",
     "fill-labs.dependi"
