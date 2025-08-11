@@ -30,6 +30,7 @@ pub use crate::traits::*;
 pub use crate::types::Error;
 
 use matrix_sdk::authentication::matrix::MatrixSession;
+use matrix_sdk::ruma::OwnedRoomOrAliasId;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
@@ -586,17 +587,26 @@ pub async fn on_room_replace(
     client: matrix_sdk::Client,
 ) {
     tokio::spawn(async move {
-        let room_id = ev.content.replacement_room;
+        let room_id: OwnedRoomOrAliasId = ev.content.replacement_room.into();
         tracing::info!("Room replaced, Autojoining new room {}", room_id);
+        let sender = ev.sender;
+        let server_name = sender.server_name();
         let mut delay = 2;
-        while let Err(e) = client.join_room_by_id(&room_id).await {
+        while let Err(e) = client
+            .join_room_by_id_or_alias(&room_id, &[server_name.into()])
+            .await
+        {
             use tokio::time::{Duration, sleep};
-            tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
+            tracing::warn!(
+                "Failed to join replacement room {room_id} ({e:#}), retrying in {delay}s"
+            );
             sleep(Duration::from_secs(delay)).await;
             delay *= 2;
 
             if delay > 3600 {
-                tracing::error!("Can't join room {room_id} ({e:#})");
+                tracing::error!(
+                    "Can't join replacement room {room_id} ({e:#}), please join manually."
+                );
                 break;
             }
         }
