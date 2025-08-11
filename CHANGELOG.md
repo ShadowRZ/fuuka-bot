@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add BiliBili video extractor and command
+
+### Fixed
+
+- Fix GitHub Actions
+
+## [0.4.2] - 2025-08-11
+
+### Changed
+
+- Migrate to let chains and Rust 1.88.0
+- Replace TOML VS Code extension with tombi
+
+### Fixed
+
+- Fix tombstone following logic to account for v12 rooms
+
+## [0.4.1] - 2025-08-06
+
+### Added
+
 - Add back commands
 - Add rooms command
 - Add quote command
@@ -16,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update changelog
-
 - Update
 - Bump dependencies
 - Update
@@ -24,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump cargo crates
 - Opt in to Rust 2024 Edition
 - Update changelog
-
 - Bump cargo packages
 - Update pixiv fomatters + Reformat
 - Bump Cargo.lock
@@ -37,7 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Also add a profile to abort on panic
 - Reformat
 - Update changelog
-
 - Refactor to use parking_lot atomics
 - Use watch channels
 - Update Cargo.toml
@@ -45,6 +63,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rewrite quote renderer to use parley instead
 - Bump dependencies
 - Allow quote renderer process to spawn on a blocking thread
+- Update changelog
+- Update
+- Bump Cargo packages
+- Move Hitokoto APIs to crate::services::hikokoto
+- Restructure logging
+- Put Rust toolchain conifguration to dedicated file
+- Bump Cargo packages
+- Update
+- Bump Rust to 1.87.0
+- Update
+- Bump Rust to 1.88.0
+- Bump Cargo packages
+- Inline all format string variables
+- 0.4.1
 
 ### Fixed
 
@@ -64,7 +96,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update changelog
-
 - Update
 - Update
 - Rewrite command system
@@ -80,7 +111,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Translated tags
 - Updated docs to reflect current commands and configs
 - 0.4.0
-
 
 ### Fixed
 
@@ -98,7 +128,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update changelog
-
 - Media Proxy
 - Allow media token to expire
 - Use dptree based dispatching
@@ -107,7 +136,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update
 - Redo some code
 - 0.3.4
-
 
 ### Fixed
 
@@ -124,13 +152,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update changelog
-
 - Enable recovery instead
 - Bump dependencies
 - Apply Clippy suggestions
 - Update docs
 - Update changelog
-
 - Ping-admin command
 - Bump dependencies
 - Move to workspace
@@ -139,7 +165,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update
 - Update flake builds
 - 0.3.3
-
 
 ### Fixed
 
@@ -156,7 +181,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update warning in avatar_changes
 - 0.3.2
 
-
 ## [0.3.1] - 2024-09-20
 
 ### Added
@@ -170,10 +194,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Merge pull request #1 from Guanran928/pixiv-url
-
-
 - Update Dev Container
-
 - Use crane instead
 - Migrate deprecated extension
 - Make pixiv command respect config
@@ -186,7 +207,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Systemd service
 - Bump dependencies
 - 0.3.1
-
 
 ### Fixed
 
@@ -205,265 +225,170 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Refactor config
-
 - Move specials to reading config file
-
 - Update nahida functions
-
 - Update configuration docs
-
 - Update nahida functions
-
 - V0.3.0
-
 
 ### Fixed
 
 - Fix title extractor
-
 - Fix jerryxiao
-
 
 ## [0.2.11] - 2024-05-14
 
 ### Added
 
 - Add some pixiv commands
-
 - Add info command
-
 
 ### Changed
 
 - Update
-
 - Update actions
-
 - Update
-
 - Update
-
 - Update
-
 - Bump deps
-
 - Update mentions for jerryxiao
-
 - Reorganize files
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - Update Actions
-
 - 0.2.11
-
 
 ### Removed
 
 - Remove rustls support
-
 
 ## [0.2.10] - 2024-05-10
 
 ### Added
 
 - Add sticker upload command
-
 - Add notification for sticker upload
-
 - Add room replacement support
-
 - Add formatting to JerryXiao commands
-
 - Add editor configs
-
 - Add admin room support
-
 - Add ignore and unignore command
-
 - Add pixiv command
-
 
 ### Changed
 
 - Update reminder command
-
 - Update
-
 - Make some config optional
-
 - Update
-
 - Tweak tracing level
-
 - Update JerryXiao function
-
 - Refactor code, stage 1
-
 - Refactor code, stage 2
-
 - Refactor code, stage 3
-
 - Update docs
-
 - Update error reporting function
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - Bump matrix-rust-sdk
-
 - Bump dependencies
-
 - Move to thiserror
-
 - Update Cargo.toml
-
 - Move to workspace
-
 - Change sticker usage type to exact type
-
 - Update
-
 - Reorganize subcrates to subdir
-
 - Bump deps
-
 - Move to pixrs
-
 - Move away from workspaces
-
 - Allow using rustls
-
 - 0.2.10
-
 
 ### Removed
 
 - Remove dicer
-
 
 ## [0.2.9] - 2024-03-25
 
 ### Added
 
 - Add quote command
-
 - Add more HTML tags to ignore
-
 
 ### Changed
 
 - Disable message backup
-
 - Use UNIX shell word spliting
-
 - Tweak loglevel
-
 - Update command types
-
 - 0.2.9
-
 
 ## [0.2.8] - 2024-03-24
 
 ### Changed
 
 - Move session code to a new file
-
 - Update
-
 - Include a license
-
 - Move Pages docs to mdBook docs
-
 - Update
-
 - Update
-
 - Update
-
 - 0.2.8
-
 
 ### Fixed
 
 - Fix Actions
-
 
 ## [0.2.7] - 2024-03-24
 
 ### Added
 
 - Add presence info
-
 - Add remind command
-
 
 ### Changed
 
 - Update typing functions
-
 - Change ping delta formatting
-
 - Bump matrix-rust-sdk
-
 - Bump deps
-
 - 0.2.7
-
 
 ## [0.2.6] - 2024-02-14
 
 ### Changed
 
 - Update
-
 - 0.2.6
-
 
 ## [0.2.5] - 2024-02-14
 
 ### Changed
 
 - Update metas
-
 - 0.2.5
-
 
 ## [0.2.4] - 2024-02-14
 
 ### Added
 
 - Add typing notices
-
 - Add At-Nahida prefix message handlers
-
 
 ### Changed
 
 - Update
-
 - Update
-
 - 0.2.4
-
 
 ### Fixed
 
 - Fix Hitokoto API
-
 
 ## [0.2.3] - 2024-02-08
 
@@ -471,21 +396,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add Hitokoto API
 
-
 ### Changed
 
 - Update
-
 - Bump matrix-rust-sdk
-
 - Bump dependencies
-
 - Update Rustdoc workflow
-
 - Update
-
 - 0.2.3
-
 
 ## [0.2.2] - 2023-12-03
 
@@ -493,195 +411,124 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add additional mentions for JerryXiao
 
-
 ### Changed
 
 - Update jerryxiao handling
-
 - Bump deps
-
 - 0.2.2
-
 
 ### Fixed
 
 - Fix retrying
-
 
 ## [0.2.1] - 2023-11-20
 
 ### Added
 
 - Add instrument macros
-
 - Add optional features
-
 - Add SQLite to Nix environment
-
 
 ### Changed
 
 - Move to simpler image size detection
-
 - Update Cargo.toml
-
 - Allow tracing to report errors
-
 - Allow proper retrys
-
 - 0.2.1
-
 
 ## [0.2.0] - 2023-11-17
 
 ### Added
 
 - Add docs
-
 - Add Pages
-
 - Add autojoin
-
 
 ### Changed
 
 - Update
-
 - Optimize dicer output
-
 - Give nom_error_message the expr string
-
 - Graceful shutdown
-
 - Update member changes command
-
 - Update
-
 - Update tracing level
-
 - Reformat imports
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - Update error handling
-
 - Update
-
 - Restructure the code
-
 - 0.2.0
-
 
 ### Fixed
 
 - Fix format
-
 - Fix error reporting
-
 - Fix workflow
-
 - Fix logic
-
 
 ### Removed
 
 - Remove extra dots
-
 
 ## [0.1.2] - 2023-11-14
 
 ### Added
 
 - Add at symbols
-
 - Add dicer implmentation
-
 
 ### Changed
 
 - Update
-
 - Revert "Add randomdraw"
 
 This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
-
 - Retry randomdraw
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - 0.1.2
-
 
 ## [0.1.1] - 2023-11-12
 
 ### Added
 
 - Add name_changes command
-
 - Add Jerryxiao function
-
 - Add randomdraw
-
 - Add divergence command
-
 - Support proper intentional mentions for jerryxiao
-
 - Add ignore and unignore command
-
 - Add thiserror
-
 
 ### Changed
 
 - Initial commit
-
 - Update
-
 - Update
-
 - Update
-
 - Update
-
 - Bump to git version of Matrix Rust SDK
-
 - Move message sending to outer level
-
 - Update randomdraw implmentation
-
 - Restructure the code
-
 - Format error messages nicely
-
 - 0.1.1
-
 
 ### Fixed
 
 - Fix matrix.to link creation
-
 - Fix jerryxiao message output
-
 - Fix divergence command
-
 - Fix randomdraw
-
 
 ### Removed
 
@@ -689,8 +536,9 @@ This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
 
 Can't make it work. :(
 
-
-[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.0..HEAD
+[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.2..HEAD
+[0.4.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.1..v0.4.2
+[0.4.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.0..v0.4.1
 [0.4.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.4..v0.4.0
 [0.3.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.3..v0.3.4
 [0.3.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.2..v0.3.3
