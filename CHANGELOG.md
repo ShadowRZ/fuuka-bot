@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add BiliBili video extractor and command
 
+### Changed
+
+- Update changelog
+- Allow Release action to be manually started
+
 ### Fixed
 
 - Fix GitHub Actions
