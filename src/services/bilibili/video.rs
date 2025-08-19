@@ -9,7 +9,7 @@ static REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?:window\.__INITIAL_STATE__\s*=)\s*(?P<json>\{(?s:.+)\})\s*(?:;)").unwrap()
 });
 
-pub(self) static USER_AGENT_HEADER_VALUE: LazyLock<HeaderValue> =
+static USER_AGENT_HEADER_VALUE: LazyLock<HeaderValue> =
     LazyLock::new(|| HeaderValue::from_static(super::USER_AGENT));
 
 pub async fn request(client: &reqwest::Client, id: &str) -> anyhow::Result<Video> {
@@ -45,11 +45,19 @@ pub fn format(resp: Video, prefix: bool) -> RoomMessageEventContent {
         like,
         ..
     } = &resp.data.stat;
-    let stats_str: String = format!("Views: {view} Likes: {like} Coins: {coin} Favorties: {favorite} Shares: {share} Danmakus: {danmaku}");
+    let stats_str: String = format!(
+        "Views: {view} Likes: {like} Coins: {coin} Favorties: {favorite} Shares: {share} Danmakus: {danmaku}"
+    );
     let prefix_text = if prefix { "[BiliBili/Video] " } else { "" };
-    let prefix_html = if prefix { "<p><b>[BiliBili/Video]</b> " } else { "" };
+    let prefix_html = if prefix {
+        "<p><b>[BiliBili/Video]</b> "
+    } else {
+        ""
+    };
     RoomMessageEventContent::text_html(
-        format!("{prefix_text}{title} https://www.bilibili.com/video/{bvid}\nUP: {owner_name} https://space.bilibili.com/{owner_uid}\n{stats_str}"),
+        format!(
+            "{prefix_text}{title} https://www.bilibili.com/video/{bvid}\nUP: {owner_name} https://space.bilibili.com/{owner_uid}\n{stats_str}"
+        ),
         format!(
             "{prefix_html}<a href='https://www.bilibili.com/video/{bvid}'>{title}</a></p><p>UP: <a href='https://space.bilibili.com/{owner_uid}'>{owner_name}</a></p><p>{stats_str}</p>"
         ),

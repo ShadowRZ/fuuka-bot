@@ -129,7 +129,9 @@ async fn process(
                 CommandType::UserId => self::command::user_id::process(ev, room, injected).await?,
                 CommandType::Rooms => self::command::rooms::process(ev, room, injected).await?,
                 CommandType::Quote => self::command::quote::process(ev, room, injected).await?,
-                CommandType::BiliBili(id) => self::command::bilibili::process(ev, room, injected, &id).await?,
+                CommandType::BiliBili(id) => {
+                    self::command::bilibili::process(ev, room, injected, &id).await?
+                }
             },
             None => return Ok(()),
         }

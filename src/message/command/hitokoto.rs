@@ -2,9 +2,7 @@ use crate::message::Injected;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
-    ruma::events::room::message::{
-        AddMentions, ForwardThread, OriginalRoomMessageEvent,
-    },
+    ruma::events::room::message::{AddMentions, ForwardThread, OriginalRoomMessageEvent},
 };
 
 pub async fn process(

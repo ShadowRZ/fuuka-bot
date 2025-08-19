@@ -185,9 +185,7 @@ async fn jerryxiao(
                             from = from_member.name(),
                             to = to_member.name(),
                         ),
-                        format!(
-                            "{from_pill} {arg0} {to_pill} {arg1}了{arg2}",
-                        ),
+                        format!("{from_pill} {arg0} {to_pill} {arg1}了{arg2}",),
                     )
                     .add_mentions(Mentions::with_user_ids([
                         from_member.user_id().to_owned(),
@@ -355,9 +353,7 @@ async fn fortune(
                     luck_string,
                     result
                 ),
-                format!(
-                    "你好, {user_pill}<br/>汝今天{luck_string}概率是 {result}"
-                ),
+                format!("你好, {user_pill}<br/>汝今天{luck_string}概率是 {result}"),
             )
         } else {
             RoomMessageEventContent::text_html(
@@ -387,9 +383,7 @@ async fn fortune(
                 query,
                 result
             ),
-            format!(
-                "你好, {user_pill}<br/>所求事项: {query}<br/>结果: {result}"
-            ),
+            format!("你好, {user_pill}<br/>所求事项: {query}<br/>结果: {result}"),
         )
     };
     Ok(content)
