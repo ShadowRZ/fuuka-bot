@@ -15,6 +15,16 @@ pub async fn process(
     let _ = injected;
     use crate::RoomExt as _;
 
+    {
+        let sender = &ev.sender;
+        let config = injected.config.borrow();
+        let admin = config.admin_user.as_ref();
+
+        if admin != Some(sender) {
+            return Ok(());
+        };
+    }
+
     let user_id = room
         .in_reply_to_target(ev)
         .await?

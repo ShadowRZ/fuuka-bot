@@ -17,6 +17,16 @@ pub async fn process(
 ) -> anyhow::Result<()> {
     let _ = injected;
 
+    {
+        let sender = &ev.sender;
+        let config = injected.config.borrow();
+        let admin = config.admin_user.as_ref();
+
+        if admin != Some(sender) {
+            return Ok(());
+        };
+    }
+
     let account = room.client().account();
     account.unignore_user(&user_id).await?;
 
