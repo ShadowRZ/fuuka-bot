@@ -102,14 +102,13 @@ impl RoomExt for matrix_sdk::Room {
         match &ev.content.relates_to {
             Some(Relation::Reply { in_reply_to }) => {
                 use matrix_sdk::deserialized_responses::TimelineEventKind;
-                use matrix_sdk::ruma::events::AnyTimelineEvent;
                 let event_id = &in_reply_to.event_id;
                 let event = match self.event(event_id, None).await?.kind {
                     TimelineEventKind::PlainText { event } => event
                         .deserialize()?
                         .into_full_event(self.room_id().to_owned()),
                     TimelineEventKind::Decrypted(decrypted) => {
-                        AnyTimelineEvent::MessageLike(decrypted.event.deserialize()?)
+                        decrypted.event.deserialize()?
                     }
                     TimelineEventKind::UnableToDecrypt { event, utd_info } => {
                         tracing::warn!(
