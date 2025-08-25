@@ -10,15 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add BiliBili video extractor and command
+- Add Tokio Console and Journal logging
 
 ### Changed
 
 - Update changelog
 - Allow Release action to be manually started
+- Update changelog
+- Reformat
+- Bump Rust version to 1.89.0
+- Bump packages
+- Overhaul tracing
+- Update Nixpkgs PR tracking info template
 
 ### Fixed
 
 - Fix GitHub Actions
+- Restrict ignore ability to admin user
+- Fix RoomExt::in_reply_to_event
+- Fix stylecheck violations
+- Only log errors on leaf span
 
 ## [0.4.2] - 2025-08-11
 
