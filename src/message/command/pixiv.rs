@@ -24,7 +24,7 @@ pub async fn process(
     let content = match command {
         PixivCommand::Ranking => format_ranking(pixiv).await?,
         PixivCommand::IllustInfo(illust_id) => {
-            match format_illust_info(&pixiv, room, config, illust_id).await? {
+            match format_illust_info(pixiv, room, config, illust_id).await? {
                 Some(msg) => msg,
                 None => {
                     tracing::debug!("Not sending response because the requested illust is marked R-18.");

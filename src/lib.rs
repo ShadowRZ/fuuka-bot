@@ -495,11 +495,10 @@ async fn ensure_self_device_verified(client: &matrix_sdk::Client) -> anyhow::Res
         return Ok(());
     }
 
-    if let Some(device) = encryption.get_own_device().await? {
-        if !device.is_cross_signed_by_owner() {
+    if let Some(device) = encryption.get_own_device().await?
+        && !device.is_cross_signed_by_owner() {
             device.verify().await?
         }
-    }
 
     Ok(())
 }

@@ -426,6 +426,7 @@ impl Document {
         });
 
         for op in ops {
+            #[allow(clippy::cloned_ref_to_slice_refs)]
             match op {
                 LayoutOps::Text(text) => builder.push_text(text),
                 LayoutOps::InlineBox => {}
