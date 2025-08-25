@@ -16,7 +16,7 @@ use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::Original
 
 use crate::message::{CommandType, Injected};
 
-#[tracing::instrument(name = "command", skip(ev, room, injected), err)]
+#[tracing::instrument(name = "command", skip_all)]
 pub(super) async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

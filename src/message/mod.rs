@@ -87,7 +87,6 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
         event_id = %ev.event_id,
         room_id = %room.room_id()
     )
-    err
 )]
 async fn process(
     ev: &OriginalRoomMessageEvent,

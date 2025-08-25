@@ -25,7 +25,7 @@ enum Type {
 #[derive(Clone, Debug)]
 struct Remaining(String);
 
-#[tracing::instrument(name = "jerryxiao", skip_all, err)]
+#[tracing::instrument(name = "jerryxiao", skip_all)]
 pub(super) async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
@@ -187,6 +187,7 @@ pub(super) async fn process(
 
 /// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room, two senders and text.
 #[tracing::instrument(
+    name = "normal",
     skip(from_member, to_member),
     fields(
         from_sender = %from_member.user_id(),
@@ -282,6 +283,7 @@ async fn jerryxiao(
 /// Constructs the [RoomMessageEventContent] result of Jerry Xiao from the given room,
 /// two senders and formatting text.
 #[tracing::instrument(
+    name = "formatted",
     skip(from_member, to_member),
     fields(
         from_sender = %from_member.user_id(),

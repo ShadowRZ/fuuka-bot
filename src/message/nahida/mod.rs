@@ -28,7 +28,7 @@ use self::link_type::{CrateLinkType, LinkType, PixivLinkType};
 
 use super::Injected;
 
-#[tracing::instrument(name = "nahida", skip(ev, room, injected), err)]
+#[tracing::instrument(name = "nahida", skip(ev, room, injected))]
 pub(super) async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

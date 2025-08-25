@@ -9,6 +9,7 @@ use matrix_sdk::{
 };
 use pixrs::{PixivClient, RankingContent, RankingMode};
 
+#[tracing::instrument(name = "pixiv", skip_all)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
