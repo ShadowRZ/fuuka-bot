@@ -201,7 +201,8 @@ fn rounded_rectangle_pixmap(w: u32, h: u32, r: f32) -> Option<Pixmap> {
 use image::{GenericImage, Pixel, Rgba, RgbaImage};
 use parley::{
     Alignment, AlignmentOptions, FontContext, FontFamily, FontStack, FontStyle, FontWeight,
-    GenericFamily, Glyph, GlyphRun, LayoutContext, PositionedLayoutItem, StyleProperty, TextStyle,
+    GenericFamily, Glyph, GlyphRun, LayoutContext, LineHeight, PositionedLayoutItem, StyleProperty,
+    TextStyle,
 };
 use swash::{
     FontRef,
@@ -221,7 +222,7 @@ static SCALE_CONTEXT: LazyLock<Mutex<ScaleContext>> = LazyLock::new(|| ScaleCont
 static ROOT_STYLE: LazyLock<TextStyle<'static, Brush>> = LazyLock::new(|| TextStyle {
     brush: Brush::default(),
     font_stack: FontStack::Single(FontFamily::Generic(GenericFamily::SansSerif)),
-    line_height: 1.3,
+    line_height: LineHeight::Absolute(1.3),
     font_size: 16.0,
     ..Default::default()
 });
@@ -367,7 +368,7 @@ impl Document {
     fn render_name_block(name: &str) -> RgbaImage {
         let mut font_context = FONT_CONTEXT.lock();
         let mut layout = LAYOUT_CONTEXT.lock();
-        let mut builder = layout.tree_builder(&mut font_context, 1.0, &ROOT_STYLE);
+        let mut builder = layout.tree_builder(&mut font_context, 1.0, true, &ROOT_STYLE);
 
         let max_advance = Some(500.0);
         builder.push_style_span(TextStyle {
@@ -409,7 +410,7 @@ impl Document {
     fn render_single_block(block: &mut Block) -> RgbaImage {
         let mut font_context = FONT_CONTEXT.lock();
         let mut layout = LAYOUT_CONTEXT.lock();
-        let mut builder = layout.tree_builder(&mut font_context, 1.0, &ROOT_STYLE);
+        let mut builder = layout.tree_builder(&mut font_context, 1.0, true, &ROOT_STYLE);
         let ops = &mut block.inner;
         if ops
             .last()

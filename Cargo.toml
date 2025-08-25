@@ -16,7 +16,7 @@ crc32fast = "1"
 cronchik = { version = "2", features = ["time", "serde"] }
 envsubst = "0.2"
 fastrand = "2"
-file-format = "0.26"
+file-format = "0.28.0"
 futures-util = "0.3"
 graphql_client = { version = "0.14", default-features = false }
 hmac = "0.12"
@@ -30,11 +30,11 @@ image = { version = "0.25", default-features = false, features = [
   "webp",
 ] }
 imageproc = { version = "0.25", default-features = false }
-imagesize = "0.13"
+imagesize = "0.14"
 jose-jwk = { version = "0.1", default-features = false }
 mime = "0.3"
 parking_lot = "0.12"
-parley = "0.3"
+parley = "0.5"
 pin-project-lite = "0.2"
 regex = "1"
 rpassword = { version = "7", optional = true }
@@ -52,9 +52,9 @@ tiny-skia = { version = "0.11", default-features = false, features = [
 ] }
 tl = "0.7"
 tokio = { version = "1", features = ["full"] }
-toml = "0.8"
+toml = "0.9"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "parking_lot"] }
 url = { version = "2", features = ["serde"] }
 zip = { version = "4", default-features = false, features = ["deflate"] }
 
@@ -77,7 +77,7 @@ version = "0.12"
 # Flattens with the features used by matrix-rust-sdk
 features = ["html-matrix"]
 git = "https://github.com/ruma/ruma"
-rev = "a626e6b8521bcaa01bf8b7c4161b26b361b72aff"
+rev = "e85e224cef32181029efa106a059d277ecfbe87d"
 
 [dependencies.pixrs]
 default-features = false
