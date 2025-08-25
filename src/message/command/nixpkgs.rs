@@ -96,24 +96,56 @@ pub async fn process(
         });
     }
 
-    let in_branches = result.in_branches.as_ref().map(|in_branches| {
-                format!(
-                    "\nstaging-next {staging} master {master} nixos-unstable-small {nixos_unstable_small} nixpkgs-unstable {nixpkgs_unstable} nixos-unstable {nixos_unstable}",
-                    staging = if in_branches.staging { "⭕" } else { "❌" },
-                    master = if in_branches.master { "⭕" } else { "❌" },
-                    nixos_unstable_small = if in_branches.nixos_unstable_small { "⭕" } else { "❌" },
-                    nixpkgs_unstable = if in_branches.nixpkgs_unstable { "⭕" } else { "❌" },
-                    nixos_unstable = if in_branches.nixos_unstable { "⭕" } else { "❌" },
-                )
-            }).unwrap_or_default();
+    let in_branches = result
+        .in_branches
+        .as_ref()
+        .map(|in_branches| {
+            format!(
+                "\n\
+                    staging-next {staging} \
+                    master {master} \
+                    nixos-unstable-small {nixos_unstable_small} \
+                    nixpkgs-unstable {nixpkgs_unstable} \
+                    nixos-unstable {nixos_unstable}",
+                staging = if in_branches.staging { "✅" } else { "-" },
+                master = if in_branches.master { "✅" } else { "-" },
+                nixos_unstable_small = if in_branches.nixos_unstable_small {
+                    "✅"
+                } else {
+                    "-"
+                },
+                nixpkgs_unstable = if in_branches.nixpkgs_unstable {
+                    "✅"
+                } else {
+                    "-"
+                },
+                nixos_unstable = if in_branches.nixos_unstable {
+                    "✅"
+                } else {
+                    "-"
+                },
+            )
+        })
+        .unwrap_or_default();
     let in_branches_html = result.in_branches.as_ref().map(|in_branches| {
                 format!(
-                    "<p><b>staging-next</b> {staging}<br/><b>master</b> {master}<br/><b>nixos-unstable-small</b> {nixos_unstable_small}<br/><b>nixpkgs-unstable</b> {nixpkgs_unstable}<br/><b>nixos-unstable</b> {nixos_unstable}</p>",
-                    staging = if in_branches.staging { "⭕" } else { "❌" },
-                    master = if in_branches.master { "⭕" } else { "❌" },
-                    nixos_unstable_small = if in_branches.nixos_unstable_small { "⭕" } else { "❌" },
-                    nixpkgs_unstable = if in_branches.nixpkgs_unstable { "⭕" } else { "❌" },
-                    nixos_unstable = if in_branches.nixos_unstable { "⭕" } else { "❌" },
+                    "<p>\
+                    <{staging_tag}>staging-next</{staging_tag}> {staging}<br/>\
+                    <{master_tag}>master</{master_tag}> {master}<br/>\
+                    <{nixos_unstable_small_tag}>nixos-unstable-small</{nixos_unstable_small_tag}> {nixos_unstable_small}<br/>\
+                    <{nixpkgs_unstable_tag}>nixpkgs-unstable</{nixpkgs_unstable_tag}> {nixpkgs_unstable}<br/>\
+                    <{nixos_unstable_tag}>nixos-unstable</{nixos_unstable_tag}> {nixos_unstable}\
+                    </p>",
+                    staging = if in_branches.staging { "✅" } else { "" },
+                    master = if in_branches.master { "✅" } else { "" },
+                    nixos_unstable_small = if in_branches.nixos_unstable_small { "✅" } else { "" },
+                    nixpkgs_unstable = if in_branches.nixpkgs_unstable { "✅" } else { "" },
+                    nixos_unstable = if in_branches.nixos_unstable { "✅" } else { "" },
+                    staging_tag = if in_branches.staging { "b" } else { "del" },
+                    master_tag = if in_branches.master { "b" } else { "del" },
+                    nixos_unstable_small_tag = if in_branches.nixos_unstable_small { "b" } else { "del" },
+                    nixpkgs_unstable_tag = if in_branches.nixpkgs_unstable { "b" } else { "del" },
+                    nixos_unstable_tag = if in_branches.nixos_unstable { "b" } else { "del" },
                 )
             }).unwrap_or_default();
 
