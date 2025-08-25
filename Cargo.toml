@@ -12,6 +12,9 @@ rust-version = "1.88.0"
 anyhow = "1"
 axum = "0.8"
 bytes = "1"
+console-subscriber = { version = "0.4", features = [
+  "parking_lot",
+], optional = true }
 crc32fast = "1"
 cronchik = { version = "2", features = ["time", "serde"] }
 envsubst = "0.2"
@@ -54,7 +57,11 @@ tl = "0.7"
 tokio = { version = "1", features = ["full"] }
 toml = "0.9"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "parking_lot"] }
+tracing-journald = { version = "0.3", optional = true }
+tracing-subscriber = { version = "0.3", features = [
+  "env-filter",
+  "parking_lot",
+] }
 url = { version = "2", features = ["serde"] }
 zip = { version = "4", default-features = false, features = ["deflate"] }
 
@@ -100,6 +107,10 @@ rustls-tls = [
 
 # Rustls
 rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
+
+tokio-console = ["dep:console-subscriber", "tokio/tracing"]
+
+use-journald = ["dep:tracing-journald"]
 
 [profile.release]
 strip = "debuginfo"
