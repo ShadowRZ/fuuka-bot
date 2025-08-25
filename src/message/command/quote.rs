@@ -23,6 +23,7 @@ use matrix_sdk::{
 };
 use mime::Mime;
 
+#[tracing::instrument(name = "quote", skip_all, err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

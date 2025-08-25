@@ -36,6 +36,7 @@ impl<'a> MembershipHistory<'a> {
                         .await
                         .map_err(|e| {
                             tracing::warn!(
+                                member_id = %member.user_id(),
                                 "Unexpected error happened during iteration of state events: {e:#}"
                             )
                         })

@@ -7,6 +7,8 @@ use matrix_sdk::{
         AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
     },
 };
+
+#[tracing::instrument(name = "user_id", skip_all, err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

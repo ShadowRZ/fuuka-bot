@@ -21,6 +21,7 @@ use matrix_sdk::{
         AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
     },
 };
+use tracing::Instrument;
 use url::Url;
 
 use self::link_type::{CrateLinkType, LinkType, PixivLinkType};
@@ -28,7 +29,7 @@ use self::link_type::{CrateLinkType, LinkType, PixivLinkType};
 use super::Injected;
 
 #[tracing::instrument(name = "nahida", skip(ev, room, injected), err)]
-pub async fn process(
+pub(super) async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
     injected: &Ctx<Injected>,
@@ -76,11 +77,12 @@ async fn dispatch(
                     &config.pixiv,
                     room.room_id(),
                 )
+                .instrument(tracing::info_span!("pixiv")) // TODO
                 .await
             }
             None => Ok(None),
         },
-        LinkType::Generic(url) => self::extractors::generic::extract(client, url).await, // TODO
+        LinkType::Generic(url) => self::extractors::generic::extract(client, url).await,
         LinkType::CannotBeABase => {
             Result::Err(crate::Error::UnexpectedError("URL is a cannot-be-a-base!").into())
         }

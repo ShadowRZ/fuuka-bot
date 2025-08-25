@@ -7,6 +7,7 @@ use matrix_sdk::{
     },
 };
 
+#[tracing::instrument(name = "rooms", skip_all, err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

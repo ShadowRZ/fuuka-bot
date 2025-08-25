@@ -3,6 +3,7 @@ use matrix_sdk::ruma::{RoomId, events::room::message::RoomMessageEventContent};
 
 use crate::config::PixivConfig;
 
+#[tracing::instrument(name = "illust", skip(pixiv, config, room_id), err)]
 pub async fn pixiv_illust(
     pixiv: &pixrs::PixivClient,
     artwork_id: i32,

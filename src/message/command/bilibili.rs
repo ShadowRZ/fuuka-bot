@@ -5,6 +5,7 @@ use matrix_sdk::{
     ruma::events::room::message::{AddMentions, ForwardThread, OriginalRoomMessageEvent},
 };
 
+#[tracing::instrument(name = "bilibili", skip(ev, room, injected), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

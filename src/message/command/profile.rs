@@ -4,6 +4,7 @@ use crate::message::{
 };
 use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::OriginalRoomMessageEvent};
 
+#[tracing::instrument(name = "profile", skip_all, err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

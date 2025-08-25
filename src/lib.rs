@@ -34,6 +34,7 @@ use matrix_sdk::ruma::OwnedRoomOrAliasId;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
+use matrix_sdk::sync::SyncResponse;
 use matrix_sdk::{Client, config::SyncSettings};
 use pixrs::PixivClient;
 use std::path::PathBuf;
@@ -41,6 +42,7 @@ use std::sync::Arc;
 use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
+use tracing::Instrument;
 
 static APP_USER_AGENT: &str = concat!(
     env!("CARGO_PKG_NAME"),
@@ -167,6 +169,7 @@ impl FuukaBot {
         };
 
         client.add_event_handler_context(injected);
+        log_encryption_info(&client).await?;
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {
@@ -215,11 +218,14 @@ impl FuukaBot {
                 let addr = &config.listen;
                 let router = media_proxy.router();
                 let listener = tokio::net::TcpListener::bind(addr).await?;
-                tokio::spawn(async move {
-                    axum::serve(listener, router)
-                        .with_graceful_shutdown(graceful_shutdown_future())
-                        .await
-                });
+                tokio::spawn(
+                    async move {
+                        axum::serve(listener, router)
+                            .with_graceful_shutdown(graceful_shutdown_future())
+                            .await
+                    }
+                    .instrument(tracing::info_span!("media_proxy")),
+                );
                 Ok(Some(Arc::new(media_proxy)))
             }
             None => Ok(None),
@@ -475,6 +481,7 @@ fn get_store_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
+#[tracing::instrument(name = "encryption", skip_all, err)]
 async fn ensure_self_device_verified(client: &matrix_sdk::Client) -> anyhow::Result<()> {
     let encryption = client.encryption();
     let has_keys = encryption
@@ -497,30 +504,35 @@ async fn ensure_self_device_verified(client: &matrix_sdk::Client) -> anyhow::Res
     Ok(())
 }
 
-async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-    let user_id = client.user_id();
-    let homeserver = client.homeserver();
-    tracing::info!(user_id = ?user_id, homeserver = %homeserver, "Initial sync beginning...");
+#[tracing::instrument(skip_all, err)]
+async fn initial_sync(client: &matrix_sdk::Client) -> anyhow::Result<SyncResponse> {
+    tracing::info!("Initial sync beginning...");
     let response = client
         .sync_once(SyncSettings::default().set_presence(PresenceState::Online))
         .await?;
-    tracing::info!(user_id = ?user_id, homeserver = %homeserver, "Initial sync completed.");
-    // Print some info regarding this device.
-    {
-        let encryption = client.encryption();
-        let cross_signing_status = encryption.cross_signing_status().await;
-        if let Some(device) = encryption.get_own_device().await? {
-            let device_id = device.device_id();
-            tracing::debug!(
-                cross_signing_status = ?cross_signing_status,
-                is_cross_signed_by_owner = device.is_cross_signed_by_owner(),
-                is_verified = device.is_verified(),
-                is_verified_with_cross_signing = device.is_verified_with_cross_signing(),
-                "Own device ID: {device_id}"
-            );
-        }
+    tracing::info!("Initial sync completed.");
+
+    Ok(response)
+}
+
+async fn log_encryption_info(client: &matrix_sdk::Client) -> anyhow::Result<()> {
+    let encryption = client.encryption();
+    let cross_signing_status = encryption.cross_signing_status().await;
+    if let Some(device) = encryption.get_own_device().await? {
+        let device_id = device.device_id();
+        tracing::debug!(
+            "Own device ID: {device_id}, Cross signing status: {cross_signing_status:#?}, is_cross_signed_by_owner = {is_cross_signed_by_owner}, is_verified = {is_verified}, is_verified_with_cross_signing = {is_verified_with_cross_signing}",
+            is_cross_signed_by_owner = device.is_cross_signed_by_owner(),
+            is_verified = device.is_verified(),
+            is_verified_with_cross_signing = device.is_verified_with_cross_signing(),
+        );
     }
 
+    Ok(())
+}
+
+async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
+    let response = initial_sync(client).await?;
     let next_batch = response.next_batch;
 
     if let Err(e) = ensure_self_device_verified(client).await {
@@ -562,25 +574,40 @@ pub async fn on_stripped_member(
         return;
     }
 
-    tokio::spawn(async move {
-        let room_id = room.room_id();
-        tracing::info!("Autojoining room {}", room_id);
-        let mut delay = 2;
-        while let Err(e) = room.join().await {
-            use tokio::time::{Duration, sleep};
-            tracing::warn!("Failed to join room {room_id} ({e:#}), retrying in {delay}s");
-            sleep(Duration::from_secs(delay)).await;
-            delay *= 2;
+    tokio::spawn(
+        async move {
+            let room_id = room.room_id();
+            tracing::info!("Autojoining room {}", room_id);
+            let mut delay = 2;
+            while let Err(e) = room.join().await {
+                use tokio::time::{Duration, sleep};
+                tracing::warn!(
+                    %room_id,
+                    "Failed to join room {room_id} ({e:#}), retrying in {delay}s",
+                );
+                sleep(Duration::from_secs(delay)).await;
+                delay *= 2;
 
-            if delay > 3600 {
-                tracing::error!("Can't join room {room_id} ({e:#})");
-                break;
+                if delay > 3600 {
+                    tracing::error!(
+                        %room_id,
+                        "Can't join room {room_id} ({e:#})"
+                    );
+                    break;
+                }
             }
         }
-    });
+        .instrument(tracing::info_span!("on_stripped_member")),
+    );
 }
 
 /// Called when we have a tombstone event.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        room_id = %room.room_id(),
+    ),
+)]
 pub async fn on_room_replace(
     ev: OriginalSyncRoomTombstoneEvent,
     room: matrix_sdk::Room,
@@ -588,7 +615,11 @@ pub async fn on_room_replace(
 ) {
     tokio::spawn(async move {
         let room_id: OwnedRoomOrAliasId = ev.content.replacement_room.into();
-        tracing::info!("Room replaced, Autojoining new room {}", room_id);
+        tracing::info!(
+            room_id = %room.room_id(),
+            "Room replaced, Autojoining new room {}",
+            room_id
+        );
         let sender = ev.sender;
         let server_name = sender.server_name();
         let mut delay = 2;
@@ -598,6 +629,7 @@ pub async fn on_room_replace(
         {
             use tokio::time::{Duration, sleep};
             tracing::warn!(
+                %room_id,
                 "Failed to join replacement room {room_id} ({e:#}), retrying in {delay}s"
             );
             sleep(Duration::from_secs(delay)).await;
@@ -605,17 +637,20 @@ pub async fn on_room_replace(
 
             if delay > 3600 {
                 tracing::error!(
+                    %room_id,
                     "Can't join replacement room {room_id} ({e:#}), please join manually."
                 );
                 break;
             }
         }
-        if let Some(room) = client.get_room(room.room_id()) {
-            tokio::spawn(async move {
-                if let Err(e) = room.leave().await {
-                    tracing::error!("Can't leave the original room {} ({e:#})", room.room_id());
-                }
-            });
-        }
+        tokio::spawn(async move {
+            if let Err(e) = room.leave().await {
+                tracing::error!(
+                    room_id = %room.room_id(),
+                    "Can't leave the original room {} ({e:#})",
+                    room.room_id()
+                );
+            }
+        });
     });
 }

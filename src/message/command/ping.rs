@@ -9,6 +9,7 @@ use matrix_sdk::{
 };
 use time::Duration;
 
+#[tracing::instrument(name = "ping", skip(ev, room, injected), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

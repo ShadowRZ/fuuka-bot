@@ -25,7 +25,8 @@ enum Type {
 #[derive(Clone, Debug)]
 struct Remaining(String);
 
-pub async fn process(
+#[tracing::instrument(name = "jerryxiao", skip_all, err)]
+pub(super) async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
     injected: &Ctx<Injected>,
@@ -41,38 +42,75 @@ pub async fn process(
     }
 
     let result = if let Some(remaining) = body.strip_prefix("//") {
+        tracing::debug!(
+            sigil = "//",
+            content = remaining,
+            "Received a JerryXiao request"
+        );
         Some(Type::Formatted {
             text: Remaining(remaining.to_string()),
         })
     } else if let Some(remaining) = body.strip_prefix('/') {
+        tracing::debug!(
+            sigil = "/",
+            content = remaining,
+            "Received a JerryXiao request"
+        );
         Some(Type::Normal {
             text: Remaining(remaining.to_string()),
             reverse: false,
         })
     } else if let Some(remaining) = body.strip_prefix("!!") {
+        tracing::debug!(
+            sigil = "!!",
+            content = remaining,
+            "Received a JerryXiao request"
+        );
         Some(Type::Normal {
             text: Remaining(remaining.to_string()),
             reverse: false,
         })
     } else if let Some(remaining) = body.strip_prefix('\\') {
+        tracing::debug!(
+            sigil = "\\",
+            content = remaining,
+            "Received a JerryXiao request"
+        );
         Some(Type::Normal {
             text: Remaining(remaining.to_string()),
             reverse: true,
         })
     } else if let Some(remaining) = body.strip_prefix("¡¡") {
+        tracing::debug!(
+            sigil = "¡¡",
+            content = remaining,
+            "Received a JerryXiao request"
+        );
         Some(Type::Normal {
             text: Remaining(remaining.to_string()),
             reverse: true,
         })
     } else if let Some(remaining) = body.strip_prefix("@@") {
+        tracing::debug!(
+            sigil = "@@",
+            content = remaining,
+            "Received a JerryXiao request"
+        );
         Some(Type::Fortune {
             text: Remaining(remaining.to_string()),
             prob: false,
         })
     } else {
-        body.strip_prefix("@%").map(|remaining| Type::Fortune {
-            text: Remaining(remaining.to_string()),
-            prob: true,
+        body.strip_prefix("@%").map(|remaining| {
+            tracing::debug!(
+                sigil = "@%",
+                content = remaining,
+                "Received a JerryXiao request"
+            );
+            Type::Fortune {
+                text: Remaining(remaining.to_string()),
+                prob: true,
+            }
         })
     };
 

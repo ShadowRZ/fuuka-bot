@@ -9,6 +9,8 @@ use matrix_sdk::{
         },
     },
 };
+
+#[tracing::instrument(name = "unignore", skip(ev, room, injected), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

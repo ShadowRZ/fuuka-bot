@@ -43,9 +43,9 @@ pub async fn on_sync_message(
     let room_id = room.room_id().to_owned();
     let ev = ev.into_full_event(room_id);
 
-    let result = process(&ev, &room, &injected).await;
-
     tokio::spawn(async move {
+        let result = process(&ev, &room, &injected).await;
+
         if let Err(e) = result {
             send_error_content(&room, e, &ev).await;
         }
@@ -67,14 +67,16 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
             format!("GraphQL Error response from {service}: {error:?}")
         }
         Err(e) => {
-            tracing::error!("Unexpected error happened: {e:#}");
             format!("Unexpected error happened: {e:#}")
         }
     })
     .make_reply_to(ev, ForwardThread::No, AddMentions::Yes);
 
     if let Err(e) = room.send(body).await {
-        tracing::error!("Unexpected error happened while sending error content: {e:#}");
+        tracing::error!(
+            room_id = %room.room_id(),
+            "Unexpected error happened while sending error content: {e:#}"
+        );
     }
 }
 
@@ -97,45 +99,16 @@ async fn process(
     let body = remove_plain_reply_fallback(ev.content.body()).trim();
 
     if let Some(content) = body.strip_prefix(prefix) {
+        let content = content.trim();
         tracing::debug!(content, "Received a command request");
         let args = shell_words::split(content)?;
         let ty = self::from_args(args.into_iter())?;
-        use self::CommandType;
         match ty {
-            Some(ty) => match ty {
-                CommandType::Profile {
-                    category,
-                    response_type,
-                } => {
-                    self::command::profile::process(ev, room, injected, category, response_type)
-                        .await?
-                }
-                CommandType::Ping => self::command::ping::process(ev, room, injected).await?,
-                CommandType::Hitokoto => {
-                    self::command::hitokoto::process(ev, room, injected).await?
-                }
-                CommandType::Ignore => self::command::ignore::process(ev, room, injected).await?,
-                CommandType::Unignore(user_id) => {
-                    self::command::unignore::process(ev, room, injected, user_id).await?
-                }
-                CommandType::Pixiv(command) => {
-                    self::command::pixiv::process(ev, room, injected, command).await?
-                }
-                CommandType::Nixpkgs { pr_number, track } => {
-                    self::command::nixpkgs::process(ev, room, injected, pr_number, track).await?
-                }
-                CommandType::Help => self::command::help::process(ev, room, injected).await?,
-                CommandType::RoomId => self::command::room_id::process(ev, room, injected).await?,
-                CommandType::UserId => self::command::user_id::process(ev, room, injected).await?,
-                CommandType::Rooms => self::command::rooms::process(ev, room, injected).await?,
-                CommandType::Quote => self::command::quote::process(ev, room, injected).await?,
-                CommandType::BiliBili(id) => {
-                    self::command::bilibili::process(ev, room, injected, &id).await?
-                }
-            },
+            Some(ty) => self::command::process(ev, room, injected, ty).await?,
             None => return Ok(()),
         }
     } else if let Some(content) = body.strip_prefix("@Nahida ") {
+        let content = content.trim();
         tracing::debug!(content, "Received a @Nahida request");
         let url = Url::parse(content)?;
         self::nahida::process(ev, room, injected, url).await?;

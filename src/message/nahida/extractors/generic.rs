@@ -8,6 +8,8 @@ use anyhow::Context;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use mime::Mime;
 use url::Url;
+
+#[tracing::instrument(name = "generic", skip_all, err)]
 pub async fn extract(
     client: &reqwest::Client,
     url: Url,

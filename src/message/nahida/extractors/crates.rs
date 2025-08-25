@@ -5,6 +5,7 @@ use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 
 use crate::types::CrateMetadata;
 
+#[tracing::instrument(name = "crates", skip(client), err)]
 pub async fn crates_crate(
     name: String,
     version: Option<String>,
