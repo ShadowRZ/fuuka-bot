@@ -62,22 +62,40 @@ async fn fetch_pr_basic_info(
     };
     let resp = super::post_github_graphql::<PullInfo>(client, token, vars).await?;
     if let Some(errors) = resp.errors {
-        return Err(crate::Error::GraphQLError {
-            service: "github",
-            error: errors,
-        }
-        .into());
+        return Err(super::Error(errors).into());
     }
     let Some(data) = resp.data else {
         return Err(crate::Error::UnexpectedError("Server returned no valid data!").into());
     };
 
     let Some(repository) = data.repository else {
-        return Err(crate::Error::UnexpectedError("NixOS/nixpkgs repository disappeared!").into());
+        use graphql_client::PathFragment;
+        return Err(super::Error(vec![graphql_client::Error {
+            message: "Could not resolve to a Repository with the name NixOS/nixpkgs.".to_string(),
+            locations: None,
+            path: Some(vec![PathFragment::Key("repository".to_string())]),
+            extensions: None,
+        }])
+        .into());
     };
 
     let Some(pull_request) = repository.pull_request else {
-        return Err(crate::Error::UnexpectedError("This PR is not a pull request!").into());
+        use graphql_client::PathFragment;
+        return Err(
+            // GraphQL: Could not resolve to a PullRequest with the number of ${pr_number}. (repository.pullRequest)
+            super::Error(vec![graphql_client::Error {
+                message: format!(
+                    "Could not resolve to a PullRequest with the number of {pr_number}."
+                ),
+                locations: None,
+                path: Some(vec![
+                    PathFragment::Key("repository".to_string()),
+                    PathFragment::Key("pullRequest".to_string()),
+                ]),
+                extensions: None,
+            }])
+            .into(),
+        );
     };
 
     let title = pull_request.title;
@@ -99,17 +117,20 @@ async fn fetch_head_in_branches(
     };
     let resp = super::post_github_graphql::<PullBranches>(client, token, vars).await?;
     if let Some(errors) = resp.errors {
-        return Err(crate::Error::GraphQLError {
-            service: "github",
-            error: errors,
-        }
-        .into());
+        return Err(super::Error(errors).into());
     }
     let Some(data) = resp.data else {
         return Err(crate::Error::UnexpectedError("Server returned no valid data!").into());
     };
     let Some(merged_branches) = data.merged_branches else {
-        anyhow::bail!("NixOS/nixpkgs repository disappeared!");
+        use graphql_client::PathFragment;
+        return Err(super::Error(vec![graphql_client::Error {
+            message: "Could not resolve to a Repository with the name NixOS/nixpkgs.".to_string(),
+            locations: None,
+            path: Some(vec![PathFragment::Key("repository".to_string())]),
+            extensions: None,
+        }])
+        .into());
     };
 
     Ok(PrBranchesStatus {
@@ -189,6 +210,7 @@ pub fn track_nixpkgs_pr<'a>(
         let (state, pr_number) = state?;
         fetch_next_pr_track_status(client, cron, token, pr_number, Some(state))
             .await
+            .map_err(|e| tracing::error!("Fetching for next PR status of {pr_number} failed: {e}"))
             .ok()
     })
     .boxed();
@@ -206,10 +228,7 @@ async fn fetch_next_pr_track_status<'a>(
 
     let now = OffsetDateTime::now_utc();
     let next = cron.next_time_from(now);
-    tracing::debug!(
-        "PR #{pr_number} next tracking time: {next}",
-        pr_number = pr_number
-    );
+    tracing::debug!("PR #{pr_number} next tracking time: {next}",);
     let elpased = next - now;
 
     tokio::time::sleep(elpased.unsigned_abs()).await;

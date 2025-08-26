@@ -113,7 +113,7 @@ impl RoomExt for matrix_sdk::Room {
                             ?utd_info,
                             event_id = %ev.event_id,
                             room_id = %self.room_id(),
-                            "Unable to decrypt event {event_id:?}",
+                            "Unable to decrypt event {event_id}",
                         );
                         event
                             .deserialize()?

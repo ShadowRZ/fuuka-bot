@@ -56,10 +56,7 @@ pub enum Error {
     /// An unknown command was passed.
     #[error("Unrecognized command {0}")]
     UnknownCommand(String),
-    /// A GraphQL error occured.
-    #[error("Error response from {service}: {error:?}")]
-    GraphQLError {
-        service: &'static str,
-        error: Vec<graphql_client::Error>,
-    },
+    /// Error occoured while getting infomation from GitHub.
+    #[error("Error when fetching infomation from GitHub: {0}")]
+    GitHubError(#[source] anyhow::Error),
 }

@@ -26,7 +26,9 @@ pub async fn process(
     let Some(nixpkgs_pr) = ({ injected.config.borrow().nixpkgs_pr.clone() }) else {
         return Ok(());
     };
-    let result = fetch_nixpkgs_pr(http, &nixpkgs_pr.token, pr_number).await?;
+    let result = fetch_nixpkgs_pr(http, &nixpkgs_pr.token, pr_number)
+        .await
+        .map_err(crate::Error::GitHubError)?;
 
     if track {
         if !room.is_direct().await? {
@@ -76,7 +78,7 @@ pub async fn process(
                                 )))
                                 .await
                             {
-                                tracing::warn!("Failed to send status: {e:?}");
+                                tracing::warn!("Failed to send status: {e}");
                             }
                         }
                     }
@@ -87,7 +89,7 @@ pub async fn process(
                             )))
                             .await
                         {
-                            tracing::warn!("Failed to send status: {e:?}");
+                            tracing::warn!("Failed to send status: {e}");
                         }
                         return;
                     }
