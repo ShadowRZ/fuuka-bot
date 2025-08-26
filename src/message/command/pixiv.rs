@@ -28,9 +28,11 @@ pub async fn process(
             match format_illust_info(pixiv, room, config, illust_id).await? {
                 Some(msg) => msg,
                 None => {
-                    tracing::debug!("Not sending response because the requested illust is marked R-18.");
-                    return Ok(())
-                },
+                    tracing::debug!(
+                        "Not sending response because the requested illust is marked R-18."
+                    );
+                    return Ok(());
+                }
             }
         }
     }
@@ -41,12 +43,7 @@ pub async fn process(
     Ok(())
 }
 
-#[tracing::instrument(
-    name = "ranking",
-    skip_all,
-    fields(ranking = "daily"),
-    err
-)]
+#[tracing::instrument(name = "ranking", skip_all, fields(ranking = "daily"), err)]
 async fn format_ranking(pixiv: &PixivClient) -> anyhow::Result<RoomMessageEventContent> {
     let resp = pixiv
         .ranking_stream(RankingMode::Daily, RankingContent::Illust, None)

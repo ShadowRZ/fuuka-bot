@@ -109,12 +109,7 @@ impl RoomExt for matrix_sdk::Room {
                         .into_full_event(self.room_id().to_owned()),
                     TimelineEventKind::Decrypted(decrypted) => decrypted.event.deserialize()?,
                     TimelineEventKind::UnableToDecrypt { event, utd_info } => {
-                        tracing::warn!(
-                            ?utd_info,
-                            event_id = %ev.event_id,
-                            room_id = %self.room_id(),
-                            "Unable to decrypt event {event_id}",
-                        );
+                        tracing::warn!(?utd_info, "Unable to decrypt event {event_id}",);
                         event
                             .deserialize()?
                             .into_full_event(self.room_id().to_owned())

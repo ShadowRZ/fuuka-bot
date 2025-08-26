@@ -23,21 +23,10 @@ file-format = "0.28.0"
 futures-util = "0.3"
 graphql_client = { version = "0.14", default-features = false }
 hmac = "0.12"
-image = { version = "0.25", default-features = false, features = [
-  "avif",
-  "bmp",
-  "gif",
-  "ico",
-  "jpeg",
-  "png",
-  "webp",
-] }
-imageproc = { version = "0.25", default-features = false }
 imagesize = "0.14"
 jose-jwk = { version = "0.1", default-features = false }
 mime = "0.3"
 parking_lot = "0.12"
-parley = "0.5"
 pin-project-lite = "0.2"
 regex = "1"
 rpassword = { version = "7", optional = true }
@@ -45,14 +34,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 shell-words = "1"
-swash = "0.2"
 thiserror = "2"
 time = { version = "0.3", features = ["macros", "formatting"] }
-tiny-skia = { version = "0.11", default-features = false, features = [
-  "simd",
-  "std",
-  "png-format",
-] }
 tl = "0.7"
 tokio = { version = "1", features = ["full"] }
 toml = "0.9"
@@ -63,7 +46,6 @@ tracing-subscriber = { version = "0.3", features = [
   "parking_lot",
 ] }
 url = { version = "2", features = ["serde"] }
-zip = { version = "4", default-features = false, features = ["deflate"] }
 
 [dependencies.matrix-sdk]
 default-features = false

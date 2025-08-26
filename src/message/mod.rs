@@ -145,7 +145,6 @@ pub(super) enum CommandType {
     RoomId,
     UserId,
     Rooms,
-    Quote,
     BiliBili(String),
 }
 
@@ -180,10 +179,9 @@ pub(super) fn from_args(
         "room_id" => Ok(Some(CommandType::RoomId)),
         "user_id" => Ok(Some(CommandType::UserId)),
         "rooms" => Ok(Some(CommandType::Rooms)),
-        "quote" => Ok(Some(CommandType::Quote)),
         "bilibili" => Ok(Some(CommandType::BiliBili(
             args.next()
-                .ok_or(crate::Error::MissingArgument("user_id"))?,
+                .ok_or(crate::Error::MissingArgument("video_id"))?,
         ))),
         _ => Result::Err(crate::Error::UnknownCommand(command).into()),
     }

@@ -15,7 +15,6 @@ pub mod config;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
-pub mod render;
 pub mod services;
 #[doc(hidden)]
 #[cfg(feature = "interactive-login")]
@@ -496,9 +495,10 @@ async fn ensure_self_device_verified(client: &matrix_sdk::Client) -> anyhow::Res
     }
 
     if let Some(device) = encryption.get_own_device().await?
-        && !device.is_cross_signed_by_owner() {
-            device.verify().await?
-        }
+        && !device.is_cross_signed_by_owner()
+    {
+        device.verify().await?
+    }
 
     Ok(())
 }

@@ -6,7 +6,6 @@ pub(super) mod nixpkgs;
 pub(super) mod ping;
 pub(super) mod pixiv;
 pub(super) mod profile;
-pub(super) mod quote;
 pub(super) mod room_id;
 pub(super) mod rooms;
 pub(super) mod unignore;
@@ -42,7 +41,6 @@ pub(super) async fn process(
         CommandType::RoomId => self::room_id::process(ev, room, injected).await,
         CommandType::UserId => self::user_id::process(ev, room, injected).await,
         CommandType::Rooms => self::rooms::process(ev, room, injected).await,
-        CommandType::Quote => self::quote::process(ev, room, injected).await,
         CommandType::BiliBili(id) => self::bilibili::process(ev, room, injected, &id).await,
     }
 }
