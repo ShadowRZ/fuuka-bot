@@ -1,12 +1,19 @@
+use std::str::FromStr;
+
 use crate::message::{Injected, pixiv::PixivCommand};
 use futures_util::{StreamExt, pin_mut};
+use matrix_sdk::room::reply::{EnforceThread, Reply};
+use matrix_sdk::ruma::events::Mentions;
+use matrix_sdk::ruma::events::room::message::FormattedBody;
 use matrix_sdk::{
     Room,
+    attachment::{AttachmentConfig, AttachmentInfo, BaseImageInfo},
     event_handler::Ctx,
     ruma::events::room::message::{
         AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
     },
 };
+use mime::Mime;
 use pixrs::{PixivClient, RankingContent, RankingMode};
 
 #[tracing::instrument(name = "pixiv", skip_all)]
@@ -16,7 +23,12 @@ pub async fn process(
     injected: &Ctx<Injected>,
     command: PixivCommand,
 ) -> anyhow::Result<()> {
-    let Ctx(Injected { pixiv, config, .. }) = injected;
+    let Ctx(Injected {
+        pixiv,
+        config,
+        http,
+        ..
+    }) = injected;
 
     let Some(pixiv) = pixiv else {
         return Ok(());
@@ -26,7 +38,51 @@ pub async fn process(
         PixivCommand::Ranking => format_ranking(pixiv).await?,
         PixivCommand::IllustInfo(illust_id) => {
             match format_illust_info(pixiv, room, config, illust_id).await? {
-                Some(msg) => msg,
+                Some(((body, formatted_body), url)) => {
+                    use url::Url;
+
+                    let url = Url::parse(&url)?;
+                    let filename = url
+                        .path_segments()
+                        .and_then(|mut path| path.next_back())
+                        .unwrap_or("file.png")
+                        .to_string();
+
+                    let image = http
+                        .get(url)
+                        .header(reqwest::header::REFERER, "https://www.pixiv.net")
+                        .send()
+                        .await?
+                        .error_for_status()?
+                        .bytes()
+                        .await?
+                        .to_vec();
+
+                    let info = crate::imageinfo(&image)?;
+
+                    let config = AttachmentConfig::new()
+                        .info(AttachmentInfo::Image(BaseImageInfo {
+                            height: info.height,
+                            width: info.width,
+                            size: info.size,
+                            blurhash: None,
+                            is_animated: Some(false),
+                        }))
+                        .caption(Some(body.clone()))
+                        .formatted_caption(Some(FormattedBody::html(formatted_body.clone())))
+                        .mentions(Some(Mentions::with_user_ids([ev.sender.clone()])))
+                        .reply(Some(Reply {
+                            event_id: ev.event_id.clone(),
+                            enforce_thread: EnforceThread::MaybeThreaded,
+                        }));
+
+                    let content_type =
+                        Mime::from_str(file_format::FileFormat::from_bytes(&image).media_type())?;
+
+                    room.send_attachment(filename, &content_type, image.to_vec(), config).await?;
+
+                    return Ok(());
+                }
                 None => {
                     tracing::debug!(
                         "Not sending response because the requested illust is marked R-18."
@@ -97,16 +153,19 @@ async fn format_illust_info(
     room: &Room,
     config: &tokio::sync::watch::Receiver<crate::Config>,
     illust_id: i32,
-) -> anyhow::Result<Option<RoomMessageEventContent>> {
+) -> anyhow::Result<Option<((String, String), String)>> {
     let resp = pixiv.illust_info(illust_id).with_lang("zh").await?;
     let room_id = room.room_id();
     let send_r18 = { config.borrow().features.room_pixiv_r18_enabled(room_id) };
 
+    let url = resp.urls.original.clone();
+
     {
         let config = config.borrow();
         let pixiv = &config.pixiv;
-        Ok(crate::services::pixiv::illust::format(
-            resp, pixiv, send_r18, room_id, false,
-        ))
+        Ok(
+            crate::services::pixiv::illust::format(resp.clone(), pixiv, send_r18, room_id, false)
+                .map(|resp| (resp, url)),
+        )
     }
 }

@@ -30,6 +30,7 @@ pub use crate::types::Error;
 
 use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::ruma::OwnedRoomOrAliasId;
+use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
@@ -560,6 +561,34 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         return Err(e.into());
     }
     Ok(())
+}
+
+pub(crate) fn imageinfo(data: &Vec<u8>) -> anyhow::Result<ImageInfo> {
+    use file_format::FileFormat;
+    use matrix_sdk::ruma::UInt;
+    use matrix_sdk::ruma::events::room::ThumbnailInfo;
+
+    let dimensions = imagesize::blob_size(data)?;
+    let (width, height) = (dimensions.width, dimensions.height);
+    let format = FileFormat::from_bytes(data);
+    let mimetype = format.media_type();
+    let size = data.len();
+    let mut thumb = ThumbnailInfo::new();
+    let width = UInt::try_from(width)?;
+    let height = UInt::try_from(height)?;
+    let size = UInt::try_from(size)?;
+    thumb.width = Some(width);
+    thumb.height = Some(height);
+    thumb.mimetype = Some(mimetype.to_string());
+    thumb.size = Some(size);
+    let mut info = ImageInfo::new();
+    info.width = Some(width);
+    info.height = Some(height);
+    info.mimetype = Some(mimetype.to_string());
+    info.size = Some(size);
+    info.thumbnail_info = Some(Box::new(thumb));
+
+    Ok(info)
 }
 
 /// Called when a member event is from an invited room.

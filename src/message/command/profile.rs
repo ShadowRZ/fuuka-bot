@@ -31,15 +31,14 @@ pub async fn process(
 pub mod avatar {
     pub mod current {
         use crate::message::Injected;
-        use file_format::FileFormat;
         use matrix_sdk::{
             Room,
             event_handler::Ctx,
             media::{MediaFormat, MediaRequestParameters},
             ruma::{
-                MxcUri, UInt,
+                MxcUri,
                 events::room::{
-                    ImageInfo, MediaSource, ThumbnailInfo,
+                    ImageInfo, MediaSource,
                     message::{
                         AddMentions, ForwardThread, ImageMessageEventContent, MessageType,
                         OriginalRoomMessageEvent, RoomMessageEventContent,
@@ -93,25 +92,7 @@ pub mod avatar {
                 format: MediaFormat::File,
             };
             let data = client.media().get_media_content(&request, false).await?;
-            let dimensions = imagesize::blob_size(&data)?;
-            let (width, height) = (dimensions.width, dimensions.height);
-            let format = FileFormat::from_bytes(&data);
-            let mimetype = format.media_type();
-            let size = data.len();
-            let mut thumb = ThumbnailInfo::new();
-            let width = UInt::try_from(width)?;
-            let height = UInt::try_from(height)?;
-            let size = UInt::try_from(size)?;
-            thumb.width = Some(width);
-            thumb.height = Some(height);
-            thumb.mimetype = Some(mimetype.to_string());
-            thumb.size = Some(size);
-            let mut info = ImageInfo::new();
-            info.width = Some(width);
-            info.height = Some(height);
-            info.mimetype = Some(mimetype.to_string());
-            info.size = Some(size);
-            info.thumbnail_info = Some(Box::new(thumb));
+            let mut info = crate::imageinfo(&data)?;
             info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
             Ok(info)

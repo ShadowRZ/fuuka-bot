@@ -1,5 +1,4 @@
 use matrix_sdk::ruma::RoomId;
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use pixrs::{IllustInfo, Restriction};
 
 use crate::config::PixivConfig;
@@ -10,7 +9,7 @@ pub fn format(
     send_r18: bool,
     room_id: &RoomId,
     prefix: bool,
-) -> Option<RoomMessageEventContent> {
+) -> Option<(String, String)> {
     // R18 = 1, R18G = 2, General = 0
     let r18 = match resp.restriction {
         Restriction::General => false,
@@ -85,5 +84,5 @@ pub fn format(
         author = resp.user_name
     );
 
-    Some(RoomMessageEventContent::text_html(body, html_body))
+    Some((body, html_body))
 }

@@ -12,7 +12,8 @@ pub async fn pixiv_illust(
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let resp = pixiv.illust_info(artwork_id).with_lang("zh").await?;
     let send_r18 = config.r18;
-    Ok(crate::services::pixiv::illust::format(
-        resp, config, send_r18, room_id, true,
-    ))
+    Ok(
+        crate::services::pixiv::illust::format(resp, config, send_r18, room_id, true)
+            .map(|(body, formatted_body)| RoomMessageEventContent::text_html(body, formatted_body)),
+    )
 }
