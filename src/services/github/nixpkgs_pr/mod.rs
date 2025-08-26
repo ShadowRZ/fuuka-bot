@@ -30,7 +30,6 @@ pub struct PrBranchesStatus {
     pub nixos_unstable: bool,
 }
 
-#[tracing::instrument(skip(client, token))]
 pub async fn fetch_nixpkgs_pr(
     client: &reqwest::Client,
     token: &str,
@@ -179,7 +178,6 @@ impl Stream for TrackNixpkgsPr<'_> {
     }
 }
 
-#[tracing::instrument(skip(client, cron, token, pr_info))]
 pub fn track_nixpkgs_pr<'a>(
     client: &'a reqwest::Client,
     cron: &'a cronchik::CronSchedule,

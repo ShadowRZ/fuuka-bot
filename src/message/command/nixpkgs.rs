@@ -56,7 +56,7 @@ pub async fn process(
             let stream = track_nixpkgs_pr(&client, cron, token, pr_number, pr_info);
             pin_mut!(stream);
 
-            tracing::debug!(room_id = %room.room_id(), "Start tracking Nixpkgs PR #{pr_number}");
+            tracing::debug!("Start tracking Nixpkgs PR #{pr_number}");
             while let Some(status) = stream.next().await {
                 use crate::services::github::nixpkgs_pr::TrackStatus;
                 match status {
