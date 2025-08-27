@@ -1,19 +1,23 @@
 //! Extracts Pixiv URLs.
-use matrix_sdk::ruma::{RoomId, events::room::message::RoomMessageEventContent};
+use matrix_sdk::{
+    Room,
+    ruma::events::room::message::{OriginalRoomMessageEvent, RoomMessageEventContent},
+};
 
 use crate::config::PixivConfig;
 
-#[tracing::instrument(name = "illust", skip(pixiv, config, room_id), err)]
+#[tracing::instrument(name = "illust", skip_all, fields(illust_id = %illust_id), err)]
 pub async fn pixiv_illust(
+    ev: &OriginalRoomMessageEvent,
+    room: &Room,
     pixiv: &pixrs::PixivClient,
-    artwork_id: i32,
+    http: &reqwest::Client,
+    illust_id: i32,
     config: &PixivConfig,
-    room_id: &RoomId,
+    send_r18: bool,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let resp = pixiv.illust_info(artwork_id).with_lang("zh").await?;
-    let send_r18 = config.r18;
-    Ok(
-        crate::services::pixiv::illust::format(resp, config, send_r18, room_id, true)
-            .map(|(body, formatted_body)| RoomMessageEventContent::text_html(body, formatted_body)),
-    )
+    crate::services::pixiv::illust::send(ev, room, pixiv, http, config, illust_id, send_r18)
+        .await?;
+
+    return Ok(None);
 }

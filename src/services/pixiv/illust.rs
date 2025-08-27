@@ -1,4 +1,16 @@
-use matrix_sdk::ruma::RoomId;
+use std::str::FromStr;
+
+use matrix_sdk::ruma::events::{
+    Mentions,
+    room::message::{FormattedBody, OriginalRoomMessageEvent},
+};
+use matrix_sdk::{
+    Room,
+    attachment::{AttachmentConfig, AttachmentInfo, BaseImageInfo},
+    room::reply::{EnforceThread, Reply},
+    ruma::RoomId,
+};
+use mime::Mime;
 use pixrs::{IllustInfo, Restriction};
 
 use crate::config::PixivConfig;
@@ -85,4 +97,70 @@ pub fn format(
     );
 
     Some((body, html_body))
+}
+
+pub async fn send(
+    ev: &OriginalRoomMessageEvent,
+    room: &Room,
+    pixiv: &pixrs::PixivClient,
+    http: &reqwest::Client,
+    config: &PixivConfig,
+    illust_id: i32,
+    send_r18: bool,
+) -> anyhow::Result<()> {
+    let resp = pixiv.illust_info(illust_id).with_lang("zh").await?;
+    let room_id = room.room_id();
+
+    let url = resp.urls.original.clone();
+
+    if let Some((body, formatted_body)) =
+        crate::services::pixiv::illust::format(resp.clone(), config, send_r18, room_id, false)
+    {
+        use url::Url;
+
+        let url = Url::parse(&url)?;
+        let filename = url
+            .path_segments()
+            .and_then(|mut path| path.next_back())
+            .unwrap_or("file.png")
+            .to_string();
+
+        let image = http
+            .get(url)
+            .header(reqwest::header::REFERER, "https://www.pixiv.net")
+            .send()
+            .await?
+            .error_for_status()?
+            .bytes()
+            .await?
+            .to_vec();
+
+        let info = crate::imageinfo(&image)?;
+
+        let config = AttachmentConfig::new()
+            .info(AttachmentInfo::Image(BaseImageInfo {
+                height: info.height,
+                width: info.width,
+                size: info.size,
+                blurhash: None,
+                is_animated: Some(false),
+            }))
+            .caption(Some(body.clone()))
+            .formatted_caption(Some(FormattedBody::html(formatted_body.clone())))
+            .mentions(Some(Mentions::with_user_ids([ev.sender.clone()])))
+            .reply(Some(Reply {
+                event_id: ev.event_id.clone(),
+                enforce_thread: EnforceThread::MaybeThreaded,
+            }));
+
+        let content_type =
+            Mime::from_str(file_format::FileFormat::from_bytes(&image).media_type())?;
+
+        room.send_attachment(filename, &content_type, image.to_vec(), config)
+            .await?;
+    } else {
+        tracing::debug!("Not sending response because the requested illust is marked R-18.");
+    }
+
+    Ok(())
 }
