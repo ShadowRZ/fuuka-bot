@@ -62,12 +62,6 @@ default-features = false
 features = ["gzip", "brotli", "deflate", "json", "hickory-dns"]
 version = "0.12"
 
-[dependencies.ruma]
-# Flattens with the features used by matrix-rust-sdk
-features = ["html-matrix"]
-git = "https://github.com/ruma/ruma"
-rev = "e85e224cef32181029efa106a059d277ecfbe87d"
-
 [dependencies.pixrs]
 default-features = false
 git = "https://github.com/ShadowRZ/pixrs"
