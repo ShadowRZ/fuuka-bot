@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use matrix_sdk::ruma::events::{
     Mentions,
-    room::message::{FormattedBody, OriginalRoomMessageEvent},
+    room::message::{OriginalRoomMessageEvent, TextMessageEventContent},
 };
 use matrix_sdk::{
     Room,
@@ -145,8 +145,10 @@ pub async fn send(
                 blurhash: None,
                 is_animated: Some(false),
             }))
-            .caption(Some(body.clone()))
-            .formatted_caption(Some(FormattedBody::html(formatted_body.clone())))
+            .caption(Some(TextMessageEventContent::html(
+                body.clone(),
+                formatted_body.clone(),
+            )))
             .mentions(Some(Mentions::with_user_ids([ev.sender.clone()])))
             .reply(Some(Reply {
                 event_id: ev.event_id.clone(),
