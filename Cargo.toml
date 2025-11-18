@@ -12,7 +12,7 @@ rust-version = "1.88.0"
 anyhow = "1"
 axum = "0.8.7"
 bytes = "1.11.0"
-console-subscriber = { version = "0.4", features = [
+console-subscriber = { version = "0.5.0", features = [
   "parking_lot",
 ], optional = true }
 crc32fast = "1"
