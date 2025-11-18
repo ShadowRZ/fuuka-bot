@@ -6,10 +6,9 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let filter = EnvFilter::from_default_env()
-        .add_directive(LevelFilter::WARN.into())
-        .add_directive("fuuka_bot=debug".parse()?)
-        .add_directive("matrix_sdk_crypto::backups=error".parse()?);
+    let filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .try_from_env()?;
     #[cfg(feature = "tokio-console")]
     let filter = filter.add_directive("tokio=trace,runtime=trace".parse()?);
 
