@@ -47,11 +47,21 @@
           inherit system;
           overlays = [ (import rust-overlay) ];
         };
+        lib = pkgs.lib;
         toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
         craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
-        src = craneLib.cleanCargoSource ./.;
+        #src = craneLib.cleanCargoSource ./.;
+        src = lib.fileset.toSource {
+          root = ./.;
+          fileset = lib.fileset.unions [
+            # Default files from crane (Rust and cargo files)
+            (craneLib.fileset.commonCargoSources ./.)
+            # Also keep any markdown files
+            (lib.fileset.fileFilter (file: file.hasExt "jinja") ./.)
+          ];
+        };
 
         # Common arguments can be set here to avoid repeating them later
         commonArgs = {

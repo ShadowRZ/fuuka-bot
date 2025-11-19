@@ -26,6 +26,13 @@ hmac = "0.12.1"
 imagesize = "0.14.0"
 jose-jwk = { version = "0.1.2", default-features = false }
 mime = "0.3.17"
+minijinja = { version = "2.12.0", default-features = false, features = [
+  "builtins",
+  "serde",
+  "std_collections",
+  "loader",
+  "speedups",
+] }
 parking_lot = "0.12.5"
 pin-project-lite = "0.2.16"
 regex = "1.12.2"
@@ -67,6 +74,7 @@ default-features = false
 git = "https://github.com/ShadowRZ/pixrs"
 
 [dev-dependencies]
+html-compare-rs = "0.3.0"
 pretty_assertions = "1.4.1"
 
 [features]

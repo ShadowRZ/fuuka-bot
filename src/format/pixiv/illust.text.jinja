@@ -1,0 +1,12 @@
+{{ title }} https://www.pixiv.net/artworks/{{ id }} | @{{ author.name }} https://www.pixiv.net/u/{{ author.id }}
+{% for tag in tags -%}
+#{{ tag.original }}
+{%- if tag.translated %} ({{ tag.translated }}){%- endif -%}
+{%- if loop.last is false %}{{ ' ' }}{% endif -%}
+{%- endfor %}
+{%- if triggers %}
+{% for trigger in triggers -%}
+#{{ trigger }}诱捕器
+{%- if loop.last is false %}{{ ' ' }}{% endif -%}
+{%- endfor -%}
+{%- endif -%}

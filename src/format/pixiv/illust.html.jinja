@@ -1,0 +1,16 @@
+<p><a href="https://www.pixiv.net/artworks/{{ id }}">{{ title }}</a> | <a href="https://www.pixiv.net/u/{{ author.id }}">@{{ author.name }}</a></p>
+<p>
+    {%- for tag in tags -%}
+    <font color="#3771bb">#{{ tag.original }}</font>
+    {%- if tag.translated %} ({{ tag.translated }}){%- endif -%}
+    {%- if loop.last is false %}{{ ' ' }}{% endif -%}
+    {%- endfor -%}
+</p>
+{%- if triggers -%}
+<p>
+    {%- for trigger in triggers -%}
+    <font color="#d72b6d"><b>#{{ trigger }}诱捕器</b></font>
+    {%- if loop.last is false %}{{ ' ' }}{% endif -%}
+    {%- endfor -%}
+</p>
+{%- endif -%}

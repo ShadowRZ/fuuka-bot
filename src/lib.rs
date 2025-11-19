@@ -12,6 +12,7 @@
 //!
 //! Where `<version>` is the running version of the bot.
 pub mod config;
+pub mod format;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
