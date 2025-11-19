@@ -8,7 +8,7 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 async fn main() -> anyhow::Result<()> {
     let filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
-        .try_from_env()?;
+        .from_env_lossy();
     #[cfg(feature = "tokio-console")]
     let filter = filter.add_directive("tokio=trace,runtime=trace".parse()?);
 
