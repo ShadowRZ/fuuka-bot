@@ -9,43 +9,43 @@ rust-version = "1.88.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1"
+anyhow = "1.0.100"
 axum = "0.8.7"
 bytes = "1.11.0"
 console-subscriber = { version = "0.5.0", features = [
   "parking_lot",
 ], optional = true }
-crc32fast = "1"
-cronchik = { version = "2", features = ["time", "serde"] }
-envsubst = "0.2"
-fastrand = "2"
+crc32fast = "1.5.0"
+cronchik = { version = "2.0.4", features = ["time", "serde"] }
+envsubst = "0.2.1"
+fastrand = "2.3.0"
 file-format = "0.28.0"
-futures-util = "0.3"
-graphql_client = { version = "0.14", default-features = false }
-hmac = "0.12"
-imagesize = "0.14"
-jose-jwk = { version = "0.1", default-features = false }
-mime = "0.3"
-parking_lot = "0.12"
-pin-project-lite = "0.2"
-regex = "1"
-rpassword = { version = "7", optional = true }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-sha2 = "0.10"
-shell-words = "1"
-thiserror = "2"
-time = { version = "0.3", features = ["macros", "formatting"] }
-tl = "0.7"
-tokio = { version = "1", features = ["full"] }
-toml = "0.9"
-tracing = "0.1"
-tracing-journald = { version = "0.3", optional = true }
-tracing-subscriber = { version = "0.3", features = [
+futures-util = "0.3.31"
+graphql_client = { version = "0.14.0", default-features = false }
+hmac = "0.12.1"
+imagesize = "0.14.0"
+jose-jwk = { version = "0.1.2", default-features = false }
+mime = "0.3.17"
+parking_lot = "0.12.5"
+pin-project-lite = "0.2.16"
+regex = "1.12.2"
+rpassword = { version = "7.4.0", optional = true }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+shell-words = "1.1.0"
+thiserror = "2.0.17"
+time = { version = "0.3.44", features = ["macros", "formatting"] }
+tl = "0.7.8"
+tokio = { version = "1.48.0", features = ["full"] }
+toml = "0.9.8"
+tracing = "0.1.41"
+tracing-journald = { version = "0.3.1", optional = true }
+tracing-subscriber = { version = "0.3.20", features = [
   "env-filter",
   "parking_lot",
 ] }
-url = { version = "2", features = ["serde"] }
+url = { version = "2.5.7", features = ["serde"] }
 
 [dependencies.matrix-sdk]
 default-features = false
@@ -60,14 +60,14 @@ git = "https://github.com/matrix-org/matrix-rust-sdk"
 [dependencies.reqwest]
 default-features = false
 features = ["gzip", "brotli", "deflate", "json", "hickory-dns"]
-version = "0.12"
+version = "0.12.24"
 
 [dependencies.pixrs]
 default-features = false
 git = "https://github.com/ShadowRZ/pixrs"
 
 [dev-dependencies]
-pretty_assertions = "1"
+pretty_assertions = "1.4.1"
 
 [features]
 default = ["rustls-tls"]
