@@ -1,7 +1,7 @@
 [package]
 name = "fuuka-bot"
 license = "Apache-2.0"
-version = "0.4.5"
+version = "0.4.6"
 edition = "2024"
 repository = "https://github.com/ShadowRZ/fuuka-bot"
 rust-version = "1.88.0"
