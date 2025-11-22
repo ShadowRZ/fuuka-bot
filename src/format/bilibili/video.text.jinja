@@ -1,0 +1,9 @@
+{{ title }} https://www.bilibili.com/video/{{ id }} | @{{ author.name }} https://space.bilibili.com/{{ author.id }}
+▶️ {{ counts.view }} · 👍 {{ counts.like }} · 🪙 {{ counts.coin }} · 🌟 {{ counts.favorite }} · 🪧 {{ counts.danmaku }} · 💬 {{ counts.reply }} · ↗️ {{ counts.share }}
+{% for tag in tags -%}
+#{{ tag }}#
+{%- if loop.last is false -%}{{ ' ' }}{%- endif -%}
+{%- endfor -%}
+{%- if description %}
+{{ description | quote }}
+{%- endif -%}

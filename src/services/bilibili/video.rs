@@ -30,11 +30,11 @@ pub async fn request(client: &reqwest::Client, id: &str) -> anyhow::Result<Video
     Ok(serde_json::from_str(json_str)?)
 }
 
-pub fn format(resp: Video, prefix: bool) -> RoomMessageEventContent {
-    let title = &resp.data.title;
-    let bvid = &resp.data.bvid;
-    let owner_name = &resp.data.owner.name;
-    let owner_uid = &resp.data.owner.mid;
+pub fn format(resp: Video, _prefix: bool) -> anyhow::Result<RoomMessageEventContent> {
+    use crate::format::ENVIRONMENT;
+    use crate::format::bilibili::video::{Author, Context, Counts};
+
+    let tags: Vec<_> = resp.tags.iter().map(|tag| tag.tag_name.as_str()).collect();
 
     let Stat {
         view,
@@ -43,25 +43,35 @@ pub fn format(resp: Video, prefix: bool) -> RoomMessageEventContent {
         coin,
         share,
         like,
+        reply,
         ..
-    } = &resp.data.stat;
-    let stats_str: String = format!(
-        "Views: {view} Likes: {like} Coins: {coin} Favorties: {favorite} Shares: {share} Danmakus: {danmaku}"
-    );
-    let prefix_text = if prefix { "[BiliBili/Video] " } else { "" };
-    let prefix_html = if prefix {
-        "<p><b>[BiliBili/Video]</b> "
-    } else {
-        ""
+    } = resp.data.stat;
+    let context = Context {
+        id: &resp.data.bvid,
+        title: &resp.data.title,
+        description: match resp.data.desc.as_str() {
+            "-" => None,
+            desc => Some(desc),
+        },
+        tags: &tags,
+        author: Author {
+            id: resp.data.owner.mid,
+            name: &resp.data.owner.name,
+        },
+        counts: Counts {
+            view,
+            like,
+            coin,
+            favorite,
+            danmaku,
+            reply,
+            share,
+        },
     };
-    RoomMessageEventContent::text_html(
-        format!(
-            "{prefix_text}{title} https://www.bilibili.com/video/{bvid}\nUP: {owner_name} https://space.bilibili.com/{owner_uid}\n{stats_str}"
-        ),
-        format!(
-            "{prefix_html}<a href='https://www.bilibili.com/video/{bvid}'>{title}</a></p><p>UP: <a href='https://space.bilibili.com/{owner_uid}'>{owner_name}</a></p><p>{stats_str}</p>"
-        ),
-    )
+    let body: String = crate::format::bilibili::video::text::format(&ENVIRONMENT, &context)?;
+    let html_body = crate::format::bilibili::video::html::format(&ENVIRONMENT, &context)?;
+
+    Ok(RoomMessageEventContent::text_html(body, html_body))
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -70,6 +80,12 @@ pub fn format(resp: Video, prefix: bool) -> RoomMessageEventContent {
 pub struct Video {
     #[serde(rename = "videoData", alias = "videoInfo")]
     pub data: VideoData,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Tag {
+    pub tag_name: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -89,19 +105,19 @@ pub struct VideoData {
 #[allow(missing_docs)]
 #[serde(rename_all = "camelCase")]
 pub struct Stat {
-    pub view: i128,
-    pub danmaku: i128,
-    pub reply: i128,
-    pub favorite: i128,
-    pub coin: i128,
-    pub share: i128,
-    pub like: i128,
+    pub view: u64,
+    pub danmaku: u64,
+    pub reply: u64,
+    pub favorite: u64,
+    pub coin: u64,
+    pub share: u64,
+    pub like: u64,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(missing_docs)]
 #[serde(rename_all = "camelCase")]
 pub struct Owner {
-    pub mid: i128,
+    pub mid: u64,
     pub name: String,
 }

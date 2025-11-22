@@ -1,0 +1,9 @@
+<p><a href="https://www.bilibili.com/video/{{ id }}">{{ title }}</a> | <a href="https://space.bilibili.com/{{ author.id }}">@{{ author.name }}</a></p>
+<p>▶️ {{ counts.view }} · 👍 {{ counts.like }} · 🪙 {{ counts.coin }} · 🌟 {{ counts.favorite }} · 🪧 {{ counts.danmaku }} · 💬 {{ counts.reply }} · ↗️ {{ counts.share }}</p>
+{%- if description -%}<details><summary>Description</summary><blockquote>{{ description | to_html | safe }}</blockquote></details>{%- endif -%}
+<p>
+    {%- for tag in tags -%}
+    <font color="#3771bb">#{{ tag }}#</font>
+    {%- if loop.last is false %}{{ ' ' }}{% endif -%}
+    {%- endfor -%}
+</p>

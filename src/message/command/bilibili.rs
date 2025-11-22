@@ -13,7 +13,7 @@ pub async fn process(
     id: &str,
 ) -> anyhow::Result<()> {
     let video = crate::services::bilibili::video::request(&injected.http, id).await?;
-    let content = crate::services::bilibili::video::format(video, false);
+    let content = crate::services::bilibili::video::format(video, false)?;
 
     room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
         .await?;
