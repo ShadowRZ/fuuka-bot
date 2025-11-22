@@ -8,6 +8,7 @@ header = """
 
 # https://keats.github.io/tera/docs/#introduction
 body = """
+{% if message %}{{ message }}{% endif %}
 {% for group, commits in commits | group_by(attribute="group") %}
     ## {{ group | upper_first }}
     {% for commit in commits %}
