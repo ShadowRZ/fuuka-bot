@@ -5,7 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.6] - 2025-11-22
+
+### Changed
+
+- Bump axum to 0.8.7
+- Bump bytes to 1.11.0
+- Bump console-subscriber to 0.5.0
+- Pin all dependencies to exact versions
+- Bump matrix-rust-sdk
+- Bump all transitive dependencies
+- Migrate Pixiv illust formatting to minijinja
+- Migrate BiliBili video formatting to minijinja
+- Also add tag message to changelog
+- Change version to 0.4.6
+
+## [0.4.5] - 2025-11-19
+
+### Changed
+
+- Change version to 0.4.5
+
+### Fixed
+
+- Allow starting the bot even if RUST_LOG isn't present
+
+## [0.4.4] - 2025-11-18
+
+### Changed
+
+- Cleanup
+- Captioned Pixiv illust info
+- Unify Pixiv content sending
+- Update
+- Bump Rust version to 1.90.0
+- Bump Cargo Crates dependencies
+- Use rust-overlay instead of fenix to manage Rust toolchain in Nix
+- Bump Rust version to 1.91.0
+- Bump Cargo Crates dependencies
+- Pin all GitHub Action to version commits
+- Change version to 0.4.4
+
+### Fixed
+
+- Don't override any RUST_LOG provided directives
+
+## [0.4.3] - 2025-08-26
 
 ### Added
 
@@ -22,6 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump packages
 - Overhaul tracing
 - Update Nixpkgs PR tracking info template
+- Update changelog
+- Cleanup tracing
+- Optimize error reports from GitHub GraphQL response
+- 0.4.3
 
 ### Fixed
 
@@ -552,7 +601,10 @@ This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
 
 Can't make it work. :(
 
-[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.2..HEAD
+[0.4.6]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.5..v0.4.6
+[0.4.5]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.4..v0.4.5
+[0.4.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.3..v0.4.4
+[0.4.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.2..v0.4.3
 [0.4.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.1..v0.4.2
 [0.4.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.0..v0.4.1
 [0.4.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.4..v0.4.0
