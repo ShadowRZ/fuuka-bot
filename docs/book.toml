@@ -1,7 +1,5 @@
 [book]
-authors = ["夜坂雅"]
-language = "en"
-multilingual = false
+authors = ["Yorusaka Miyabi"]
 src = "src"
 title = "Fuuka Bot"
 
