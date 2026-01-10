@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update changelog
 - Configure Renovate
+- Update changelog
+- Update CI configs
+
+### Fixed
+
+- Fix mdbook docs build
 
 ## [0.4.6] - 2025-11-22
 
