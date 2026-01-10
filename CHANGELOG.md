@@ -8,637 +8,535 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-
-- Update changelog
-- Configure Renovate
-- Update changelog
-- Update CI configs
+- *(ci)* Update CI configs by @ShadowRZ
+- Configure Renovate by @ShadowRZ
 
 ### Fixed
-
-- Fix mdbook docs build
+- *(docs)* Fix mdbook docs build by @ShadowRZ
 
 ## [0.4.6] - 2025-11-22
 
 ### Changed
-
-- Bump axum to 0.8.7
-- Bump bytes to 1.11.0
-- Bump console-subscriber to 0.5.0
-- Pin all dependencies to exact versions
-- Bump matrix-rust-sdk
-- Bump all transitive dependencies
-- Migrate Pixiv illust formatting to minijinja
-- Migrate BiliBili video formatting to minijinja
-- Also add tag message to changelog
-- Change version to 0.4.6
+- Also add tag message to changelog by @ShadowRZ
+- Migrate BiliBili video formatting to minijinja by @ShadowRZ
+- Migrate Pixiv illust formatting to minijinja by @ShadowRZ
+- Bump all transitive dependencies by @ShadowRZ
+- Bump matrix-rust-sdk by @ShadowRZ
+- Pin all dependencies to exact versions by @ShadowRZ
+- Bump console-subscriber to 0.5.0 by @ShadowRZ
+- Bump bytes to 1.11.0 by @ShadowRZ
+- Bump axum to 0.8.7 by @ShadowRZ
 
 ## [0.4.5] - 2025-11-19
 
-### Changed
-
-- Change version to 0.4.5
-
 ### Fixed
-
-- Allow starting the bot even if RUST_LOG isn't present
+- Allow starting the bot even if RUST_LOG isn't present by @ShadowRZ
 
 ## [0.4.4] - 2025-11-18
 
 ### Changed
-
-- Cleanup
-- Captioned Pixiv illust info
-- Unify Pixiv content sending
-- Update
-- Bump Rust version to 1.90.0
-- Bump Cargo Crates dependencies
-- Use rust-overlay instead of fenix to manage Rust toolchain in Nix
-- Bump Rust version to 1.91.0
-- Bump Cargo Crates dependencies
-- Pin all GitHub Action to version commits
-- Change version to 0.4.4
+- Pin all GitHub Action to version commits by @ShadowRZ
+- Bump Cargo Crates dependencies by @ShadowRZ
+- Bump Rust version to 1.91.0 by @ShadowRZ
+- Use rust-overlay instead of fenix to manage Rust toolchain in Nix by @ShadowRZ
+- Bump Cargo Crates dependencies by @ShadowRZ
+- Bump Rust version to 1.90.0 by @ShadowRZ
+- Update by @ShadowRZ
+- Unify Pixiv content sending by @ShadowRZ
+- Captioned Pixiv illust info by @ShadowRZ
+- Cleanup by @ShadowRZ
 
 ### Fixed
-
-- Don't override any RUST_LOG provided directives
+- Don't override any RUST_LOG provided directives by @ShadowRZ
 
 ## [0.4.3] - 2025-08-26
 
-### Added
-
-- Add BiliBili video extractor and command
-- Add Tokio Console and Journal logging
-
 ### Changed
-
-- Update changelog
-- Allow Release action to be manually started
-- Update changelog
-- Reformat
-- Bump Rust version to 1.89.0
-- Bump packages
-- Overhaul tracing
-- Update Nixpkgs PR tracking info template
-- Update changelog
-- Cleanup tracing
-- Optimize error reports from GitHub GraphQL response
-- 0.4.3
+- 0.4.3 by @ShadowRZ
+- Optimize error reports from GitHub GraphQL response by @ShadowRZ
+- Cleanup tracing by @ShadowRZ
+- Update Nixpkgs PR tracking info template by @ShadowRZ
+- Add Tokio Console and Journal logging by @ShadowRZ
+- Fix stylecheck violations by @ShadowRZ
+- Overhaul tracing by @ShadowRZ
+- Bump packages by @ShadowRZ
+- Bump Rust version to 1.89.0 by @ShadowRZ
+- Reformat by @ShadowRZ
+- Allow Release action to be manually started by @ShadowRZ
+- Add BiliBili video extractor and command by @ShadowRZ
 
 ### Fixed
-
-- Fix GitHub Actions
-- Restrict ignore ability to admin user
-- Fix RoomExt::in_reply_to_event
-- Fix stylecheck violations
-- Only log errors on leaf span
+- Only log errors on leaf span by @ShadowRZ
+- Fix RoomExt::in_reply_to_event by @ShadowRZ
+- Restrict ignore ability to admin user by @ShadowRZ
+- Fix GitHub Actions by @ShadowRZ
 
 ## [0.4.2] - 2025-08-11
 
 ### Changed
-
-- Migrate to let chains and Rust 1.88.0
-- Replace TOML VS Code extension with tombi
+- Replace TOML VS Code extension with tombi by @ShadowRZ
+- Migrate to let chains and Rust 1.88.0 by @ShadowRZ
 
 ### Fixed
-
-- Fix tombstone following logic to account for v12 rooms
+- Fix tombstone following logic to account for v12 rooms by @ShadowRZ
 
 ## [0.4.1] - 2025-08-06
 
-### Added
-
-- Add back commands
-- Add rooms command
-- Add quote command
-
 ### Changed
-
-- Update changelog
-- Update
-- Bump dependencies
-- Update
-- Update
-- Bump cargo crates
-- Opt in to Rust 2024 Edition
-- Update changelog
-- Bump cargo packages
-- Update pixiv fomatters + Reformat
-- Bump Cargo.lock
-- Reuse reqwest::Client across libs
-- Update
-- Bump packages
-- Use manual dispatch instead
-- Rustls + Hickory DNS
-- Use graphql_client
-- Also add a profile to abort on panic
-- Reformat
-- Update changelog
-- Refactor to use parking_lot atomics
-- Use watch channels
-- Update Cargo.toml
-- Reformat
-- Rewrite quote renderer to use parley instead
-- Bump dependencies
-- Allow quote renderer process to spawn on a blocking thread
-- Update changelog
-- Update
-- Bump Cargo packages
-- Move Hitokoto APIs to crate::services::hikokoto
-- Restructure logging
-- Put Rust toolchain conifguration to dedicated file
-- Bump Cargo packages
-- Update
-- Bump Rust to 1.87.0
-- Update
-- Bump Rust to 1.88.0
-- Bump Cargo packages
-- Inline all format string variables
-- 0.4.1
+- 0.4.1 by @ShadowRZ
+- Inline all format string variables by @ShadowRZ
+- Bump Cargo packages by @ShadowRZ
+- Bump Rust to 1.88.0 by @ShadowRZ
+- Update by @ShadowRZ
+- Bump Rust to 1.87.0 by @ShadowRZ
+- Update by @ShadowRZ
+- Bump Cargo packages by @ShadowRZ
+- Put Rust toolchain conifguration to dedicated file by @ShadowRZ
+- Restructure logging by @ShadowRZ
+- Move Hitokoto APIs to crate::services::hikokoto by @ShadowRZ
+- Bump Cargo packages by @ShadowRZ
+- Update by @ShadowRZ
+- Fix clippy warnings by @ShadowRZ
+- Allow quote renderer process to spawn on a blocking thread by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Rewrite quote renderer to use parley instead by @ShadowRZ
+- Reformat by @ShadowRZ
+- Update Cargo.toml by @ShadowRZ
+- Use watch channels by @ShadowRZ
+- Refactor to use parking_lot atomics by @ShadowRZ
+- Add quote command by @ShadowRZ
+- Add rooms command by @ShadowRZ
+- Reformat by @ShadowRZ
+- Also add a profile to abort on panic by @ShadowRZ
+- Use graphql_client by @ShadowRZ
+- Rustls + Hickory DNS by @ShadowRZ
+- Use manual dispatch instead by @ShadowRZ
+- Bump packages by @ShadowRZ
+- Update by @ShadowRZ
+- Reuse reqwest::Client across libs by @ShadowRZ
+- Bump Cargo.lock by @ShadowRZ
+- Update pixiv fomatters + Reformat by @ShadowRZ
+- Bump cargo packages by @ShadowRZ
+- Opt in to Rust 2024 Edition by @ShadowRZ
+- Bump cargo crates by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Add back commands by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Update by @ShadowRZ
 
 ### Fixed
-
-- Fix JerryXiao
-- Use more accurate emoji for branch status
-- Fix pixiv command
-- Fix quote function
-- Fix clippy warnings
+- Fix quote function by @ShadowRZ
+- Fix pixiv command by @ShadowRZ
+- Use more accurate emoji for branch status by @ShadowRZ
+- Fix JerryXiao by @ShadowRZ
 
 ## [0.4.0] - 2025-01-04
 
-### Added
-
-- Add more size optimizations
-- Add direnv
-
 ### Changed
-
-- Update changelog
-- Update
-- Update
-- Rewrite command system
-- Update
-- Bump
-- Move GraqhQL to gql_client
-- Cleanup
-- Update
-- Reformat
-- Cleanup
-- Bump dependencies
-- Bump axum
-- Translated tags
-- Updated docs to reflect current commands and configs
-- 0.4.0
+- 0.4.0 by @ShadowRZ
+- Updated docs to reflect current commands and configs by @ShadowRZ
+- Translated tags by @ShadowRZ
+- Bump axum by @ShadowRZ
+- Add direnv by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Cleanup by @ShadowRZ
+- Add more size optimizations by @ShadowRZ
+- Reformat by @ShadowRZ
+- Update by @ShadowRZ
+- Remove workspaces by @ShadowRZ
+- Cleanup by @ShadowRZ
+- Move GraqhQL to gql_client by @ShadowRZ
+- Bump by @ShadowRZ
+- Update by @ShadowRZ
+- Rewrite command system by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
 
 ### Fixed
-
-- Fix nixpkgs command
-- Fix jerryxiao
-- Derive defaults for some config
-- Fix some warnings
-
-### Removed
-
-- Remove workspaces
+- Fix some warnings by @ShadowRZ
+- Derive defaults for some config by @ShadowRZ
+- Fix jerryxiao by @ShadowRZ
+- Fix nixpkgs command by @ShadowRZ
 
 ## [0.3.4] - 2024-11-27
 
 ### Changed
-
-- Update changelog
-- Media Proxy
-- Allow media token to expire
-- Use dptree based dispatching
-- Import ruma from matrix_sdk
-- Refactor Rust files
-- Update
-- Redo some code
-- 0.3.4
+- 0.3.4 by @ShadowRZ
+- Redo some code by @ShadowRZ
+- Update by @ShadowRZ
+- Refactor Rust files by @ShadowRZ
+- Import ruma from matrix_sdk by @ShadowRZ
+- Use dptree based dispatching by @ShadowRZ
+- Allow media token to expire by @ShadowRZ
+- Media Proxy by @ShadowRZ
 
 ### Fixed
-
-- Fix release action
+- Fix release action by @ShadowRZ
 
 ## [0.3.3] - 2024-11-05
 
-### Added
-
-- Add proper recovery support
-- Add nixpkgs command
-- Add cross signing management
-
 ### Changed
-
-- Update changelog
-- Enable recovery instead
-- Bump dependencies
-- Apply Clippy suggestions
-- Update docs
-- Update changelog
-- Ping-admin command
-- Bump dependencies
-- Move to workspace
-- Use cynic to build GraphQL query
-- Nixpkgs PR tracking
-- Update
-- Update flake builds
-- 0.3.3
+- 0.3.3 by @ShadowRZ
+- Update flake builds by @ShadowRZ
+- Update by @ShadowRZ
+- Nixpkgs PR tracking by @ShadowRZ
+- Use cynic to build GraphQL query by @ShadowRZ
+- Move to workspace by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Add cross signing management by @ShadowRZ
+- Add nixpkgs command by @ShadowRZ
+- Ping-admin command by @ShadowRZ
+- Update docs by @ShadowRZ
+- Apply Clippy suggestions by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Add proper recovery support by @ShadowRZ
+- Enable recovery instead by @ShadowRZ
 
 ### Fixed
+- Fix sending done status by @ShadowRZ
+- Fix user_id command by @ShadowRZ
+- Fix code for changed matrix-rust-sdk API by @ShadowRZ
+- Fix actions by @ShadowRZ
 
-- Fix actions
-- Fix code for changed matrix-rust-sdk API
-- Fix user_id command
-- Fix sending done status
+### New Contributors
+* @github-actions[bot] made their first contribution
 
 ## [0.3.2] - 2024-09-20
 
 ### Changed
-
-- Update actions
-- Update warning in avatar_changes
-- 0.3.2
+- 0.3.2 by @ShadowRZ
+- Update warning in avatar_changes by @ShadowRZ
+- Update actions by @ShadowRZ
 
 ## [0.3.1] - 2024-09-20
 
 ### Added
-
-- Add www prefix to pixiv links
-- Add a warning to avatar_changes
-- Add interactive-login feature
-- Add changelog
-- Add changelog workflow
+- *(pixiv)* Add www prefix to pixiv links by @Guanran928
 
 ### Changed
-
-- Merge pull request #1 from Guanran928/pixiv-url
-- Update Dev Container
-- Use crane instead
-- Migrate deprecated extension
-- Make pixiv command respect config
-- BiliBili extractor
-- Update flakes
-- Use the same toolchain for two devshells
-- Update Flakes Rust toolchain
-- Set RUST_SRC_PATH in flakes
-- Allow specifiy directories in env var
-- Systemd service
-- Bump dependencies
-- 0.3.1
+- 0.3.1 by @ShadowRZ
+- Add changelog workflow by @ShadowRZ
+- Add changelog by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Add interactive-login feature by @ShadowRZ
+- Systemd service by @ShadowRZ
+- Allow specifiy directories in env var by @ShadowRZ
+- Set RUST_SRC_PATH in flakes by @ShadowRZ
+- Update Flakes Rust toolchain by @ShadowRZ
+- Remove Dev Containers by @ShadowRZ
+- Use the same toolchain for two devshells by @ShadowRZ
+- Update flakes by @ShadowRZ
+- BiliBili extractor by @ShadowRZ
+- Make pixiv command respect config by @ShadowRZ
+- Add a warning to avatar_changes by @ShadowRZ
+- Migrate deprecated extension by @ShadowRZ
+- Remove quote by @ShadowRZ
+- *(flake)* Use crane instead by @ShadowRZ
+- Update Dev Container by @ShadowRZ
+- Merge pull request #1 from Guanran928/pixiv-url by @ShadowRZ in [#1](https://github.com/ShadowRZ/fuuka-bot/pull/1)
 
 ### Fixed
+- Fix ping command by @ShadowRZ
+- Fix Actions by @ShadowRZ
+- Properly restart sync on error by @ShadowRZ
+- *(pixiv)* Use /artworks/{id} instead of /i/{id} by @Guanran928
 
-- Use /artworks/{id} instead of /i/{id}
-- Properly restart sync on error
-- Fix Actions
-- Fix ping command
-
-### Removed
-
-- Remove quote
-- Remove Dev Containers
+### New Contributors
+* @Guanran928 made their first contribution
 
 ## [0.3.0] - 2024-05-15
 
 ### Changed
-
-- Refactor config
-- Move specials to reading config file
-- Update nahida functions
-- Update configuration docs
-- Update nahida functions
-- V0.3.0
-
-### Fixed
-
-- Fix title extractor
-- Fix jerryxiao
+- V0.3.0 by @ShadowRZ
+- Fix jerryxiao by @ShadowRZ
+- Fix title extractor by @ShadowRZ
+- Update nahida functions by @ShadowRZ
+- Update configuration docs by @ShadowRZ
+- Update nahida functions by @ShadowRZ
+- Move specials to reading config file by @ShadowRZ
+- Refactor config by @ShadowRZ
 
 ## [0.2.11] - 2024-05-14
 
 ### Added
-
-- Add some pixiv commands
-- Add info command
+- Add info command by @ShadowRZ
+- Add some pixiv commands by @ShadowRZ
 
 ### Changed
-
-- Update
-- Update actions
-- Update
-- Update
-- Update
-- Bump deps
-- Update mentions for jerryxiao
-- Reorganize files
-- Update
-- Update
-- Update
-- Update
-- Update Actions
-- 0.2.11
+- 0.2.11 by @ShadowRZ
+- Update Actions by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Reorganize files by @ShadowRZ
+- Update mentions for jerryxiao by @ShadowRZ
+- Bump deps by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update actions by @ShadowRZ
+- Update by @ShadowRZ
 
 ### Removed
-
-- Remove rustls support
+- Remove rustls support by @ShadowRZ
 
 ## [0.2.10] - 2024-05-10
 
 ### Added
-
-- Add sticker upload command
-- Add notification for sticker upload
-- Add room replacement support
-- Add formatting to JerryXiao commands
-- Add editor configs
-- Add admin room support
-- Add ignore and unignore command
-- Add pixiv command
+- Add pixiv command by @ShadowRZ
+- Add ignore and unignore command by @ShadowRZ
+- Add admin room support by @ShadowRZ
+- Add editor configs by @ShadowRZ
+- Add formatting to JerryXiao commands by @ShadowRZ
+- Add room replacement support by @ShadowRZ
+- Add notification for sticker upload by @ShadowRZ
+- Add sticker upload command by @ShadowRZ
 
 ### Changed
-
-- Update reminder command
-- Update
-- Make some config optional
-- Update
-- Tweak tracing level
-- Update JerryXiao function
-- Refactor code, stage 1
-- Refactor code, stage 2
-- Refactor code, stage 3
-- Update docs
-- Update error reporting function
-- Update
-- Update
-- Update
-- Update
-- Bump matrix-rust-sdk
-- Bump dependencies
-- Move to thiserror
-- Update Cargo.toml
-- Move to workspace
-- Change sticker usage type to exact type
-- Update
-- Reorganize subcrates to subdir
-- Bump deps
-- Move to pixrs
-- Move away from workspaces
-- Allow using rustls
-- 0.2.10
+- 0.2.10 by @ShadowRZ
+- Allow using rustls by @ShadowRZ
+- Move away from workspaces by @ShadowRZ
+- Move to pixrs by @ShadowRZ
+- Bump deps by @ShadowRZ
+- Reorganize subcrates to subdir by @ShadowRZ
+- Update by @ShadowRZ
+- Change sticker usage type to exact type by @ShadowRZ
+- Move to workspace by @ShadowRZ
+- Update Cargo.toml by @ShadowRZ
+- Move to thiserror by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Bump matrix-rust-sdk by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update error reporting function by @ShadowRZ
+- Update docs by @ShadowRZ
+- Refactor code, stage 3 by @ShadowRZ
+- Refactor code, stage 2 by @ShadowRZ
+- Refactor code, stage 1 by @ShadowRZ
+- Update JerryXiao function by @ShadowRZ
+- Tweak tracing level by @ShadowRZ
+- Update by @ShadowRZ
+- Make some config optional by @ShadowRZ
+- Update by @ShadowRZ
+- Update reminder command by @ShadowRZ
 
 ### Removed
-
-- Remove dicer
+- Remove dicer by @ShadowRZ
 
 ## [0.2.9] - 2024-03-25
 
 ### Added
-
-- Add quote command
-- Add more HTML tags to ignore
+- Add more HTML tags to ignore by @ShadowRZ
+- Add quote command by @ShadowRZ
 
 ### Changed
-
-- Disable message backup
-- Use UNIX shell word spliting
-- Tweak loglevel
-- Update command types
-- 0.2.9
+- 0.2.9 by @ShadowRZ
+- Update command types by @ShadowRZ
+- Tweak loglevel by @ShadowRZ
+- Use UNIX shell word spliting by @ShadowRZ
+- Disable message backup by @ShadowRZ
 
 ## [0.2.8] - 2024-03-24
 
 ### Changed
-
-- Move session code to a new file
-- Update
-- Include a license
-- Move Pages docs to mdBook docs
-- Update
-- Update
-- Update
-- 0.2.8
-
-### Fixed
-
-- Fix Actions
+- 0.2.8 by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Fix Actions by @ShadowRZ
+- Update by @ShadowRZ
+- Move Pages docs to mdBook docs by @ShadowRZ
+- Include a license by @ShadowRZ
+- Update by @ShadowRZ
+- Move session code to a new file by @ShadowRZ
 
 ## [0.2.7] - 2024-03-24
 
 ### Added
-
-- Add presence info
-- Add remind command
+- Add remind command by @ShadowRZ
+- Add presence info by @ShadowRZ
 
 ### Changed
-
-- Update typing functions
-- Change ping delta formatting
-- Bump matrix-rust-sdk
-- Bump deps
-- 0.2.7
+- 0.2.7 by @ShadowRZ
+- Bump deps by @ShadowRZ
+- Bump matrix-rust-sdk by @ShadowRZ
+- Change ping delta formatting by @ShadowRZ
+- Update typing functions by @ShadowRZ
 
 ## [0.2.6] - 2024-02-14
 
 ### Changed
-
-- Update
-- 0.2.6
+- 0.2.6 by @ShadowRZ
+- Update by @ShadowRZ
 
 ## [0.2.5] - 2024-02-14
 
 ### Changed
-
-- Update metas
-- 0.2.5
+- 0.2.5 by @ShadowRZ
+- Update metas by @ShadowRZ
 
 ## [0.2.4] - 2024-02-14
 
 ### Added
-
-- Add typing notices
-- Add At-Nahida prefix message handlers
+- Add At-Nahida prefix message handlers by @ShadowRZ
+- Add typing notices by @ShadowRZ
 
 ### Changed
-
-- Update
-- Update
-- 0.2.4
-
-### Fixed
-
-- Fix Hitokoto API
+- 0.2.4 by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Fix Hitokoto API by @ShadowRZ
 
 ## [0.2.3] - 2024-02-08
 
 ### Added
-
-- Add Hitokoto API
+- Add Hitokoto API by @ShadowRZ
 
 ### Changed
-
-- Update
-- Bump matrix-rust-sdk
-- Bump dependencies
-- Update Rustdoc workflow
-- Update
-- 0.2.3
+- 0.2.3 by @ShadowRZ
+- Update by @ShadowRZ
+- Update Rustdoc workflow by @ShadowRZ
+- Bump dependencies by @ShadowRZ
+- Bump matrix-rust-sdk by @ShadowRZ
+- Update by @ShadowRZ
 
 ## [0.2.2] - 2023-12-03
 
 ### Added
-
-- Add additional mentions for JerryXiao
+- Add additional mentions for JerryXiao by @ShadowRZ
 
 ### Changed
-
-- Update jerryxiao handling
-- Bump deps
-- 0.2.2
-
-### Fixed
-
-- Fix retrying
+- 0.2.2 by @ShadowRZ
+- Bump deps by @ShadowRZ
+- Fix retrying by @ShadowRZ
+- Update jerryxiao handling by @ShadowRZ
 
 ## [0.2.1] - 2023-11-20
 
 ### Added
-
-- Add instrument macros
-- Add optional features
-- Add SQLite to Nix environment
+- Add SQLite to Nix environment by @ShadowRZ
+- Add optional features by @ShadowRZ
+- Add instrument macros by @ShadowRZ
 
 ### Changed
-
-- Move to simpler image size detection
-- Update Cargo.toml
-- Allow tracing to report errors
-- Allow proper retrys
-- 0.2.1
+- 0.2.1 by @ShadowRZ
+- Allow proper retrys by @ShadowRZ
+- Allow tracing to report errors by @ShadowRZ
+- Update Cargo.toml by @ShadowRZ
+- Move to simpler image size detection by @ShadowRZ
 
 ## [0.2.0] - 2023-11-17
 
 ### Added
-
-- Add docs
-- Add Pages
-- Add autojoin
+- Add autojoin by @ShadowRZ
+- Add Pages by @ShadowRZ
+- Add docs by @ShadowRZ
 
 ### Changed
-
-- Update
-- Optimize dicer output
-- Give nom_error_message the expr string
-- Graceful shutdown
-- Update member changes command
-- Update
-- Update tracing level
-- Reformat imports
-- Update
-- Update
-- Update
-- Update
-- Update
-- Update
-- Update error handling
-- Update
-- Restructure the code
-- 0.2.0
-
-### Fixed
-
-- Fix format
-- Fix error reporting
-- Fix workflow
-- Fix logic
+- Fix logic by @ShadowRZ
+- 0.2.0 by @ShadowRZ
+- Restructure the code by @ShadowRZ
+- Update by @ShadowRZ
+- Update error handling by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Reformat imports by @ShadowRZ
+- Update tracing level by @ShadowRZ
+- Update by @ShadowRZ
+- Update member changes command by @ShadowRZ
+- Graceful shutdown by @ShadowRZ
+- Fix workflow by @ShadowRZ
+- Fix error reporting by @ShadowRZ
+- Give nom_error_message the expr string by @ShadowRZ
+- Optimize dicer output by @ShadowRZ
+- Update by @ShadowRZ
+- Fix format by @ShadowRZ
 
 ### Removed
-
-- Remove extra dots
+- Remove extra dots by @ShadowRZ
 
 ## [0.1.2] - 2023-11-14
 
 ### Added
-
-- Add at symbols
-- Add dicer implmentation
+- Add dicer implmentation by @ShadowRZ
+- Add at symbols by @ShadowRZ
 
 ### Changed
-
-- Update
-- Revert "Add randomdraw"
-
-This reverts commit 6a42ed86f369731f4dd9ed0f16396f4200da43ac.
-- Retry randomdraw
-- Update
-- Update
-- Update
-- Update
-- 0.1.2
+- 0.1.2 by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Retry randomdraw by @ShadowRZ
+- Revert "Add randomdraw" by @ShadowRZ
+- Update by @ShadowRZ
 
 ## [0.1.1] - 2023-11-12
 
 ### Added
-
-- Add name_changes command
-- Add Jerryxiao function
-- Add randomdraw
-- Add divergence command
-- Support proper intentional mentions for jerryxiao
-- Add ignore and unignore command
-- Add thiserror
+- Add thiserror by @ShadowRZ
+- Add ignore and unignore command by @ShadowRZ
+- Support proper intentional mentions for jerryxiao by @ShadowRZ
+- Add divergence command by @ShadowRZ
+- Add randomdraw by @ShadowRZ
+- Add Jerryxiao function by @ShadowRZ
+- Add name_changes command by @ShadowRZ
 
 ### Changed
-
-- Initial commit
-- Update
-- Update
-- Update
-- Update
-- Bump to git version of Matrix Rust SDK
-- Move message sending to outer level
-- Update randomdraw implmentation
-- Restructure the code
-- Format error messages nicely
-- 0.1.1
-
-### Fixed
-
-- Fix matrix.to link creation
-- Fix jerryxiao message output
-- Fix divergence command
-- Fix randomdraw
+- 0.1.1 by @ShadowRZ
+- Format error messages nicely by @ShadowRZ
+- Restructure the code by @ShadowRZ
+- Update randomdraw implmentation by @ShadowRZ
+- Fix randomdraw by @ShadowRZ
+- Fix divergence command by @ShadowRZ
+- Move message sending to outer level by @ShadowRZ
+- Bump to git version of Matrix Rust SDK by @ShadowRZ
+- Fix jerryxiao message output by @ShadowRZ
+- Update by @ShadowRZ
+- Fix matrix.to link creation by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Update by @ShadowRZ
+- Initial commit by @ShadowRZ
 
 ### Removed
+- Remove randomdraw by @ShadowRZ
 
-- Remove randomdraw
+### New Contributors
+* @ShadowRZ made their first contribution
 
-Can't make it work. :(
-
-[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.6..HEAD
-[0.4.6]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.5..v0.4.6
-[0.4.5]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.4..v0.4.5
-[0.4.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.3..v0.4.4
-[0.4.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.2..v0.4.3
-[0.4.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.1..v0.4.2
-[0.4.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.0..v0.4.1
-[0.4.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.4..v0.4.0
-[0.3.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.3..v0.3.4
-[0.3.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.2..v0.3.3
-[0.3.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.1..v0.3.2
-[0.3.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.0..v0.3.1
-[0.3.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.11..v0.3.0
-[0.2.11]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.10..v0.2.11
-[0.2.10]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.9..v0.2.10
-[0.2.9]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.8..v0.2.9
-[0.2.8]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.7..v0.2.8
-[0.2.7]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.6..v0.2.7
-[0.2.6]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.5..v0.2.6
-[0.2.5]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.4..v0.2.5
-[0.2.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.3..v0.2.4
-[0.2.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.2..v0.2.3
-[0.2.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.1..v0.2.2
-[0.2.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.0..v0.2.1
-[0.2.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.1.2..v0.2.0
-[0.1.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.1.1..v0.1.2
+[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.6...HEAD
+[0.4.6]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.5...v0.4.6
+[0.4.5]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.4...v0.4.0
+[0.3.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.11...v0.3.0
+[0.2.11]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.10...v0.2.11
+[0.2.10]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.9...v0.2.10
+[0.2.9]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.8...v0.2.9
+[0.2.8]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.7...v0.2.8
+[0.2.7]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.6...v0.2.7
+[0.2.6]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.5...v0.2.6
+[0.2.5]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.4...v0.2.5
+[0.2.4]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.3...v0.2.4
+[0.2.3]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.1.1...v0.1.2
 
 <!-- generated by git-cliff -->
