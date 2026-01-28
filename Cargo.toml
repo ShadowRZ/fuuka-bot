@@ -21,7 +21,7 @@ envsubst = "0.2.1"
 fastrand = "2.3.0"
 file-format = "0.28.0"
 futures-util = "0.3.31"
-graphql_client = { version = "0.14.0", default-features = false }
+graphql_client = { version = "0.16.0", default-features = false }
 hmac = "0.12.1"
 imagesize = "0.14.0"
 jose-jwk = { version = "0.1.2", default-features = false }
