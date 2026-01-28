@@ -33,7 +33,7 @@ pub static ENVIRONMENT: LazyLock<Environment> = LazyLock::new(|| {
     env
 });
 
-pub(self) mod filter {
+mod filter {
     pub fn to_html(text: &str) -> String {
         text.replace("\n", "<br/>")
     }
