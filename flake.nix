@@ -160,6 +160,14 @@
 
             RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
           };
+          aarch64-unknown-linux-musl = craneLib.devShell {
+            # Inherit inputs from checks.
+            checks = self.checks.${system};
+
+            packages = [
+              pkgs.pkgsCross.aarch64-multiplatform-musl.stdenv.cc
+            ];
+          };
         };
       }
     );
