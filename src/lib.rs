@@ -30,6 +30,7 @@ pub use crate::traits::*;
 pub use crate::types::Error;
 
 use matrix_sdk::authentication::matrix::MatrixSession;
+use matrix_sdk::config::RequestConfig;
 use matrix_sdk::ruma::OwnedRoomOrAliasId;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
@@ -40,6 +41,7 @@ use matrix_sdk::{Client, config::SyncSettings};
 use pixrs::PixivClient;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
@@ -122,6 +124,7 @@ impl FuukaBot {
         let store_path = get_store_path()?;
         let builder = Client::builder()
             .http_client(http.clone())
+            .request_config(RequestConfig::new().timeout(Some(Duration::from_mins(5))))
             .homeserver_url(&self.config.matrix.homeserver)
             .sqlite_store(store_path, None);
         let client = builder.build().await?;
