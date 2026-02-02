@@ -150,6 +150,14 @@ impl FuukaBot {
                     Self::recover_cross_sigining(&client).await?;
                     return Ok(());
                 }
+                "create-secret-store" => {
+                    Self::create_secret_store(&client).await?;
+                    return Ok(());
+                }
+                "new-backup" => {
+                    Self::new_backup(&client).await?;
+                    return Ok(());
+                }
                 _ => {
                     println!("Unknown command!");
                     return Ok(());
@@ -400,6 +408,26 @@ impl FuukaBot {
         print!("Enter recovery key for recovering cross signing: ");
         let recovery_key = read_password()?;
         recovery.recover(&recovery_key).await?;
+
+        Ok(())
+    }
+
+    /// Creates a secret store.
+    ///
+    /// Also downloads backups to this client.
+    async fn create_secret_store(client: &matrix_sdk::Client) -> anyhow::Result<()> {
+        let store = client.encryption().secret_storage().create_secret_store().await?;
+        let key = store.secret_storage_key();
+        println!("Your secret storage key is {key}, save it somewhere safe.");
+        store.import_secrets().await?;
+
+        Ok(())
+    }
+
+    // Creates a new backup and upload it to homeserver.
+    async fn new_backup(client: &matrix_sdk::Client) -> anyhow::Result<()> {
+        let backups = client.encryption().backups();
+        backups.create().await?;
 
         Ok(())
     }
