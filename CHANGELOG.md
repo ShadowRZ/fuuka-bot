@@ -7,12 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- *(command)* Add bot subcommands
+- *(command)* Add delete command
+- Add secret storage commands
+- Add recover-cross-signing subcommand
+- *(dev)* Add Justfile
+- *(build)* Add more targets
+
 ### Changed
+- Make default timeout a static variable
+- Increase Matrix client timeout to 5 minutes
+- *(build)* Bump rust toolchain to 1.93.0
+- Update
+- *(deps)* Update rust crate time to v0.3.46 by @renovate[bot] in [#16](https://github.com/ShadowRZ/fuuka-bot/pull/16)
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(deps)* Update rust crate thiserror to v2.0.18 by @renovate[bot] in [#15](https://github.com/ShadowRZ/fuuka-bot/pull/15)
+- *(deps)* Update actions/checkout action to v6.0.2 by @renovate[bot] in [#14](https://github.com/ShadowRZ/fuuka-bot/pull/14)
+- *(deps)* Update rust crate tokio to v1.49.0 by @renovate[bot] in [#11](https://github.com/ShadowRZ/fuuka-bot/pull/11)
+- *(deps)* Update rust crate minijinja to v2.15.1 by @renovate[bot] in [#10](https://github.com/ShadowRZ/fuuka-bot/pull/10)
+- *(deps)* Update tokio-tracing monorepo by @renovate[bot] in [#9](https://github.com/ShadowRZ/fuuka-bot/pull/9)
+- *(deps)* Update rust crate url to v2.5.8 by @renovate[bot] in [#8](https://github.com/ShadowRZ/fuuka-bot/pull/8)
+- *(deps)* Update rust crate toml to v0.9.11 by @renovate[bot] in [#7](https://github.com/ShadowRZ/fuuka-bot/pull/7)
+- *(deps)* Update rust crate shell-words to v1.1.1 by @renovate[bot] in [#6](https://github.com/ShadowRZ/fuuka-bot/pull/6)
+- *(deps)* Update rust crate serde_json to v1.0.149 by @renovate[bot] in [#5](https://github.com/ShadowRZ/fuuka-bot/pull/5)
+- *(deps)* Update rust crate axum to v0.8.8 by @renovate[bot] in [#3](https://github.com/ShadowRZ/fuuka-bot/pull/3)
+- *(ci)* Stop automatically updating changelogs on each push to master by @ShadowRZ
 - *(ci)* Update CI configs by @ShadowRZ
 - Configure Renovate by @ShadowRZ
 
 ### Fixed
+- *(changelog)* Properly categorize some commits
+- Fetch backup status from server
+- *(deps)* Update rust crate graphql_client to 0.16.0 by @renovate[bot] in [#12](https://github.com/ShadowRZ/fuuka-bot/pull/12)
 - *(docs)* Fix mdbook docs build by @ShadowRZ
+
+### Removed
+- Remove unnecessary `pub(self)` by @ShadowRZ
+
+### New Contributors
+* @renovate[bot] made their first contribution in [#16](https://github.com/ShadowRZ/fuuka-bot/pull/16)
 
 ## [0.4.6] - 2025-11-22
 
@@ -51,19 +85,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.3] - 2025-08-26
 
+### Added
+- Add Tokio Console and Journal logging by @ShadowRZ
+- Add BiliBili video extractor and command by @ShadowRZ
+
 ### Changed
 - 0.4.3 by @ShadowRZ
 - Optimize error reports from GitHub GraphQL response by @ShadowRZ
 - Cleanup tracing by @ShadowRZ
 - Update Nixpkgs PR tracking info template by @ShadowRZ
-- Add Tokio Console and Journal logging by @ShadowRZ
 - Fix stylecheck violations by @ShadowRZ
 - Overhaul tracing by @ShadowRZ
 - Bump packages by @ShadowRZ
 - Bump Rust version to 1.89.0 by @ShadowRZ
 - Reformat by @ShadowRZ
 - Allow Release action to be manually started by @ShadowRZ
-- Add BiliBili video extractor and command by @ShadowRZ
 
 ### Fixed
 - Only log errors on leaf span by @ShadowRZ
@@ -81,6 +117,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix tombstone following logic to account for v12 rooms by @ShadowRZ
 
 ## [0.4.1] - 2025-08-06
+
+### Added
+- Add quote command by @ShadowRZ
+- Add rooms command by @ShadowRZ
+- Add back commands by @ShadowRZ
 
 ### Changed
 - 0.4.1 by @ShadowRZ
@@ -104,8 +145,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update Cargo.toml by @ShadowRZ
 - Use watch channels by @ShadowRZ
 - Refactor to use parking_lot atomics by @ShadowRZ
-- Add quote command by @ShadowRZ
-- Add rooms command by @ShadowRZ
 - Reformat by @ShadowRZ
 - Also add a profile to abort on panic by @ShadowRZ
 - Use graphql_client by @ShadowRZ
@@ -121,7 +160,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump cargo crates by @ShadowRZ
 - Update by @ShadowRZ
 - Update by @ShadowRZ
-- Add back commands by @ShadowRZ
 - Bump dependencies by @ShadowRZ
 - Update by @ShadowRZ
 
@@ -133,18 +171,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-01-04
 
+### Added
+- Add direnv by @ShadowRZ
+- Add more size optimizations by @ShadowRZ
+
 ### Changed
 - 0.4.0 by @ShadowRZ
 - Updated docs to reflect current commands and configs by @ShadowRZ
 - Translated tags by @ShadowRZ
 - Bump axum by @ShadowRZ
-- Add direnv by @ShadowRZ
 - Bump dependencies by @ShadowRZ
 - Cleanup by @ShadowRZ
-- Add more size optimizations by @ShadowRZ
 - Reformat by @ShadowRZ
 - Update by @ShadowRZ
-- Remove workspaces by @ShadowRZ
 - Cleanup by @ShadowRZ
 - Move GraqhQL to gql_client by @ShadowRZ
 - Bump by @ShadowRZ
@@ -158,6 +197,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Derive defaults for some config by @ShadowRZ
 - Fix jerryxiao by @ShadowRZ
 - Fix nixpkgs command by @ShadowRZ
+
+### Removed
+- Remove workspaces by @ShadowRZ
 
 ## [0.3.4] - 2024-11-27
 
@@ -176,6 +218,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.3] - 2024-11-05
 
+### Added
+- Add cross signing management by @ShadowRZ
+- Add nixpkgs command by @ShadowRZ
+- Add proper recovery support by @ShadowRZ
+
 ### Changed
 - 0.3.3 by @ShadowRZ
 - Update flake builds by @ShadowRZ
@@ -184,13 +231,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use cynic to build GraphQL query by @ShadowRZ
 - Move to workspace by @ShadowRZ
 - Bump dependencies by @ShadowRZ
-- Add cross signing management by @ShadowRZ
-- Add nixpkgs command by @ShadowRZ
 - Ping-admin command by @ShadowRZ
 - Update docs by @ShadowRZ
 - Apply Clippy suggestions by @ShadowRZ
 - Bump dependencies by @ShadowRZ
-- Add proper recovery support by @ShadowRZ
 - Enable recovery instead by @ShadowRZ
 
 ### Fixed
@@ -212,26 +256,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1] - 2024-09-20
 
 ### Added
+- Add changelog workflow by @ShadowRZ
+- Add changelog by @ShadowRZ
+- Add interactive-login feature by @ShadowRZ
+- Add a warning to avatar_changes by @ShadowRZ
 - *(pixiv)* Add www prefix to pixiv links by @Guanran928
 
 ### Changed
 - 0.3.1 by @ShadowRZ
-- Add changelog workflow by @ShadowRZ
-- Add changelog by @ShadowRZ
 - Bump dependencies by @ShadowRZ
-- Add interactive-login feature by @ShadowRZ
 - Systemd service by @ShadowRZ
 - Allow specifiy directories in env var by @ShadowRZ
 - Set RUST_SRC_PATH in flakes by @ShadowRZ
 - Update Flakes Rust toolchain by @ShadowRZ
-- Remove Dev Containers by @ShadowRZ
 - Use the same toolchain for two devshells by @ShadowRZ
 - Update flakes by @ShadowRZ
 - BiliBili extractor by @ShadowRZ
 - Make pixiv command respect config by @ShadowRZ
-- Add a warning to avatar_changes by @ShadowRZ
 - Migrate deprecated extension by @ShadowRZ
-- Remove quote by @ShadowRZ
 - *(flake)* Use crane instead by @ShadowRZ
 - Update Dev Container by @ShadowRZ
 - Merge pull request #1 from Guanran928/pixiv-url by @ShadowRZ in [#1](https://github.com/ShadowRZ/fuuka-bot/pull/1)
@@ -241,6 +283,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Actions by @ShadowRZ
 - Properly restart sync on error by @ShadowRZ
 - *(pixiv)* Use /artworks/{id} instead of /i/{id} by @Guanran928
+
+### Removed
+- Remove Dev Containers by @ShadowRZ
+- Remove quote by @ShadowRZ
 
 ### New Contributors
 * @Guanran928 made their first contribution
