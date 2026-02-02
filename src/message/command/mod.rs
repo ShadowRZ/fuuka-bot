@@ -1,4 +1,5 @@
 pub(super) mod bilibili;
+pub(super) mod delete;
 pub(super) mod help;
 pub(super) mod hitokoto;
 pub(super) mod ignore;
@@ -42,5 +43,6 @@ pub(super) async fn process(
         CommandType::UserId => self::user_id::process(ev, room, injected).await,
         CommandType::Rooms => self::rooms::process(ev, room, injected).await,
         CommandType::BiliBili(id) => self::bilibili::process(ev, room, injected, &id).await,
+        CommandType::Delete => self::delete::process(ev, room, injected).await,
     }
 }

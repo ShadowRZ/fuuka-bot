@@ -416,7 +416,11 @@ impl FuukaBot {
     ///
     /// Also downloads backups to this client.
     async fn create_secret_store(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        let store = client.encryption().secret_storage().create_secret_store().await?;
+        let store = client
+            .encryption()
+            .secret_storage()
+            .create_secret_store()
+            .await?;
         let key = store.secret_storage_key();
         println!("Your secret storage key is {key}, save it somewhere safe.");
         store.import_secrets().await?;

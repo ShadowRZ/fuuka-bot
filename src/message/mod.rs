@@ -141,6 +141,7 @@ pub(super) enum CommandType {
         track: bool,
     },
     //Info,
+    Delete,
     Help,
     RoomId,
     UserId,
@@ -178,6 +179,7 @@ pub(super) fn from_args(
         "help" => Ok(Some(CommandType::Help)),
         "room_id" => Ok(Some(CommandType::RoomId)),
         "user_id" => Ok(Some(CommandType::UserId)),
+        "delete" => Ok(Some(CommandType::Delete)),
         "rooms" => Ok(Some(CommandType::Rooms)),
         "bilibili" => Ok(Some(CommandType::BiliBili(
             args.next()
