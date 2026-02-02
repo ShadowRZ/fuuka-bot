@@ -62,6 +62,8 @@ static APP_PRESENCE_TEXT: &str = concat!(
     env!("CARGO_PKG_REPOSITORY")
 );
 
+static APP_DEFAULT_TIMEOUT: Option<Duration> = Some(Duration::from_secs(300));
+
 /// The bot itself.
 pub struct FuukaBot {
     config: Config,
@@ -123,7 +125,7 @@ impl FuukaBot {
         let store_path = get_store_path()?;
         let builder = Client::builder()
             .http_client(http.clone())
-            .request_config(RequestConfig::new().timeout(Some(Duration::from_mins(5))))
+            .request_config(RequestConfig::new().timeout(APP_DEFAULT_TIMEOUT))
             .homeserver_url(&self.config.matrix.homeserver)
             .sqlite_store(store_path, None);
         let client = builder.build().await?;
