@@ -36,7 +36,7 @@ minijinja = { version = "2.12.0", default-features = false, features = [
 parking_lot = "0.12.5"
 pin-project-lite = "0.2.16"
 regex = "1.12.2"
-rpassword = { version = "7.4.0", optional = true }
+rpassword = { version = "7.4.0" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 sha2 = "0.10.9"
@@ -80,7 +80,7 @@ pretty_assertions = "1.4.1"
 [features]
 default = ["rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
-interactive-login = ["dep:rpassword"]
+interactive-login = []
 
 native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls"]
 rustls-tls = [

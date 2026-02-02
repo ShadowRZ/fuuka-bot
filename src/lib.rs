@@ -36,7 +36,6 @@ use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
-use matrix_sdk::sync::SyncResponse;
 use matrix_sdk::{Client, config::SyncSettings};
 use pixrs::PixivClient;
 use std::path::PathBuf;
@@ -135,19 +134,20 @@ impl FuukaBot {
         args.next();
         if let Some(arg1) = args.next() {
             match arg1.as_str() {
-                #[cfg(feature = "interactive-login")]
                 "bootstrap-cross-signing-if-needed" => {
                     Self::bootstrap_cross_signing_if_needed(&client).await?;
                     return Ok(());
                 }
-                #[cfg(feature = "interactive-login")]
                 "bootstrap-cross-signing" => {
                     Self::bootstrap_cross_signing(&client).await?;
                     return Ok(());
                 }
-                #[cfg(feature = "interactive-login")]
                 "reset-cross-signing" => {
                     Self::reset_cross_signing(&client).await?;
+                    return Ok(());
+                }
+                "recover-cross-signing" => {
+                    Self::recover_cross_sigining(&client).await?;
                     return Ok(());
                 }
                 _ => {
@@ -285,7 +285,6 @@ impl FuukaBot {
     }
 
     /// Prepares the bootstrap cross signing key if needed.
-    #[cfg(feature = "interactive-login")]
     async fn bootstrap_cross_signing_if_needed(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         use anyhow::Context;
         use matrix_sdk::ruma::api::client::uiaa;
@@ -322,7 +321,6 @@ impl FuukaBot {
     }
 
     /// Prepares the bootstrap cross signing key.
-    #[cfg(feature = "interactive-login")]
     async fn bootstrap_cross_signing(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         use anyhow::Context;
         use matrix_sdk::ruma::api::client::uiaa;
@@ -355,7 +353,6 @@ impl FuukaBot {
     }
 
     /// Resets the bootstrap cross signing key.
-    #[cfg(feature = "interactive-login")]
     async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         use matrix_sdk::encryption::CrossSigningResetAuthType;
 
@@ -381,7 +378,7 @@ impl FuukaBot {
                         .auth(Some(uiaa::AuthData::Password(password)))
                         .await?;
                 }
-                CrossSigningResetAuthType::Oidc(o) => {
+                CrossSigningResetAuthType::OAuth(o) => {
                     tracing::info!(
                         "To reset your end-to-end encryption cross-signing identity, \
                             you first need to approve it at {}",
@@ -391,6 +388,18 @@ impl FuukaBot {
                 }
             }
         }
+
+        Ok(())
+    }
+
+    /// Interactively starts the recovery process.
+    async fn recover_cross_sigining(client: &matrix_sdk::Client) -> anyhow::Result<()> {
+        use rpassword::read_password;
+
+        let recovery = client.encryption().recovery();
+        print!("Enter recovery key for recovering cross signing: ");
+        let recovery_key = read_password()?;
+        recovery.recover(&recovery_key).await?;
 
         Ok(())
     }
@@ -509,14 +518,14 @@ async fn ensure_self_device_verified(client: &matrix_sdk::Client) -> anyhow::Res
 }
 
 #[tracing::instrument(skip_all, err)]
-async fn initial_sync(client: &matrix_sdk::Client) -> anyhow::Result<SyncResponse> {
+async fn initial_sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
     tracing::info!("Initial sync beginning...");
-    let response = client
+    client
         .sync_once(SyncSettings::default().set_presence(PresenceState::Online))
         .await?;
     tracing::info!("Initial sync completed.");
 
-    Ok(response)
+    Ok(())
 }
 
 async fn log_encryption_info(client: &matrix_sdk::Client) -> anyhow::Result<()> {
@@ -536,15 +545,11 @@ async fn log_encryption_info(client: &matrix_sdk::Client) -> anyhow::Result<()> 
 }
 
 async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-    let response = initial_sync(client).await?;
-    let next_batch = response.next_batch;
-
+    initial_sync(client).await?;
     if let Err(e) = ensure_self_device_verified(client).await {
         tracing::warn!("Failed to ensure this device is verified: {e:#}");
     }
-    let settings = SyncSettings::default()
-        .token(next_batch)
-        .set_presence(PresenceState::Online);
+    let settings = SyncSettings::default().set_presence(PresenceState::Online);
     use matrix_sdk::ruma::api::client::presence::set_presence::v3::Request;
     if let Some(user_id) = client.user_id() {
         let mut presence = Request::new(user_id.into(), PresenceState::Online);
