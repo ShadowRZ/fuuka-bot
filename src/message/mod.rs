@@ -136,6 +136,7 @@ pub(super) enum CommandType {
     Ignore,
     Unignore(OwnedUserId),
     Pixiv(self::pixiv::PixivCommand),
+    Bot(self::bot::BotCommand),
     Nixpkgs {
         pr_number: i32,
         track: bool,
@@ -173,6 +174,7 @@ pub(super) fn from_args(
                 .ok_or(crate::Error::MissingArgument("user_id"))?,
         )?))),
         "pixiv" => Ok(Some(CommandType::Pixiv(self::pixiv::from_args(args)?))),
+        "bot" => Ok(Some(CommandType::Bot(self::bot::from_args(args)?))),
         "nixpkgs" => self::nixpkgs::from_args(args)
             .map(|(pr_number, track)| Some(CommandType::Nixpkgs { pr_number, track })),
         //"info" => Ok(Some(CommandType::Info)),
@@ -246,6 +248,31 @@ pub mod pixiv {
             Some(id) => PixivCommand::IllustInfo(<i32 as FromStr>::from_str(&id)?),
             None => PixivCommand::Ranking,
         })
+    }
+}
+
+pub mod bot {
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash)]
+    pub enum BotCommand {
+        SetAvatar,
+        SetDisplayName(String),
+    }
+
+    pub(super) fn from_args(mut args: impl Iterator<Item = String>) -> anyhow::Result<BotCommand> {
+        let command = args
+            .next()
+            .ok_or(crate::Error::MissingArgument("subcommand"))?;
+
+        match command.as_str() {
+            "set-avatar" => Ok(BotCommand::SetAvatar),
+            "set-displayname" => {
+                let displayname = args
+                    .next()
+                    .ok_or(crate::Error::MissingArgument("displayname"))?;
+                Ok(BotCommand::SetDisplayName(displayname))
+            }
+            _ => Result::Err(crate::Error::UnknownCommand(command).into()),
+        }
     }
 }
 
