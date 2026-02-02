@@ -239,7 +239,7 @@ impl FuukaBot {
     async fn enable_key_backups(client: &matrix_sdk::Client) -> anyhow::Result<()> {
         let backup = client.encryption().backups();
 
-        if backup.are_enabled().await && backup.exists_on_server().await? {
+        if backup.fetch_exists_on_server().await? {
             tracing::debug!(
                 "Bot has an existing server key backup that is valid, skipping recovery provision."
             );
