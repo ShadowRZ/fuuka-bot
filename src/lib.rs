@@ -13,6 +13,7 @@
 //! Where `<version>` is the running version of the bot.
 pub mod config;
 pub mod format;
+pub mod matrix;
 pub mod media_proxy;
 pub mod member_changes;
 pub mod message;
@@ -137,27 +138,27 @@ impl FuukaBot {
         if let Some(arg1) = args.next() {
             match arg1.as_str() {
                 "bootstrap-cross-signing-if-needed" => {
-                    Self::bootstrap_cross_signing_if_needed(&client).await?;
+                    crate::matrix::bootstrap_cross_signing_if_needed(&client).await?;
                     return Ok(());
                 }
                 "bootstrap-cross-signing" => {
-                    Self::bootstrap_cross_signing(&client).await?;
+                    crate::matrix::bootstrap_cross_signing(&client).await?;
                     return Ok(());
                 }
                 "reset-cross-signing" => {
-                    Self::reset_cross_signing(&client).await?;
+                    crate::matrix::reset_cross_signing(&client).await?;
                     return Ok(());
                 }
                 "recover-cross-signing" => {
-                    Self::recover_cross_sigining(&client).await?;
+                    crate::matrix::recover_cross_signing(&client).await?;
                     return Ok(());
                 }
                 "create-secret-store" => {
-                    Self::create_secret_store(&client).await?;
+                    crate::matrix::create_secret_store(&client).await?;
                     return Ok(());
                 }
                 "new-backup" => {
-                    Self::new_backup(&client).await?;
+                    crate::matrix::new_backup(&client).await?;
                     return Ok(());
                 }
                 _ => {
@@ -168,7 +169,7 @@ impl FuukaBot {
         }
 
         if self.with_key_backups {
-            Self::enable_key_backups(&client).await?;
+            crate::matrix::enable_key_backups(&client).await?;
         }
 
         let prefix = self.config.command.prefix.clone();
@@ -183,7 +184,7 @@ impl FuukaBot {
         };
 
         client.add_event_handler_context(injected);
-        log_encryption_info(&client).await?;
+        crate::matrix::log_encryption_info(&client).await?;
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
                 _ = async {
@@ -244,198 +245,6 @@ impl FuukaBot {
             }
             None => Ok(None),
         }
-    }
-
-    async fn enable_key_backups(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        let backup = client.encryption().backups();
-
-        if backup.fetch_exists_on_server().await? {
-            tracing::debug!(
-                "Bot has an existing server key backup that is valid, skipping recovery provision."
-            );
-            return Ok(());
-        }
-
-        let recovery = client.encryption().recovery();
-        let enable = recovery.enable().wait_for_backups_to_upload();
-
-        let mut progress = enable.subscribe_to_progress();
-
-        tokio::spawn(async move {
-            use futures_util::StreamExt;
-            use matrix_sdk::encryption::recovery::EnableProgress;
-
-            while let Some(update) = progress.next().await {
-                let Ok(update) = update else {
-                    panic!("Update to the enable progress lagged");
-                };
-
-                match update {
-                    EnableProgress::CreatingBackup => {
-                        tracing::debug!("Creating a new backup");
-                    }
-                    EnableProgress::CreatingRecoveryKey => {
-                        tracing::debug!("Creating a new recovery key");
-                    }
-                    EnableProgress::Done { .. } => {
-                        tracing::debug!("Recovery has been enabled");
-                        break;
-                    }
-                    _ => (),
-                }
-            }
-        });
-
-        match enable.await {
-            Ok(key) => tracing::info!("The recovery key is: {key}"),
-            Err(e) => tracing::warn!("Error while enabling backup: {e:#}"),
-        }
-
-        Ok(())
-    }
-
-    /// Prepares the bootstrap cross signing key if needed.
-    async fn bootstrap_cross_signing_if_needed(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        use anyhow::Context;
-        use matrix_sdk::ruma::api::client::uiaa;
-        use rpassword::read_password;
-
-        if let Err(e) = client
-            .encryption()
-            .bootstrap_cross_signing_if_needed(None)
-            .await
-        {
-            if let Some(response) = e.as_uiaa_response() {
-                use std::io::Write;
-
-                print!("Enter password for preparing cross signing: ");
-                std::io::stdout().flush()?;
-                let password = read_password()?;
-                let mut password = uiaa::Password::new(
-                    uiaa::UserIdentifier::UserIdOrLocalpart(client.user_id().unwrap().to_string()),
-                    password,
-                );
-                password.session = response.session.clone();
-
-                client
-                    .encryption()
-                    .bootstrap_cross_signing(Some(uiaa::AuthData::Password(password)))
-                    .await
-                    .context("Couldn't bootstrap cross signing")?
-            } else {
-                anyhow::bail!("Error during cross signing bootstrap {:#?}", e);
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Prepares the bootstrap cross signing key.
-    async fn bootstrap_cross_signing(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        use anyhow::Context;
-        use matrix_sdk::ruma::api::client::uiaa;
-        use rpassword::read_password;
-
-        if let Err(e) = client.encryption().bootstrap_cross_signing(None).await {
-            if let Some(response) = e.as_uiaa_response() {
-                use std::io::Write;
-
-                print!("Enter password for preparing cross signing: ");
-                std::io::stdout().flush()?;
-                let password = read_password()?;
-                let mut password = uiaa::Password::new(
-                    uiaa::UserIdentifier::UserIdOrLocalpart(client.user_id().unwrap().to_string()),
-                    password,
-                );
-                password.session = response.session.clone();
-
-                client
-                    .encryption()
-                    .bootstrap_cross_signing(Some(uiaa::AuthData::Password(password)))
-                    .await
-                    .context("Couldn't bootstrap cross signing")?
-            } else {
-                anyhow::bail!("Error during cross signing bootstrap {:#?}", e);
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Resets the bootstrap cross signing key.
-    async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        use matrix_sdk::encryption::CrossSigningResetAuthType;
-
-        if let Some(handle) = client.encryption().reset_cross_signing().await? {
-            match handle.auth_type() {
-                CrossSigningResetAuthType::Uiaa(uiaa) => {
-                    use matrix_sdk::ruma::api::client::uiaa;
-                    use rpassword::read_password;
-                    use std::io::Write;
-
-                    print!("Enter password for resetting cross signing: ");
-                    std::io::stdout().flush()?;
-                    let password = read_password()?;
-                    let mut password = uiaa::Password::new(
-                        uiaa::UserIdentifier::UserIdOrLocalpart(
-                            client.user_id().unwrap().to_string(),
-                        ),
-                        password,
-                    );
-                    password.session = uiaa.session.clone();
-
-                    handle
-                        .auth(Some(uiaa::AuthData::Password(password)))
-                        .await?;
-                }
-                CrossSigningResetAuthType::OAuth(o) => {
-                    tracing::info!(
-                        "To reset your end-to-end encryption cross-signing identity, \
-                            you first need to approve it at {}",
-                        o.approval_url
-                    );
-                    handle.auth(None).await?;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Interactively starts the recovery process.
-    async fn recover_cross_sigining(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        use rpassword::read_password;
-
-        let recovery = client.encryption().recovery();
-        print!("Enter recovery key for recovering cross signing: ");
-        let recovery_key = read_password()?;
-        recovery.recover(&recovery_key).await?;
-
-        Ok(())
-    }
-
-    /// Creates a secret store.
-    ///
-    /// Also downloads backups to this client.
-    async fn create_secret_store(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        let store = client
-            .encryption()
-            .secret_storage()
-            .create_secret_store()
-            .await?;
-        let key = store.secret_storage_key();
-        println!("Your secret storage key is {key}, save it somewhere safe.");
-        store.import_secrets().await?;
-
-        Ok(())
-    }
-
-    // Creates a new backup and upload it to homeserver.
-    async fn new_backup(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-        let backups = client.encryption().backups();
-        backups.create().await?;
-
-        Ok(())
     }
 }
 
@@ -528,59 +337,9 @@ fn get_store_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
-#[tracing::instrument(name = "encryption", skip_all, err)]
-async fn ensure_self_device_verified(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-    let encryption = client.encryption();
-    let has_keys = encryption
-        .cross_signing_status()
-        .await
-        .map(|status| status.has_self_signing && status.has_master)
-        .unwrap_or_default();
-
-    if !has_keys {
-        tracing::warn!("No self signing key to sign this own device!");
-        return Ok(());
-    }
-
-    if let Some(device) = encryption.get_own_device().await?
-        && !device.is_cross_signed_by_owner()
-    {
-        device.verify().await?
-    }
-
-    Ok(())
-}
-
-#[tracing::instrument(skip_all, err)]
-async fn initial_sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-    tracing::info!("Initial sync beginning...");
-    client
-        .sync_once(SyncSettings::default().set_presence(PresenceState::Online))
-        .await?;
-    tracing::info!("Initial sync completed.");
-
-    Ok(())
-}
-
-async fn log_encryption_info(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-    let encryption = client.encryption();
-    let cross_signing_status = encryption.cross_signing_status().await;
-    if let Some(device) = encryption.get_own_device().await? {
-        let device_id = device.device_id();
-        tracing::debug!(
-            "Own device ID: {device_id}, Cross signing status: {cross_signing_status:#?}, is_cross_signed_by_owner = {is_cross_signed_by_owner}, is_verified = {is_verified}, is_verified_with_cross_signing = {is_verified_with_cross_signing}",
-            is_cross_signed_by_owner = device.is_cross_signed_by_owner(),
-            is_verified = device.is_verified(),
-            is_verified_with_cross_signing = device.is_verified_with_cross_signing(),
-        );
-    }
-
-    Ok(())
-}
-
 async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
-    initial_sync(client).await?;
-    if let Err(e) = ensure_self_device_verified(client).await {
+    crate::matrix::initial_sync(client).await?;
+    if let Err(e) = crate::matrix::ensure_self_device_verified(client).await {
         tracing::warn!("Failed to ensure this device is verified: {e:#}");
     }
     let settings = SyncSettings::default().set_presence(PresenceState::Online);
