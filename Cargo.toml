@@ -12,11 +12,7 @@ rust-version = "1.88.0"
 anyhow = "1.0.100"
 axum = "0.8.7"
 bytes = "1.11.0"
-clap = { version = "4.5.57", default-features = false, features = [
-  "derive",
-  "std",
-  "help",
-] }
+clap = { version = "4.5.57", features = ["derive"] }
 console-subscriber = { version = "0.5.0", features = [
   "parking_lot",
 ], optional = true }
@@ -85,7 +81,6 @@ pretty_assertions = "1.4.1"
 [features]
 default = ["rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
-interactive-login = []
 
 native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls"]
 rustls-tls = [
