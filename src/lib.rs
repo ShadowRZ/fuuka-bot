@@ -30,6 +30,7 @@ pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
 pub use crate::types::Error;
 
+use clap::Parser;
 use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::config::RequestConfig;
 use matrix_sdk::ruma::OwnedRoomOrAliasId;
@@ -64,6 +65,31 @@ static APP_PRESENCE_TEXT: &str = concat!(
 );
 
 static APP_DEFAULT_TIMEOUT: Option<Duration> = Some(Duration::from_secs(300));
+
+#[derive(Debug, clap::Parser)]
+#[command(disable_help_subcommand = true)]
+pub struct Args {
+    #[command(subcommand)]
+    command: Option<Subcommand>,
+}
+
+#[derive(Debug, clap::Subcommand)]
+pub enum Subcommand {
+    /// Create and upload a new cross signing identity.
+    BootstrapCrossSigning {
+        /// Only perform this action if that has not been done yet.
+        #[arg(long)]
+        if_needed: bool,
+    },
+    /// Reset the cross-signing keys.
+    ResetCrossSigning,
+    /// Recover all the secrets from the homeserver.
+    RecoverCrossSigning,
+    /// Create a new secret store.
+    CreateSecretStore,
+    /// Create a new backup version, encrypted with a new backup recovery key.
+    NewBackup,
+}
 
 /// The bot itself.
 pub struct FuukaBot {
@@ -133,39 +159,31 @@ impl FuukaBot {
         client.restore_session(self.session).await?;
 
         // Dispatch CLI args
-        let mut args = std::env::args();
-        args.next();
-        if let Some(arg1) = args.next() {
-            match arg1.as_str() {
-                "bootstrap-cross-signing-if-needed" => {
-                    crate::matrix::bootstrap_cross_signing_if_needed(&client).await?;
-                    return Ok(());
+        let args = Args::parse();
+        if let Some(command) = args.command {
+            match command {
+                Subcommand::BootstrapCrossSigning { if_needed } => {
+                    if if_needed {
+                        crate::matrix::bootstrap_cross_signing_if_needed(&client).await?;
+                    } else {
+                        crate::matrix::bootstrap_cross_signing(&client).await?;
+                    }
                 }
-                "bootstrap-cross-signing" => {
-                    crate::matrix::bootstrap_cross_signing(&client).await?;
-                    return Ok(());
-                }
-                "reset-cross-signing" => {
+                Subcommand::ResetCrossSigning => {
                     crate::matrix::reset_cross_signing(&client).await?;
-                    return Ok(());
                 }
-                "recover-cross-signing" => {
+                Subcommand::RecoverCrossSigning => {
                     crate::matrix::recover_cross_signing(&client).await?;
-                    return Ok(());
                 }
-                "create-secret-store" => {
+                Subcommand::CreateSecretStore => {
                     crate::matrix::create_secret_store(&client).await?;
-                    return Ok(());
                 }
-                "new-backup" => {
+                Subcommand::NewBackup => {
                     crate::matrix::new_backup(&client).await?;
-                    return Ok(());
-                }
-                _ => {
-                    println!("Unknown command!");
-                    return Ok(());
                 }
             }
+
+            return Ok(());
         }
 
         if self.with_key_backups {
