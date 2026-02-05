@@ -1,4 +1,7 @@
-use crate::message::{Injected, pixiv::PixivCommand};
+use crate::message::{
+    Injected,
+    pixiv::{PixivCommand, RankingMode},
+};
 use futures_util::{StreamExt, pin_mut};
 use matrix_sdk::{
     Room,
@@ -7,7 +10,7 @@ use matrix_sdk::{
         AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
     },
 };
-use pixrs::{PixivClient, RankingContent, RankingMode};
+use pixrs::{PixivClient, RankingContent};
 
 #[tracing::instrument(name = "pixiv", skip_all)]
 pub async fn process(
@@ -28,7 +31,7 @@ pub async fn process(
     };
 
     let content = match command {
-        PixivCommand::Ranking(_) => format_ranking(pixiv).await?,
+        PixivCommand::Ranking(ranking) => format_ranking(pixiv, ranking).await?,
         PixivCommand::Illust(illust_id) => {
             let config = config.borrow().clone();
             send_illust(ev, room, pixiv, http, &config, illust_id).await?;
@@ -44,9 +47,12 @@ pub async fn process(
 }
 
 #[tracing::instrument(name = "ranking", skip_all, fields(ranking = "daily"), err)]
-async fn format_ranking(pixiv: &PixivClient) -> anyhow::Result<RoomMessageEventContent> {
+async fn format_ranking(
+    pixiv: &PixivClient,
+    ranking: RankingMode,
+) -> anyhow::Result<RoomMessageEventContent> {
     let resp = pixiv
-        .ranking_stream(RankingMode::Daily, RankingContent::Illust, None)
+        .ranking_stream(ranking.into(), RankingContent::Illust, None)
         .await
         .take(5);
     let mut body = String::from("Pixiv Ranking: (Illust/Daily)");

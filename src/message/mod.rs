@@ -288,21 +288,21 @@ pub mod pixiv {
         R18G,
     }
 
-    impl From<pixrs::RankingMode> for RankingMode {
-        fn from(value: pixrs::RankingMode) -> Self {
+    impl From<RankingMode> for pixrs::RankingMode {
+        fn from(value: RankingMode) -> Self {
             match value {
-                pixrs::RankingMode::Daily => Self::Daily,
-                pixrs::RankingMode::Weekly => Self::Weekly,
-                pixrs::RankingMode::Monthly => Self::Monthly,
-                pixrs::RankingMode::Rookie => Self::Rookie,
-                pixrs::RankingMode::Original => Self::Original,
-                pixrs::RankingMode::Male => Self::Male,
-                pixrs::RankingMode::Female => Self::Female,
-                pixrs::RankingMode::DailyR18 => Self::DailyR18,
-                pixrs::RankingMode::WeeklyR18 => Self::WeeklyR18,
-                pixrs::RankingMode::MaleR18 => Self::MaleR18,
-                pixrs::RankingMode::FemaleR18 => Self::FemaleR18,
-                pixrs::RankingMode::R18G => Self::R18G,
+                RankingMode::Daily => Self::Daily,
+                RankingMode::Weekly => Self::Weekly,
+                RankingMode::Monthly => Self::Monthly,
+                RankingMode::Rookie => Self::Rookie,
+                RankingMode::Original => Self::Original,
+                RankingMode::Male => Self::Male,
+                RankingMode::Female => Self::Female,
+                RankingMode::DailyR18 => Self::DailyR18,
+                RankingMode::WeeklyR18 => Self::WeeklyR18,
+                RankingMode::MaleR18 => Self::MaleR18,
+                RankingMode::FemaleR18 => Self::FemaleR18,
+                RankingMode::R18G => Self::R18G,
             }
         }
     }
