@@ -28,8 +28,8 @@ pub async fn process(
     };
 
     let content = match command {
-        PixivCommand::Ranking => format_ranking(pixiv).await?,
-        PixivCommand::IllustInfo(illust_id) => {
+        PixivCommand::Ranking(_) => format_ranking(pixiv).await?,
+        PixivCommand::Illust(illust_id) => {
             let config = config.borrow().clone();
             send_illust(ev, room, pixiv, http, &config, illust_id).await?;
 

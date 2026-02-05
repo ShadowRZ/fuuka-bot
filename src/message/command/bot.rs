@@ -76,10 +76,10 @@ pub async fn process(
                 anyhow::bail!("The replied to event is not an image!");
             }
         }
-        BotCommand::SetDisplayName(displayname) => {
+        BotCommand::SetDisplayName { display_name } => {
             client
                 .account()
-                .set_display_name(Some(&displayname))
+                .set_display_name(Some(&display_name))
                 .await?;
         }
     }

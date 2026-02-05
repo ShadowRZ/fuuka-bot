@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use clap::Parser;
+use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::{
     Room, RoomState,
     event_handler::Ctx,
@@ -8,10 +10,22 @@ use matrix_sdk::{
         RoomMessageEventContent,
     },
 };
+use url::Url;
+
+use crate::MediaProxy;
 
 pub mod command;
 pub mod jerryxiao;
 pub mod nahida;
+
+static HELP_TEXT: &str = concat!(
+    "Fuuka Bot\n\nSource: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "\nCommands: https://shadowrz.github.io/fuuka-bot/commands.html",
+    "\nSend a feature request: ",
+    env!("CARGO_PKG_REPOSITORY"),
+    "/issues",
+);
 
 /// Injected dependencies.
 #[derive(Clone)]
@@ -101,10 +115,18 @@ async fn process(
         let content = content.trim();
         tracing::debug!(content, "Received a command request");
         let args = shell_words::split(content)?;
-        let ty = self::from_args(args.into_iter())?;
-        match ty {
-            Some(ty) => self::command::process(ev, room, injected, ty).await?,
-            None => return Ok(()),
+        let args = Args::try_parse_from(args);
+        match args {
+            Ok(args) => self::command::process(ev, room, injected, args).await?,
+            Err(e) => {
+                let text = e.render().to_string();
+                let body = RoomMessageEventContent::text_plain(text).make_reply_to(
+                    ev,
+                    ForwardThread::No,
+                    AddMentions::Yes,
+                );
+                room.send(body).await?;
+            }
         }
     } else if let Some(content) = body.strip_prefix("@Nahida ") {
         let content = content.trim();
@@ -118,172 +140,185 @@ async fn process(
     Ok(())
 }
 
-use matrix_sdk::ruma::{OwnedUserId, UserId};
-use url::Url;
-
-use crate::MediaProxy;
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
-pub(super) enum CommandType {
+#[derive(clap::Parser, Debug)]
+#[command(
+    disable_help_flag = true,
+    arg_required_else_help = true,
+    multicall = true,
+    before_help = HELP_TEXT,
+)]
+pub enum Args {
+    /// Print info about the bot.
+    About,
+    /// Send user profile infomation.
     Profile {
+        /// The category to use.
+        #[arg(value_enum)]
         category: self::profile::Category,
+        /// Response type.
+        #[arg(value_enum, default_value_t = self::profile::ResponseType::Current)]
         response_type: self::profile::ResponseType,
     },
+    /// Ping the bot.
     Ping,
-    //Divergence,
+    /// Print a hitokoto.
     Hitokoto,
-    //Sticker,
+    /// Ignore a user.
     Ignore,
-    Unignore(OwnedUserId),
-    Pixiv(self::pixiv::PixivCommand),
+    /// Unignore a user.
+    Unignore { user_id: OwnedUserId },
+    /// Pixiv related commands.
+    Pixiv {
+        /// Either a numeric illust id, or a ranking category.
+        #[arg(name = "MODE_OR_ILLUST_ID", default_value = "daily")]
+        command: self::pixiv::PixivCommand,
+    },
+    /// Bot management commands,
+    #[command(subcommand)]
     Bot(self::bot::BotCommand),
+    /// Nixpkgs command.
     Nixpkgs {
         pr_number: i32,
-        track: bool,
+        what: Option<self::nixpkgs::NixpkgsCommand>,
     },
-    //Info,
+    /// Delete a bot message.
     Delete,
-    Help,
+    /// Send the room's ID.
+    #[command(name = "room_id")]
     RoomId,
+    /// Send the user's ID.
+    #[command(name = "user_id")]
     UserId,
+    /// (Admin only) Print info regarding joined rooms.
     Rooms,
-    BiliBili(String),
-}
-
-pub(super) fn from_args(
-    mut args: impl Iterator<Item = String>,
-) -> anyhow::Result<Option<CommandType>> {
-    let Some(command) = args.next() else {
-        return Ok(None);
-    };
-
-    match command.as_str() {
-        "profile" => Ok(
-            self::profile::from_args(args)?.map(|(category, response_type)| CommandType::Profile {
-                category,
-                response_type,
-            }),
-        ),
-        "ping" => Ok(Some(CommandType::Ping)),
-        //"divergence" => Ok(Some(CommandType::Divergence)),
-        "hitokoto" => Ok(Some(CommandType::Hitokoto)),
-        //"sticker" => Ok(Some(CommandType::Sticker)),
-        "ignore" => Ok(Some(CommandType::Ignore)),
-        "unignore" => Ok(Some(CommandType::Unignore(UserId::parse(
-            args.next()
-                .ok_or(crate::Error::MissingArgument("user_id"))?,
-        )?))),
-        "pixiv" => Ok(Some(CommandType::Pixiv(self::pixiv::from_args(args)?))),
-        "bot" => Ok(Some(CommandType::Bot(self::bot::from_args(args)?))),
-        "nixpkgs" => self::nixpkgs::from_args(args)
-            .map(|(pr_number, track)| Some(CommandType::Nixpkgs { pr_number, track })),
-        //"info" => Ok(Some(CommandType::Info)),
-        "help" => Ok(Some(CommandType::Help)),
-        "room_id" => Ok(Some(CommandType::RoomId)),
-        "user_id" => Ok(Some(CommandType::UserId)),
-        "delete" => Ok(Some(CommandType::Delete)),
-        "rooms" => Ok(Some(CommandType::Rooms)),
-        "bilibili" => Ok(Some(CommandType::BiliBili(
-            args.next()
-                .ok_or(crate::Error::MissingArgument("video_id"))?,
-        ))),
-        _ => Result::Err(crate::Error::UnknownCommand(command).into()),
-    }
+    /// Send infomation of a BiliBili video.
+    #[command(name = "bilibili")]
+    BiliBili { id: String },
 }
 
 pub mod profile {
-    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, clap::ValueEnum)]
     pub enum Category {
         Name,
         Avatar,
     }
 
-    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, clap::ValueEnum)]
     pub enum ResponseType {
         Current,
         History,
     }
-
-    impl ResponseType {
-        fn from_args(mut args: impl Iterator<Item = String>) -> anyhow::Result<Self> {
-            let Some(command) = args.next() else {
-                return Ok(Self::Current);
-            };
-
-            match command.as_str() {
-                "history" => Ok(Self::History),
-                _ => Result::Err(crate::Error::UnknownCommand(command).into()),
-            }
-        }
-    }
-
-    pub(super) fn from_args(
-        mut args: impl Iterator<Item = String>,
-    ) -> anyhow::Result<Option<(Category, ResponseType)>> {
-        let Some(command) = args.next() else {
-            return Ok(None);
-        };
-
-        match command.as_str() {
-            "name" => Ok(Some((Category::Name, ResponseType::from_args(args)?))),
-            "avatar" => Ok(Some((Category::Avatar, ResponseType::from_args(args)?))),
-            _ => Result::Err(crate::Error::UnknownCommand(command).into()),
-        }
-    }
 }
 
 pub mod pixiv {
-    use std::str::FromStr;
-
-    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
+    #[derive(Clone, Copy, Debug)]
     pub enum PixivCommand {
-        Ranking,
-        IllustInfo(i32),
+        Ranking(RankingMode),
+        Illust(i32),
     }
 
-    pub(super) fn from_args(
-        mut args: impl Iterator<Item = String>,
-    ) -> anyhow::Result<PixivCommand> {
-        Ok(match args.next() {
-            Some(id) => PixivCommand::IllustInfo(<i32 as FromStr>::from_str(&id)?),
-            None => PixivCommand::Ranking,
-        })
+    impl Default for PixivCommand {
+        fn default() -> Self {
+            Self::Ranking(RankingMode::Daily)
+        }
+    }
+
+    impl clap::builder::ValueParserFactory for PixivCommand {
+        type Parser = PixivCommandParser;
+
+        fn value_parser() -> Self::Parser {
+            PixivCommandParser
+        }
+    }
+
+    #[doc(hidden)]
+    #[derive(Copy, Clone)]
+    pub struct PixivCommandParser;
+
+    impl clap::builder::TypedValueParser for PixivCommandParser {
+        type Value = PixivCommand;
+
+        fn parse_ref(
+            &self,
+            cmd: &clap::Command,
+            arg: Option<&clap::Arg>,
+            value: &std::ffi::OsStr,
+        ) -> Result<Self::Value, clap::Error> {
+            let ranking_parser = clap::value_parser!(RankingMode);
+            if let Ok(ranking) = ranking_parser.parse_ref(cmd, arg, value) {
+                return Ok(PixivCommand::Ranking(ranking));
+            }
+
+            let illust_id_parser = clap::value_parser!(i32);
+            if let Ok(illust_id) = illust_id_parser.parse_ref(cmd, arg, value) {
+                return Ok(PixivCommand::Illust(illust_id));
+            }
+
+            Err(clap::Error::new(clap::error::ErrorKind::InvalidValue))
+        }
+
+        fn possible_values(
+            &self,
+        ) -> Option<Box<dyn Iterator<Item = clap::builder::PossibleValue> + '_>> {
+            let inner_parser = clap::value_parser!(RankingMode);
+            #[allow(clippy::needless_collect)] // Erasing a lifetime
+            inner_parser.possible_values().map(|ps| {
+                let ps = ps.collect::<Vec<_>>();
+                let ps: Box<dyn Iterator<Item = clap::builder::PossibleValue> + '_> =
+                    Box::new(ps.into_iter());
+                ps
+            })
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
+    pub enum RankingMode {
+        #[default]
+        Daily,
+        Weekly,
+        Monthly,
+        Rookie,
+        Original,
+        Male,
+        Female,
+        DailyR18,
+        WeeklyR18,
+        MaleR18,
+        FemaleR18,
+        R18G,
+    }
+
+    impl From<pixrs::RankingMode> for RankingMode {
+        fn from(value: pixrs::RankingMode) -> Self {
+            match value {
+                pixrs::RankingMode::Daily => Self::Daily,
+                pixrs::RankingMode::Weekly => Self::Weekly,
+                pixrs::RankingMode::Monthly => Self::Monthly,
+                pixrs::RankingMode::Rookie => Self::Rookie,
+                pixrs::RankingMode::Original => Self::Original,
+                pixrs::RankingMode::Male => Self::Male,
+                pixrs::RankingMode::Female => Self::Female,
+                pixrs::RankingMode::DailyR18 => Self::DailyR18,
+                pixrs::RankingMode::WeeklyR18 => Self::WeeklyR18,
+                pixrs::RankingMode::MaleR18 => Self::MaleR18,
+                pixrs::RankingMode::FemaleR18 => Self::FemaleR18,
+                pixrs::RankingMode::R18G => Self::R18G,
+            }
+        }
     }
 }
 
 pub mod bot {
-    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash)]
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash, clap::Subcommand)]
     pub enum BotCommand {
         SetAvatar,
-        SetDisplayName(String),
-    }
-
-    pub(super) fn from_args(mut args: impl Iterator<Item = String>) -> anyhow::Result<BotCommand> {
-        let command = args
-            .next()
-            .ok_or(crate::Error::MissingArgument("subcommand"))?;
-
-        match command.as_str() {
-            "set-avatar" => Ok(BotCommand::SetAvatar),
-            "set-displayname" => {
-                let displayname = args
-                    .next()
-                    .ok_or(crate::Error::MissingArgument("displayname"))?;
-                Ok(BotCommand::SetDisplayName(displayname))
-            }
-            _ => Result::Err(crate::Error::UnknownCommand(command).into()),
-        }
+        SetDisplayName { display_name: String },
     }
 }
 
 pub mod nixpkgs {
-    pub(super) fn from_args(mut args: impl Iterator<Item = String>) -> anyhow::Result<(i32, bool)> {
-        let pr_number: i32 = args
-            .next()
-            .ok_or(crate::Error::MissingArgument("pr_number"))?
-            .parse()?;
-        let track = args.next().map(|arg| &arg == "track").unwrap_or_default();
-
-        Ok((pr_number, track))
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash, clap::ValueEnum)]
+    pub enum NixpkgsCommand {
+        Track,
     }
 }
