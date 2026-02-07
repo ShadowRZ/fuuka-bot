@@ -1,8 +1,5 @@
 [toolchain]
 channel = "1.93.0"
 components = ["rust-analyzer", "rust-src"]
-targets = [
-  "x86_64-unknown-linux-gnu",
-  "aarch64-unknown-linux-musl",
-]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-musl"]
 profile = "default"

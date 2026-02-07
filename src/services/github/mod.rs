@@ -73,7 +73,7 @@ mod tests {
         ))
         .unwrap();
 
-        let error = super::Error(error.into());
+        let error = super::Error(error);
 
         let result = format!("{error}");
 
@@ -97,7 +97,7 @@ mod tests {
         ))
         .unwrap();
 
-        let error = super::Error(error.into());
+        let error = super::Error(error);
 
         let result = format!("{error}");
 
