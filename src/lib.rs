@@ -232,10 +232,7 @@ impl Client {
         }
 
         if let Some(ref media_proxy_config) = config.media_proxy {
-            crate::start_media_proxy(
-                media_proxy.as_deref(),
-                media_proxy_config.listen.clone(),
-            );
+            crate::start_media_proxy(media_proxy.as_deref(), media_proxy_config.listen.clone());
         }
 
         let pixiv = pixiv_client(&http, &config).await?;
