@@ -30,12 +30,12 @@ pub use crate::types::Error;
 use clap::Parser;
 use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::config::RequestConfig;
+use matrix_sdk::config::SyncSettings;
 use matrix_sdk::ruma::OwnedRoomOrAliasId;
 use matrix_sdk::ruma::events::room::ImageInfo;
 use matrix_sdk::ruma::events::room::member::StrippedRoomMemberEvent;
 use matrix_sdk::ruma::events::room::tombstone::OriginalSyncRoomTombstoneEvent;
 use matrix_sdk::ruma::presence::PresenceState;
-use matrix_sdk::{Client, config::SyncSettings};
 use pixrs::PixivClient;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -88,16 +88,32 @@ pub enum Subcommand {
     NewBackup,
 }
 
-/// The bot itself.
-pub struct FuukaBot {
-    config: Config,
-    session: MatrixSession,
+/// Builder for the bot.
+#[derive(Default)]
+pub struct Builder {
     with_key_backups: bool,
-    enable_media_proxy_if_enabled: bool,
+    with_optional_media_proxy: bool,
 }
 
-impl FuukaBot {
-    pub fn from_config() -> anyhow::Result<Self> {
+pub fn builder() -> Builder {
+    Default::default()
+}
+
+impl Builder {
+    pub fn with_key_backups(mut self) -> Self {
+        self.with_key_backups = true;
+
+        self
+    }
+
+    pub fn with_optional_media_proxy(mut self) -> Self {
+        self.with_optional_media_proxy = true;
+
+        self
+    }
+
+    pub fn build(self) -> anyhow::Result<crate::Client> {
+        let args = Args::parse();
         use anyhow::Context;
 
         let cred = get_config_file(CREDENTIALS_FILE)?;
@@ -109,45 +125,82 @@ impl FuukaBot {
 
         let config: Config = get_config().context("Getting config failed!")?;
 
-        Ok(Self {
-            config,
-            session,
-            with_key_backups: false,
-            enable_media_proxy_if_enabled: false,
-        })
-    }
-
-    pub fn with_key_backups(mut self) -> Self {
-        self.with_key_backups = true;
-
-        self
-    }
-
-    pub fn enable_media_proxy_if_enabled(mut self) -> anyhow::Result<Self> {
-        self.enable_media_proxy_if_enabled = true;
-
-        Ok(self)
-    }
-
-    pub async fn run(self) -> anyhow::Result<()> {
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
             .hickory_dns(true)
             .build()?;
-        let pixiv = self.pixiv_client(&http).await?;
-        let media_proxy = self.media_proxy(&http).await?;
 
         let store_path = get_store_path()?;
-        let builder = Client::builder()
+        let builder = matrix_sdk::Client::builder()
             .http_client(http.clone())
             .request_config(RequestConfig::new().timeout(APP_DEFAULT_TIMEOUT))
-            .homeserver_url(&self.config.matrix.homeserver)
+            .homeserver_url(&config.matrix.homeserver)
             .sqlite_store(store_path, None);
-        let client = builder.build().await?;
-        client.restore_session(self.session).await?;
+        let media_proxy = self.media_proxy(&http, &config, &session)?;
 
-        // Dispatch CLI args
-        let args = Args::parse();
+        Ok(crate::Client {
+            args,
+            config,
+            session,
+            http,
+            builder,
+            media_proxy,
+            with_key_backups: self.with_key_backups,
+        })
+    }
+
+    fn media_proxy(
+        &self,
+        http: &reqwest::Client,
+        config: &Config,
+        session: &MatrixSession,
+    ) -> anyhow::Result<Option<Arc<MediaProxy>>> {
+        if !self.with_optional_media_proxy {
+            return Ok(None);
+        }
+
+        match &config.media_proxy {
+            Some(_) => {
+                use anyhow::Context;
+
+                let jwk = get_jwk_token().context("Locate JWK file failed")?;
+                let media_proxy = MediaProxy::new(
+                    config.matrix.homeserver.clone(),
+                    session.tokens.access_token.clone(),
+                    jwk,
+                    http,
+                )?;
+                Ok(Some(Arc::new(media_proxy)))
+            }
+            None => Ok(None),
+        }
+    }
+}
+
+pub struct Client {
+    args: Args,
+    config: Config,
+    session: MatrixSession,
+    http: reqwest::Client,
+    builder: matrix_sdk::ClientBuilder,
+    media_proxy: Option<Arc<MediaProxy>>,
+    with_key_backups: bool,
+}
+
+impl Client {
+    pub async fn run(self) -> anyhow::Result<()> {
+        let Self {
+            args,
+            config,
+            session,
+            http,
+            builder,
+            media_proxy,
+            with_key_backups,
+        } = self;
+        let client = builder.build().await?;
+        client.restore_session(session).await?;
+
         if let Some(command) = args.command {
             match command {
                 Subcommand::BootstrapCrossSigning { if_needed } => {
@@ -174,12 +227,21 @@ impl FuukaBot {
             return Ok(());
         }
 
-        if self.with_key_backups {
+        if with_key_backups {
             crate::matrix::enable_key_backups(&client).await?;
         }
 
-        let prefix = self.config.command.prefix.clone();
-        let (_, config) = tokio::sync::watch::channel(self.config);
+        if let Some(ref media_proxy_config) = config.media_proxy {
+            crate::start_media_proxy(
+                media_proxy.as_deref(),
+                media_proxy_config.listen.clone(),
+            );
+        }
+
+        let pixiv = pixiv_client(&http, &config).await?;
+
+        let prefix = config.command.prefix.clone();
+        let (_, config) = tokio::sync::watch::channel(config);
 
         let injected = self::message::Injected {
             config,
@@ -208,50 +270,33 @@ impl FuukaBot {
 
         Ok(task.await?)
     }
+}
+async fn pixiv_client(
+    http: &reqwest::Client,
+    config: &Config,
+) -> anyhow::Result<Option<Arc<PixivClient>>> {
+    let Some(ref token) = config.pixiv.token else {
+        return Ok(None);
+    };
+    Ok(Some(Arc::new(PixivClient::from_client(token, http).await?)))
+}
 
-    async fn pixiv_client(
-        &self,
-        http: &reqwest::Client,
-    ) -> anyhow::Result<Option<Arc<PixivClient>>> {
-        let Some(ref token) = self.config.pixiv.token else {
-            return Ok(None);
-        };
-        Ok(Some(Arc::new(PixivClient::from_client(token, http).await?)))
-    }
-
-    async fn media_proxy(&self, http: &reqwest::Client) -> anyhow::Result<Option<Arc<MediaProxy>>> {
-        if !self.enable_media_proxy_if_enabled {
-            return Ok(None);
-        }
-
-        match &self.config.media_proxy {
-            Some(config) => {
-                use anyhow::Context;
-
-                let jwk = get_jwk_token().context("Locate JWK file failed")?;
-                let media_proxy = MediaProxy::new(
-                    self.config.matrix.homeserver.clone(),
-                    self.session.tokens.access_token.clone(),
-                    jwk,
-                    http,
-                )?;
-
-                let addr = &config.listen;
-                let router = media_proxy.router();
-                let listener = tokio::net::TcpListener::bind(addr).await?;
-                tokio::spawn(
-                    async move {
-                        axum::serve(listener, router)
-                            .with_graceful_shutdown(graceful_shutdown_future())
-                            .await
-                    }
-                    .instrument(tracing::info_span!("media_proxy")),
-                );
-                Ok(Some(Arc::new(media_proxy)))
+fn start_media_proxy(media_proxy: Option<&MediaProxy>, addr: String) {
+    let Some(media_proxy) = media_proxy else {
+        return;
+    };
+    let router = media_proxy.router();
+    tokio::spawn(
+        async move {
+            let Ok(listener) = tokio::net::TcpListener::bind(addr).await else {
+                return;
+            };
+            if let Err(e) = axum::serve(listener, router).await {
+                tracing::warn!("{e}");
             }
-            None => Ok(None),
         }
-    }
+        .instrument(tracing::info_span!("media_proxy")),
+    );
 }
 
 /// A sharable graceful shutdown signal.

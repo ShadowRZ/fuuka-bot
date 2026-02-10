@@ -1,4 +1,3 @@
-use fuuka_bot::FuukaBot;
 use tracing::level_filters::LevelFilter;
 #[cfg(not(feature = "tokio-console"))]
 use tracing_subscriber::fmt::Layer;
@@ -32,9 +31,10 @@ async fn main() -> anyhow::Result<()> {
         .with(filter)
         .init();
 
-    FuukaBot::from_config()?
-        .enable_media_proxy_if_enabled()?
+    fuuka_bot::builder()
         .with_key_backups()
+        .with_optional_media_proxy()
+        .build()?
         .run()
         .await
 }
