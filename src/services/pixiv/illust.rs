@@ -101,7 +101,7 @@ pub async fn send(
             .await?
             .to_vec();
 
-        let info = crate::imageinfo(&image)?;
+        let info = crate::matrix::imageinfo(&image)?;
 
         let config = AttachmentConfig::new()
             .info(AttachmentInfo::Image(BaseImageInfo {

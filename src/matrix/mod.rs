@@ -1,9 +1,17 @@
 use anyhow::Context;
 use matrix_sdk::{
     config::SyncSettings,
-    ruma::{api::client::uiaa, presence::PresenceState},
+    ruma::{
+        OwnedRoomOrAliasId,
+        api::client::uiaa,
+        events::room::{
+            ImageInfo, member::StrippedRoomMemberEvent, tombstone::OriginalSyncRoomTombstoneEvent,
+        },
+        presence::PresenceState,
+    },
 };
 use rpassword::read_password;
+use tracing::Instrument;
 
 /// Wraps [matrix_sdk::encryption::Encryption::bootstrap_cross_signing_if_needed] for CLI,
 /// which prompts for the account's password using [rpassword].
@@ -254,4 +262,125 @@ pub(crate) async fn log_encryption_info(client: &matrix_sdk::Client) -> anyhow::
     }
 
     Ok(())
+}
+
+/// Derive [ImageInfo] from a data blob.
+pub(crate) fn imageinfo(data: &[u8]) -> anyhow::Result<ImageInfo> {
+    use file_format::FileFormat;
+    use matrix_sdk::ruma::UInt;
+    use matrix_sdk::ruma::events::room::ThumbnailInfo;
+
+    let dimensions = imagesize::blob_size(data)?;
+    let (width, height) = (dimensions.width, dimensions.height);
+    let format = FileFormat::from_bytes(data);
+    let mimetype = format.media_type();
+    let size = data.len();
+    let mut thumb = ThumbnailInfo::new();
+    let width = UInt::try_from(width)?;
+    let height = UInt::try_from(height)?;
+    let size = UInt::try_from(size)?;
+    thumb.width = Some(width);
+    thumb.height = Some(height);
+    thumb.mimetype = Some(mimetype.to_string());
+    thumb.size = Some(size);
+    let mut info = ImageInfo::new();
+    info.width = Some(width);
+    info.height = Some(height);
+    info.mimetype = Some(mimetype.to_string());
+    info.size = Some(size);
+    info.thumbnail_info = Some(Box::new(thumb));
+
+    Ok(info)
+}
+
+/// Called when a member event is from an invited room.
+pub(super) async fn on_stripped_member(
+    ev: StrippedRoomMemberEvent,
+    room: matrix_sdk::Room,
+    client: matrix_sdk::Client,
+) {
+    // Ignore state events not for ourselves.
+    if ev.state_key != client.user_id().unwrap() {
+        return;
+    }
+
+    tokio::spawn(
+        async move {
+            let room_id = room.room_id();
+            tracing::info!("Autojoining room {}", room_id);
+            let mut delay = 2;
+            while let Err(e) = room.join().await {
+                use tokio::time::{Duration, sleep};
+                tracing::warn!(
+                    %room_id,
+                    "Failed to join room {room_id} ({e:#}), retrying in {delay}s",
+                );
+                sleep(Duration::from_secs(delay)).await;
+                delay *= 2;
+
+                if delay > 3600 {
+                    tracing::error!(
+                        %room_id,
+                        "Can't join room {room_id} ({e:#})"
+                    );
+                    break;
+                }
+            }
+        }
+        .instrument(tracing::info_span!("on_stripped_member")),
+    );
+}
+
+/// Called when we have a tombstone event.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        room_id = %room.room_id(),
+    ),
+)]
+pub(super) async fn on_room_replace(
+    ev: OriginalSyncRoomTombstoneEvent,
+    room: matrix_sdk::Room,
+    client: matrix_sdk::Client,
+) {
+    tokio::spawn(async move {
+        let room_id: OwnedRoomOrAliasId = ev.content.replacement_room.into();
+        tracing::info!(
+            room_id = %room.room_id(),
+            "Room replaced, Autojoining new room {}",
+            room_id
+        );
+        let sender = ev.sender;
+        let server_name = sender.server_name();
+        let mut delay = 2;
+        while let Err(e) = client
+            .join_room_by_id_or_alias(&room_id, &[server_name.into()])
+            .await
+        {
+            use tokio::time::{Duration, sleep};
+            tracing::warn!(
+                %room_id,
+                "Failed to join replacement room {room_id} ({e:#}), retrying in {delay}s"
+            );
+            sleep(Duration::from_secs(delay)).await;
+            delay *= 2;
+
+            if delay > 3600 {
+                tracing::error!(
+                    %room_id,
+                    "Can't join replacement room {room_id} ({e:#}), please join manually."
+                );
+                break;
+            }
+        }
+        tokio::spawn(async move {
+            if let Err(e) = room.leave().await {
+                tracing::error!(
+                    room_id = %room.room_id(),
+                    "Can't leave the original room {} ({e:#})",
+                    room.room_id()
+                );
+            }
+        });
+    });
 }

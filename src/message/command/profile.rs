@@ -92,7 +92,7 @@ pub mod avatar {
                 format: MediaFormat::File,
             };
             let data = client.media().get_media_content(&request, false).await?;
-            let mut info = crate::imageinfo(&data)?;
+            let mut info = crate::matrix::imageinfo(&data)?;
             info.thumbnail_source = Some(MediaSource::Plain(avatar_url.into()));
 
             Ok(info)
