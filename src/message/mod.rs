@@ -34,7 +34,7 @@ pub struct Injected {
     pub prefix: String,
     pub http: reqwest::Client,
     pub pixiv: Option<Arc<pixrs::PixivClient>>,
-    pub media_proxy: Option<Arc<MediaProxy>>,
+    pub media_proxy: Option<MediaProxy>,
 }
 
 /// Called when a message is sent.

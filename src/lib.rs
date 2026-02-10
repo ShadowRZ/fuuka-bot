@@ -127,7 +127,6 @@ impl Builder {
             .request_config(RequestConfig::new().timeout(APP_DEFAULT_TIMEOUT))
             .homeserver_url(&config.matrix.homeserver)
             .sqlite_store(store_path, None);
-        let media_proxy = self.media_proxy(&http, &config, &session)?;
 
         Ok(crate::Client {
             args,
@@ -135,36 +134,9 @@ impl Builder {
             session,
             http,
             builder,
-            media_proxy,
             with_key_backups: self.with_key_backups,
+            with_optional_media_proxy: self.with_optional_media_proxy,
         })
-    }
-
-    fn media_proxy(
-        &self,
-        http: &reqwest::Client,
-        config: &Config,
-        session: &MatrixSession,
-    ) -> anyhow::Result<Option<Arc<MediaProxy>>> {
-        if !self.with_optional_media_proxy {
-            return Ok(None);
-        }
-
-        match &config.media_proxy {
-            Some(_) => {
-                use anyhow::Context;
-
-                let jwk = crate::env::jwk_token().context("Locate JWK file failed")?;
-                let media_proxy = MediaProxy::new(
-                    config.matrix.homeserver.clone(),
-                    session.tokens.access_token.clone(),
-                    jwk,
-                    http,
-                )?;
-                Ok(Some(Arc::new(media_proxy)))
-            }
-            None => Ok(None),
-        }
     }
 }
 
@@ -174,8 +146,8 @@ pub struct Client {
     session: MatrixSession,
     http: reqwest::Client,
     builder: matrix_sdk::ClientBuilder,
-    media_proxy: Option<Arc<MediaProxy>>,
     with_key_backups: bool,
+    with_optional_media_proxy: bool,
 }
 
 impl Client {
@@ -186,8 +158,8 @@ impl Client {
             session,
             http,
             builder,
-            media_proxy,
             with_key_backups,
+            with_optional_media_proxy,
         } = self;
         let client = builder.build().await?;
         client.restore_session(session).await?;
@@ -222,8 +194,9 @@ impl Client {
             crate::matrix::enable_key_backups(&client).await?;
         }
 
-        if let Some(ref media_proxy_config) = config.media_proxy {
-            crate::start_media_proxy(media_proxy.as_deref(), media_proxy_config.listen.clone());
+        let media_proxy = media_proxy(&client, &config)?;
+        if with_optional_media_proxy && let Some(ref media_proxy_config) = config.media_proxy {
+            crate::start_media_proxy(media_proxy.as_ref(), media_proxy_config.listen.clone());
         }
 
         let pixiv = pixiv_client(&http, &config).await?;
@@ -259,6 +232,20 @@ impl Client {
         Ok(task.await?)
     }
 }
+
+fn media_proxy(client: &matrix_sdk::Client, config: &Config) -> anyhow::Result<Option<MediaProxy>> {
+    match &config.media_proxy {
+        Some(_) => {
+            use anyhow::Context;
+
+            let jwk = crate::env::jwk_token().context("Locate JWK file failed")?;
+            let media_proxy = MediaProxy::new(jwk, client)?;
+            Ok(Some(media_proxy))
+        }
+        None => Ok(None),
+    }
+}
+
 async fn pixiv_client(
     http: &reqwest::Client,
     config: &Config,
