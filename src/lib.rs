@@ -12,6 +12,7 @@
 //!
 //! Where `<version>` is the running version of the bot.
 pub mod config;
+pub mod env;
 pub mod format;
 pub mod matrix;
 pub mod media_proxy;
@@ -33,7 +34,6 @@ use matrix_sdk::config::RequestConfig;
 use matrix_sdk::config::SyncSettings;
 use matrix_sdk::ruma::presence::PresenceState;
 use pixrs::PixivClient;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
@@ -112,21 +112,16 @@ impl Builder {
         let args = Args::parse();
         use anyhow::Context;
 
-        let cred = get_config_file(CREDENTIALS_FILE)?;
-        if !cred.try_exists()? {
-            anyhow::bail!("No credentials files provided!");
-        }
+        let session = crate::env::credentials().context("Getting credentials failed!")?;
 
-        let session = get_credentials().context("Getting credentials failed!")?;
-
-        let config: Config = get_config().context("Getting config failed!")?;
+        let config: Config = crate::env::config().context("Getting config failed!")?;
 
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
             .hickory_dns(true)
             .build()?;
 
-        let store_path = get_store_path()?;
+        let store_path = crate::env::store()?;
         let builder = matrix_sdk::Client::builder()
             .http_client(http.clone())
             .request_config(RequestConfig::new().timeout(APP_DEFAULT_TIMEOUT))
@@ -159,7 +154,7 @@ impl Builder {
             Some(_) => {
                 use anyhow::Context;
 
-                let jwk = get_jwk_token().context("Locate JWK file failed")?;
+                let jwk = crate::env::jwk_token().context("Locate JWK file failed")?;
                 let media_proxy = MediaProxy::new(
                     config.matrix.homeserver.clone(),
                     session.tokens.access_token.clone(),
@@ -236,7 +231,7 @@ impl Client {
         let prefix = config.command.prefix.clone();
         let (_, config) = tokio::sync::watch::channel(config);
 
-        let injected = self::message::Injected {
+        let injected = crate::message::Injected {
             config,
             prefix,
             http,
@@ -315,70 +310,6 @@ pub async fn graceful_shutdown_future() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
-}
-
-static CREDENTIALS_FILE: &str = "credentials.json";
-static CONFIG_FILE: &str = "fuuka-bot.toml";
-static JWK_TOKEN_FILE: &str = "fuuka-bot.jwk.json";
-
-fn get_config_file(file: &'static str) -> anyhow::Result<PathBuf> {
-    static ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY: &str = "FUUKA_BOT_CONFIGURATION_DIRECTORY";
-    static ENV_CONFIGURATION_DIRECTORY: &str = "CONFIGURATION_DIRECTORY";
-
-    let dir = std::env::var(ENV_FUUKA_BOT_CONFIGURATION_DIRECTORY)
-        .ok()
-        .or_else(|| std::env::var(ENV_CONFIGURATION_DIRECTORY).ok());
-
-    let mut path = PathBuf::new();
-    if let Some(dir) = dir {
-        path.push(dir);
-    }
-    path.push(file);
-
-    Ok(path)
-}
-
-fn get_jwk_token() -> anyhow::Result<jose_jwk::Jwk> {
-    let file = get_config_file(JWK_TOKEN_FILE)?;
-
-    let contents = std::fs::read_to_string(file)?;
-    let jwk = serde_json::from_str::<jose_jwk::Jwk>(&contents)?;
-    Ok(jwk)
-}
-
-fn get_credentials() -> anyhow::Result<MatrixSession> {
-    let file = get_config_file(CREDENTIALS_FILE)?;
-
-    let contents = std::fs::read_to_string(file)?;
-    let session = serde_json::from_str::<MatrixSession>(&contents)?;
-    Ok(session)
-}
-
-fn get_config() -> anyhow::Result<Config> {
-    let file = get_config_file(CONFIG_FILE)?;
-
-    let contents = std::fs::read_to_string(file)?;
-    let config = toml::from_str::<Config>(&contents)?;
-    Ok(config)
-}
-
-fn get_store_path() -> anyhow::Result<PathBuf> {
-    static ENV_FUUKA_BOT_STATE_DIRECTORY: &str = "FUUKA_BOT_STATE_DIRECTORY";
-    static ENV_STATE_DIRECTORY: &str = "STATE_DIRECTORY";
-
-    static SQLITE_STORE_PATH: &str = "store";
-
-    let dir = std::env::var(ENV_FUUKA_BOT_STATE_DIRECTORY)
-        .ok()
-        .or_else(|| std::env::var(ENV_STATE_DIRECTORY).ok());
-
-    let mut path = PathBuf::new();
-    if let Some(dir) = dir {
-        path.push(dir);
-    }
-    path.push(SQLITE_STORE_PATH);
-
-    Ok(path)
 }
 
 async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
