@@ -86,11 +86,8 @@ native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls"]
 rustls-tls = [
   "reqwest/rustls-tls",
   "matrix-sdk/rustls-tls",
-  "rustls-tls-native-roots",
+  "reqwest/rustls-tls-native-roots",
 ]
-
-# Rustls
-rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
 
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
