@@ -13,9 +13,6 @@ anyhow = "1.0.100"
 axum = "0.8.7"
 bytes = "1.11.0"
 clap = { version = "4.5.57", features = ["derive"] }
-console-subscriber = { version = "0.5.0", features = [
-  "parking_lot",
-], optional = true }
 crc32fast = "1.5.0"
 cronchik = { version = "2.0.4", features = ["time", "serde"] }
 envsubst = "0.2.1"
@@ -48,7 +45,6 @@ tl = "0.7.8"
 tokio = { version = "1.48.0", features = ["full"] }
 toml = "0.9.8"
 tracing = "0.1.41"
-tracing-journald = { version = "0.3.1", optional = true }
 tracing-subscriber = { version = "0.3.20", features = [
   "env-filter",
   "parking_lot",
@@ -89,16 +85,8 @@ rustls-tls = [
   "reqwest/rustls-tls-native-roots",
 ]
 
-tokio-console = ["dep:console-subscriber", "tokio/tracing"]
-
-use-journald = ["dep:tracing-journald"]
-
 [profile.release]
-strip = "debuginfo"
+strip = true
 lto = true
 opt-level = "z"
 codegen-units = 1
-
-[profile.release-abort]
-inherits = "release"
-panic = "abort"

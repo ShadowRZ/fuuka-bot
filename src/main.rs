@@ -1,6 +1,4 @@
 use tracing::level_filters::LevelFilter;
-#[cfg(not(feature = "tokio-console"))]
-use tracing_subscriber::fmt::Layer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -8,28 +6,8 @@ async fn main() -> anyhow::Result<()> {
     let filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
         .from_env_lossy();
-    #[cfg(feature = "tokio-console")]
-    let filter = filter.add_directive("tokio=trace,runtime=trace".parse()?);
 
-    #[cfg(feature = "tokio-console")]
-    let console_layer = console_subscriber::spawn();
-    #[cfg(not(feature = "tokio-console"))]
-    let console_layer: Option<Layer<_>> = None;
-
-    #[cfg(feature = "use-journald")]
-    let logging_layer = tracing_journald::layer()?;
-    #[cfg(not(feature = "use-journald"))]
-    let logging_layer = tracing_subscriber::fmt::layer()
-        .with_level(true)
-        .with_target(true)
-        .with_ansi(true)
-        .compact();
-
-    tracing_subscriber::registry()
-        .with(console_layer)
-        .with(logging_layer)
-        .with(filter)
-        .init();
+    tracing_subscriber::registry().with(filter).init();
 
     fuuka_bot::builder()
         .with_key_backups()
