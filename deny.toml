@@ -1,0 +1,67 @@
+[graph]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-musl"]
+all-features = true
+no-default-features = false
+
+[advisories]
+unmaintained = "workspace"
+unsound = "all"
+ignore = []
+git-fetch-with-cli = true
+
+[licenses]
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Zlib",
+  "BSL-1.0",
+  "AGPL-3.0",
+]
+confidence-threshold = 0.8
+
+# Bundling of webpki-roots is unsupported
+[[licenses.exceptions]]
+allow = ["CDLA-Permissive-2.0"]
+name = "webpki-roots"
+
+# This section is considered when running `cargo deny check bans`.
+# More documentation about the 'bans' section can be found here:
+# https://embarkstudios.github.io/cargo-deny/checks/bans/cfg.html
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+allow-workspace = false
+skip = [
+  "rand_core@0.6.4",
+  "rand_chacha@0.3.1",
+  "rand@0.8.5",
+  "openssl-probe@0.1.6",
+  "itertools@0.10.5",
+  "hashbrown@0.15.5",
+  "getrandom@0.2.17",
+  { crate = "thiserror@1.0.69", reason = "envsubst, oauth2 uses this old version" },
+  { crate = "thiserror-impl@1.0.69", reason = "envsubst, oauth2 uses this old version" },
+  { crate = "prost@0.13.5", reason = "vodozemac uses this old version" },
+  { crate = "prost-derive@0.13.5", reason = "vodozemac uses this old version" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = [
+  "https://github.com/matrix-org/matrix-rust-sdk",
+  "https://github.com/ruma/ruma",
+]
+
+[sources.allow-org]
+github = ["ShadowRZ"]

@@ -1,6 +1,6 @@
 [package]
 name = "fuuka-bot"
-license = "Apache-2.0"
+license = "AGPL-3.0-or-later"
 version = "0.4.7"
 edition = "2024"
 repository = "https://github.com/ShadowRZ/fuuka-bot"
