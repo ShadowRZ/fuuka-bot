@@ -67,7 +67,7 @@ git = "https://github.com/matrix-org/matrix-rust-sdk"
 
 [dependencies.reqwest]
 default-features = false
-features = ["gzip", "brotli", "deflate", "json", "hickory-dns"]
+features = ["gzip", "brotli", "deflate", "json"]
 version = "0.12.28"
 
 [dependencies.pixrs]

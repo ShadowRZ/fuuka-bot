@@ -118,7 +118,6 @@ impl Builder {
 
         let http = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
-            .hickory_dns(true)
             .build()?;
 
         let store_path = crate::env::store()?;
