@@ -7,7 +7,7 @@ use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::{room::RoomMember, ruma::MxcUri};
 use url::Url;
 
-use crate::MembershipHistory;
+use crate::matrix::streams::membership::MembershipStream;
 
 /// Extensions to [RoomMember].
 pub trait RoomMemberExt {
@@ -87,7 +87,7 @@ pub trait RoomExt {
         ev: &OriginalRoomMessageEvent,
     ) -> impl Future<Output = anyhow::Result<OwnedUserId>> + Send;
     fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember)
-    -> MembershipHistory<'a>;
+    -> MembershipStream<'a>;
     fn run_with_typing<F>(&self, fut: F) -> impl Future<Output = anyhow::Result<()>> + Send
     where
         F: IntoFuture<Output = anyhow::Result<()>> + Send,
@@ -140,11 +140,8 @@ impl RoomExt for matrix_sdk::Room {
             .unwrap_or(ev.sender.clone()))
     }
 
-    fn get_member_membership_changes<'a>(
-        &'a self,
-        member: &'a RoomMember,
-    ) -> MembershipHistory<'a> {
-        MembershipHistory::new(self, member)
+    fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember) -> MembershipStream<'a> {
+        crate::matrix::streams::membership::history(self, member)
     }
 
     async fn run_with_typing<F>(&self, fut: F) -> anyhow::Result<()>

@@ -1,3 +1,5 @@
+pub mod streams;
+
 use anyhow::Context;
 use matrix_sdk::{
     config::SyncSettings,

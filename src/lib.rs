@@ -16,15 +16,13 @@ pub mod env;
 pub mod format;
 pub mod matrix;
 pub mod media_proxy;
-pub mod member_changes;
 pub mod message;
 pub mod services;
-pub mod traits;
+mod traits;
 pub mod types;
 
 pub use crate::config::Config;
 pub use crate::media_proxy::MediaProxy;
-pub use crate::member_changes::MembershipHistory;
 pub use crate::traits::*;
 pub use crate::types::Error;
 
