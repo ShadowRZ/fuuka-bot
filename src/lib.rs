@@ -11,8 +11,8 @@
 //! ```
 //!
 //! Where `<version>` is the running version of the bot.
-pub mod config;
-pub mod env;
+mod config;
+mod env;
 pub mod format;
 pub mod matrix;
 pub mod media_proxy;

@@ -1,3 +1,16 @@
+//! Formatting functions.
+//!
+//! ## Details
+//!
+//! Formatting is done by [minijinja].
+//!
+//! For each service / formatter, there are two modules in each:
+//!
+//! * `text`: Formats to plaintext.
+//! * `html`: Formats to HTML.
+//!
+//! Additional filters are avaliable in [filter],
+//! and are shared between HTML template and text template.
 use std::sync::LazyLock;
 
 use minijinja::Environment;
@@ -33,11 +46,14 @@ pub static ENVIRONMENT: LazyLock<Environment> = LazyLock::new(|| {
     env
 });
 
-mod filter {
+/// Additional filters.
+pub mod filter {
+    /// Content a piece of text to HTML by converting literal newline with HTML `<br>` tag.
     pub fn to_html(text: &str) -> String {
         text.replace("\n", "<br/>")
     }
 
+    /// Prepend `>` to each line of given text.
     pub fn quote(text: &str) -> String {
         let quoted: Vec<_> = text.lines().map(|s| format!("> {s}")).collect();
 
