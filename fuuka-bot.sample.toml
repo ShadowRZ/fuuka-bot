@@ -8,6 +8,9 @@ prefix = "%%"
 [matrix]
 # Homeserver URL.
 homeserver = "https://matrix.example.com"
+# Timeout of homeserver connection, measured in seconds.
+# Defaults to 300 seconds (5 minutes).
+# timeout = 300
 
 # Service URLs.
 [services]

@@ -2,8 +2,8 @@
 
 use cronchik::CronSchedule;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId, RoomId};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::{collections::HashMap, time::Duration};
 use url::Url;
 
 use crate::IllustTagsInfoExt;
@@ -46,6 +46,11 @@ pub struct CommandConfig {
 #[serde(rename_all = "kebab-case")]
 pub struct MatrixConfig {
     pub homeserver: Url,
+    #[serde(
+        default = "matrix_config_default_timeout",
+        deserialize_with = "deserialize_duration_from_seconds"
+    )]
+    pub timeout: Duration,
 }
 
 /// Pixiv feature related configs.
@@ -241,4 +246,20 @@ pub struct MediaProxyConfig {
     pub listen: String,
     pub public_url: Url,
     pub ttl_seconds: u32,
+}
+
+/// Returns the default duration of Matrix connection timeout,
+/// which is 5 minutes.
+fn matrix_config_default_timeout() -> Duration {
+    static DEFAULT_TIMEOUT: Duration = Duration::from_secs(300);
+
+    DEFAULT_TIMEOUT
+}
+
+fn deserialize_duration_from_seconds<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let duration_sec = u64::deserialize(deserializer)?;
+    Ok(Duration::from_secs(duration_sec))
 }

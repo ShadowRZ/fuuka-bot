@@ -86,8 +86,7 @@ pub trait RoomExt {
         &self,
         ev: &OriginalRoomMessageEvent,
     ) -> impl Future<Output = anyhow::Result<OwnedUserId>> + Send;
-    fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember)
-    -> MembershipStream<'a>;
+    fn get_member_membership_changes<'a>(&'a self, member: &'a RoomMember) -> MembershipStream<'a>;
     fn run_with_typing<F>(&self, fut: F) -> impl Future<Output = anyhow::Result<()>> + Send
     where
         F: IntoFuture<Output = anyhow::Result<()>> + Send,

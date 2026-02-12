@@ -33,7 +33,6 @@ use matrix_sdk::config::SyncSettings;
 use matrix_sdk::ruma::presence::PresenceState;
 use pixrs::PixivClient;
 use std::sync::Arc;
-use std::time::Duration;
 use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
@@ -54,8 +53,6 @@ static APP_PRESENCE_TEXT: &str = concat!(
     ") | ",
     env!("CARGO_PKG_REPOSITORY")
 );
-
-static APP_DEFAULT_TIMEOUT: Option<Duration> = Some(Duration::from_secs(300));
 
 #[derive(Debug, clap::Parser)]
 #[command(disable_help_subcommand = true)]
@@ -121,7 +118,7 @@ impl Builder {
         let store_path = crate::env::store()?;
         let builder = matrix_sdk::Client::builder()
             .http_client(http.clone())
-            .request_config(RequestConfig::new().timeout(APP_DEFAULT_TIMEOUT))
+            .request_config(RequestConfig::new().timeout(config.matrix.timeout))
             .homeserver_url(&config.matrix.homeserver)
             .sqlite_store(store_path, None);
 
