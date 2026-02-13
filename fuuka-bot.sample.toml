@@ -1,5 +1,7 @@
+# Optional bot config.
+# [bot]
 # Admin user. (Optional)
-admin-user = "@example:example.org"
+# admin = "@example:example.org"
 
 [command]
 # The command prefix.
@@ -12,22 +14,39 @@ homeserver = "https://matrix.example.com"
 # Defaults to 300 seconds (5 minutes).
 # timeout = 300
 
-# Service URLs.
-[services]
-# Hitokoto API.
-hitokoto = "https://v1.hitokoto.cn"
+# Service configurations.
+[services.hitokoto]
+# Hitokoto API base URL.
+# base-url = "https://v1.hitokoto.cn"
+[services.github]
+# GitHub API Base URL. In most cases should not be changed.
+# base-url = "https://api.github.com"
+# Token used by GitHub API.
+# See https://docs.github.com/en/rest/authentication/authenticating-to-the-rest-api
+token = ""
+[services.github.pr-tracker.targets.'NixOS/nixpkgs']
+'\Astaging\z' = "staging-next"
+'\Astaging-next\z' = "master"
+'\Astaging-next-([\d.]+)\z' = "release-$1"
+'\Ahaskell-updates\z' = "staging"
+'\Amaster\z' = ["nixpkgs-unstable", "nixos-unstable-small"]
+'\Anixos-(.*)-small\z' = "nixos-$1"
+'\Arelease-([\d.]+)\z' = ["nixos-$1-small", "nixpkgs-$1-darwin"]
+'\Astaging-((1.|20)\.\d{2})\z' = "release-$1"
+'\Astaging-((2[1-9]|[3-90].)\.\d{2})\z' = "staging-next-$1"
+'\Astaging-nixos\z' = "master"
 
 [pixiv]
 enabled = false
 r18 = false
 token = "????????_XXXXXXXXXXXXXXXXXXXX"
 
-[[pixiv.traps]]
+[[pixiv.tag-triggers]]
 rooms = ["!XXXXXXXXXXX:example.org"]
 required-tags = []
 target = ""
 
-[[pixiv.traps]]
+[[pixiv.tag-triggers]]
 required-tags = []
 target = ""
 
@@ -37,9 +56,3 @@ jerryxiao = true
 fortune = false
 pixiv = false
 pixiv-r18 = false
-
-[stickers]
-send-to = "!XXXXXXXXXXX:example.org"
-
-[nixpkgs-pr]
-token = ""

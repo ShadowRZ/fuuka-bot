@@ -37,16 +37,31 @@ pub struct MediaProxy {
 struct MediaProxyState {
     hmac_key: Secret,
     client: matrix_sdk::Client,
+    listen: String,
+    public_url: Url,
+    ttl_seconds: u32,
 }
 
 impl MediaProxy {
-    pub fn new(jwk: Jwk, client: &matrix_sdk::Client) -> anyhow::Result<Self> {
+    pub fn new(
+        jwk: Jwk,
+        client: &matrix_sdk::Client,
+        listen: String,
+        public_url: Url,
+        ttl_seconds: u32,
+    ) -> anyhow::Result<Self> {
         let client = client.clone();
 
         let Some(hmac_key) = extract_jwk_hmac_key(jwk) else {
             anyhow::bail!("No valid HMAC-SHA512 JWK token provided!");
         };
-        let state = Arc::new(MediaProxyState { hmac_key, client });
+        let state = Arc::new(MediaProxyState {
+            hmac_key,
+            client,
+            listen,
+            public_url,
+            ttl_seconds,
+        });
 
         Ok(Self { state })
     }
@@ -58,23 +73,44 @@ impl MediaProxy {
             .with_state(self.state.clone())
     }
 
-    pub fn create_media_url(
-        &self,
-        public_url: &Url,
-        mxc: &MxcUri,
-        ttl_seconds: u32,
-    ) -> anyhow::Result<Url> {
+    pub fn create_media_url(&self, mxc: &MxcUri) -> anyhow::Result<Url> {
         let mut end = MilliSecondsSinceUnixEpoch::now();
-        end.0 += (ttl_seconds * 1000).into();
-        let token = create_media_token(&self.state.hmac_key, mxc, end)?;
+        end.0 += (self.state.ttl_seconds * 1000).into();
+        let token = self.create_media_token(mxc, end)?;
 
-        let mut public_url = public_url.clone();
+        let mut public_url = self.state.public_url.clone();
         public_url
             .path_segments_mut()
             .map_err(|_| anyhow::anyhow!("URL is cannot-be-a-base!"))?
             .pop_if_empty()
             .extend(&["v1", "media", "download", &token]);
         Ok(public_url)
+    }
+
+    pub fn create_media_token(
+        &self,
+        mxc: &MxcUri,
+        end: MilliSecondsSinceUnixEpoch,
+    ) -> anyhow::Result<String> {
+        self::create_media_token(&self.state.hmac_key, mxc, end)
+    }
+
+    pub async fn start(&self) -> anyhow::Result<()> {
+        use tracing::Instrument;
+
+        let listener = tokio::net::TcpListener::bind(&self.state.listen).await?;
+        let router = self.router();
+        tokio::spawn(
+            async move {
+                axum::serve(listener, router)
+                    .with_graceful_shutdown(crate::graceful_shutdown_future())
+                    .await
+                    .unwrap()
+            }
+            .instrument(tracing::info_span!("media_proxy")),
+        );
+
+        Ok(())
     }
 
     async fn health() -> Json<Value> {

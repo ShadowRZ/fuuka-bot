@@ -13,11 +13,11 @@ use matrix_sdk::{
 use mime::Mime;
 use pixrs::{IllustInfo, Restriction};
 
-use crate::config::PixivConfig;
+use crate::config::PixivToplevelConfig;
 
 pub fn format(
     resp: IllustInfo,
-    config: &PixivConfig,
+    config: &PixivToplevelConfig,
     send_r18: bool,
     room_id: &RoomId,
     _prefix: bool,
@@ -70,7 +70,7 @@ pub async fn send(
     room: &Room,
     pixiv: &pixrs::PixivClient,
     http: &reqwest::Client,
-    config: &PixivConfig,
+    config: &PixivToplevelConfig,
     illust_id: i32,
     send_r18: bool,
 ) -> anyhow::Result<()> {

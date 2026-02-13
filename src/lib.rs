@@ -22,6 +22,8 @@ mod traits;
 pub mod types;
 
 pub use crate::config::Config;
+use crate::config::MediaProxyConfig;
+use crate::config::PixivConfig;
 pub use crate::media_proxy::MediaProxy;
 pub use crate::traits::*;
 pub use crate::types::Error;
@@ -36,7 +38,6 @@ use std::sync::Arc;
 use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
-use tracing::Instrument;
 
 static APP_USER_AGENT: &str = concat!(
     env!("CARGO_PKG_NAME"),
@@ -53,6 +54,11 @@ static APP_PRESENCE_TEXT: &str = concat!(
     ") | ",
     env!("CARGO_PKG_REPOSITORY")
 );
+
+pub struct Context {
+    pub media_proxy: Option<MediaProxy>,
+    pub pixiv: Option<(Arc<PixivClient>, PixivConfig)>,
+}
 
 #[derive(Debug, clap::Parser)]
 #[command(disable_help_subcommand = true)]
@@ -189,8 +195,8 @@ impl Client {
         }
 
         let media_proxy = media_proxy(&client, &config)?;
-        if with_optional_media_proxy && let Some(ref media_proxy_config) = config.media_proxy {
-            crate::start_media_proxy(media_proxy.as_ref(), media_proxy_config.listen.clone());
+        if with_optional_media_proxy && let Some(ref media_proxy) = media_proxy {
+            media_proxy.start().await?;
         }
 
         let pixiv = pixiv_client(&http, &config).await?;
@@ -229,14 +235,24 @@ impl Client {
 
 fn media_proxy(client: &matrix_sdk::Client, config: &Config) -> anyhow::Result<Option<MediaProxy>> {
     match &config.media_proxy {
-        Some(_) => {
+        MediaProxyConfig::Enabled {
+            listen,
+            public_url,
+            ttl_seconds,
+        } => {
             use anyhow::Context;
 
             let jwk = crate::env::jwk_token().context("Locate JWK file failed")?;
-            let media_proxy = MediaProxy::new(jwk, client)?;
+            let media_proxy = MediaProxy::new(
+                jwk,
+                client,
+                listen.clone(),
+                public_url.clone(),
+                *ttl_seconds,
+            )?;
             Ok(Some(media_proxy))
         }
-        None => Ok(None),
+        MediaProxyConfig::Disabled => Ok(None),
     }
 }
 
@@ -248,24 +264,6 @@ async fn pixiv_client(
         return Ok(None);
     };
     Ok(Some(Arc::new(PixivClient::from_client(token, http).await?)))
-}
-
-fn start_media_proxy(media_proxy: Option<&MediaProxy>, addr: String) {
-    let Some(media_proxy) = media_proxy else {
-        return;
-    };
-    let router = media_proxy.router();
-    tokio::spawn(
-        async move {
-            let Ok(listener) = tokio::net::TcpListener::bind(addr).await else {
-                return;
-            };
-            if let Err(e) = axum::serve(listener, router).await {
-                tracing::warn!("{e}");
-            }
-        }
-        .instrument(tracing::info_span!("media_proxy")),
-    );
 }
 
 /// A sharable graceful shutdown signal.

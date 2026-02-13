@@ -2,14 +2,18 @@
 
 use cronchik::CronSchedule;
 use matrix_sdk::ruma::{OwnedRoomId, OwnedUserId, RoomId};
-use serde::{Deserialize, Deserializer, Serialize};
-use std::{collections::HashMap, time::Duration};
+use secrecy::SecretString;
+use serde::{Deserialize, Deserializer};
+use std::{
+    collections::{BTreeMap, HashMap},
+    time::Duration,
+};
 use url::Url;
 
 use crate::IllustTagsInfoExt;
 
 /// The config of Fuuka bot.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
     /// Command configs.
@@ -20,12 +24,12 @@ pub struct Config {
     pub admin_user: Option<OwnedUserId>,
     /// Pixiv related configs.
     #[serde(default)]
-    pub pixiv: PixivConfig,
+    pub pixiv: PixivToplevelConfig,
     /// Optional room features.
     #[serde(default)]
     pub features: FeaturesConfig,
     /// Media proxy configuration.
-    pub media_proxy: Option<MediaProxyConfig>,
+    pub media_proxy: MediaProxyConfig,
     /// HTTP Services configuration.
     pub services: Option<ServiceConfig>,
     /// Stickers feature related configuration.
@@ -35,14 +39,14 @@ pub struct Config {
 }
 
 /// Command configs.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct CommandConfig {
     pub prefix: String,
 }
 
 /// Matrix related configs.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct MatrixConfig {
     pub homeserver: Url,
@@ -54,9 +58,9 @@ pub struct MatrixConfig {
 }
 
 /// Pixiv feature related configs.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "kebab-case")]
-pub struct PixivConfig {
+pub struct PixivToplevelConfig {
     #[serde(default)]
     pub enabled: bool,
     #[serde(default)]
@@ -65,76 +69,130 @@ pub struct PixivConfig {
     /// See <https://pixivfe.pages.dev/obtaining-pixivfe-token/>
     pub token: Option<String>,
     #[serde(default)]
-    pub traps: TrapConfig,
+    pub traps: TagTriggers,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "kebab-case")]
-struct TrapItemInner {
-    #[serde(flatten)]
-    item: TrapItem,
-    #[serde(default)]
-    rooms: Option<Vec<OwnedRoomId>>,
+/// Pixiv feature related configs.
+#[derive(Debug, Clone)]
+pub enum PixivConfig {
+    Disabled,
+    Enabled {
+        token: SecretString,
+        r18: bool,
+        tag_triggers: TagTriggers,
+    },
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+impl<'de> Deserialize<'de> for PixivConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged, rename_all = "kebab-case")]
+        #[allow(dead_code)]
+        enum PixivConfig {
+            Disabled {
+                #[serde(default)]
+                enabled: serde_bool::False,
+            },
+            Enabled {
+                enabled: serde_bool::True,
+                token: SecretString,
+                r18: bool,
+                tag_triggers: TagTriggers,
+            },
+        }
+        PixivConfig::deserialize(deserializer).map(|value| match value {
+            PixivConfig::Disabled { enabled: _ } => Self::Disabled,
+            PixivConfig::Enabled {
+                enabled: _,
+                token,
+                r18,
+                tag_triggers,
+            } => Self::Enabled {
+                token,
+                r18,
+                tag_triggers,
+            },
+        })
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
-pub struct TrapItem {
+pub struct TriggerItem {
     pub required_tags: Vec<String>,
     pub target: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[serde(from = "Vec<TrapItemInner>")]
-pub struct TrapConfig {
-    pub(crate) room_scoped_config: HashMap<OwnedRoomId, Vec<TrapItem>>,
-    pub(crate) global_config: Vec<TrapItem>,
+#[derive(Debug, Clone, Default)]
+pub struct TagTriggers {
+    pub(crate) room_scoped_config: HashMap<OwnedRoomId, Vec<TriggerItem>>,
+    pub(crate) global_config: Vec<TriggerItem>,
 }
 
-impl From<Vec<TrapItemInner>> for TrapConfig {
-    fn from(value: Vec<TrapItemInner>) -> Self {
-        let mut room_scoped_config: HashMap<OwnedRoomId, Vec<TrapItem>> = HashMap::new();
-        let mut global_config = Vec::new();
-        for item in value {
-            match item.rooms {
-                Some(rooms) => {
-                    for room in rooms {
-                        room_scoped_config
-                            .entry(room)
-                            .or_default()
-                            .push(item.item.clone())
-                    }
-                }
-                None => global_config.push(item.item.clone()),
-            }
+impl<'de> Deserialize<'de> for TagTriggers {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize, Debug, Clone)]
+        #[serde(rename_all = "kebab-case")]
+        struct TagTriggers {
+            #[serde(flatten)]
+            item: TriggerItem,
+            #[serde(default)]
+            rooms: Option<Vec<OwnedRoomId>>,
         }
 
-        Self {
-            room_scoped_config,
-            global_config,
-        }
+        Vec::<TagTriggers>::deserialize(deserializer).map(|value| {
+            let mut room_scoped_config: HashMap<OwnedRoomId, Vec<TriggerItem>> = HashMap::new();
+            let mut global_config = Vec::new();
+            for item in value {
+                match item.rooms {
+                    Some(rooms) => {
+                        for room in rooms {
+                            room_scoped_config
+                                .entry(room)
+                                .or_default()
+                                .push(item.item.clone())
+                        }
+                    }
+                    None => global_config.push(item.item.clone()),
+                }
+            }
+
+            Self {
+                room_scoped_config,
+                global_config,
+            }
+        })
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "kebab-case")]
-struct RoomFeaturesInner {
-    #[serde(flatten)]
-    features: RoomFeatures,
-    room: OwnedRoomId,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-#[serde(from = "Vec<RoomFeaturesInner>")]
+#[derive(Debug, Clone, Default)]
 pub struct FeaturesConfig(HashMap<OwnedRoomId, RoomFeatures>);
 
-impl From<Vec<RoomFeaturesInner>> for FeaturesConfig {
-    fn from(value: Vec<RoomFeaturesInner>) -> Self {
-        let mut result = HashMap::new();
-        for item in value {
-            result.insert(item.room, item.features);
+impl<'de> Deserialize<'de> for FeaturesConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize, Debug, Clone)]
+        #[serde(rename_all = "kebab-case")]
+        struct FeaturesConfig {
+            #[serde(flatten)]
+            features: RoomFeatures,
+            room: OwnedRoomId,
         }
-        Self(result)
+        Vec::<FeaturesConfig>::deserialize(deserializer).map(|value| {
+            let mut result = HashMap::new();
+            for item in value {
+                result.insert(item.room, item.features);
+            }
+            Self(result)
+        })
     }
 }
 
@@ -166,7 +224,7 @@ impl FeaturesConfig {
 }
 
 /// Sticker feature config.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct StickerConfig {
     /// Room for storing stickers.
@@ -174,7 +232,7 @@ pub struct StickerConfig {
 }
 
 /// What message features are avaliable.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "kebab-case")]
 pub struct RoomFeatures {
     /// Enable Jerry Xiao like functions.
@@ -192,15 +250,94 @@ pub struct RoomFeatures {
 }
 
 /// Configure various backend APIs
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct ServiceConfig {
-    /// Hitokoto API endpoint.
-    /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
-    pub hitokoto: Option<Url>,
+    pub hitokoto: HitokotoConfig,
+    pub github: GitHubConfig,
 }
 
-impl TrapConfig {
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub struct HitokotoConfig {
+    /// Hitokoto API endpoint.
+    /// The API should implment <https://developer.hitokoto.cn/sentence/#%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E>.
+    #[serde(default = "hitokoto_config_default_base_url")]
+    pub base_url: Url,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub struct GitHubConfig {
+    /// GitHub API endpoint.
+    #[serde(default = "github_config_default_base_url")]
+    pub base_url: Url,
+    pub pr_tracker: PrTrackerConfig,
+}
+
+#[derive(Default, Debug, Clone)]
+pub enum PrTrackerConfig {
+    #[default]
+    Disabled,
+    Enabled {
+        cron: Box<Option<CronSchedule>>,
+        targets: BTreeMap<RepositoryParts, BTreeMap<String, String>>,
+    },
+}
+
+impl<'de> Deserialize<'de> for PrTrackerConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged, rename_all = "kebab-case")]
+        #[allow(dead_code)]
+        enum PrTrackerConfig {
+            Disabled {
+                #[serde(default)]
+                enabled: serde_bool::False,
+            },
+            Enabled {
+                enabled: serde_bool::True,
+                cron: Box<Option<CronSchedule>>,
+                targets: BTreeMap<RepositoryParts, BTreeMap<String, String>>,
+            },
+        }
+        PrTrackerConfig::deserialize(deserializer).map(|value| match value {
+            PrTrackerConfig::Disabled { enabled: _ } => Self::Disabled,
+            PrTrackerConfig::Enabled {
+                enabled: _,
+                targets,
+                cron,
+            } => Self::Enabled { targets, cron },
+        })
+    }
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(try_from = "String")]
+pub struct RepositoryParts {
+    pub owner: String,
+    pub repo: String,
+}
+
+impl TryFrom<String> for RepositoryParts {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let res: Vec<_> = value.split('/').collect();
+        let owner = res.first().map(|str| str.to_string());
+        let repo = res.get(1).map(|str| str.to_string());
+        let (Some(owner), Some(repo)) = (owner, repo) else {
+            anyhow::bail!("invalid format: not in [owner]/[repo] format");
+        };
+
+        Ok(Self { owner, repo })
+    }
+}
+
+impl TagTriggers {
     pub fn check_for_traps(&self, tags: &pixrs::IllustTagsInfo, room_id: &RoomId) -> Option<&str> {
         if let Some(infos) = self.room_scoped_config.get(room_id) {
             for item in infos {
@@ -232,20 +369,69 @@ impl TrapConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct NixpkgsPrConfig {
     pub token: String,
     pub cron: Option<CronSchedule>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "kebab-case")]
-pub struct MediaProxyConfig {
-    pub enabled: bool,
-    pub listen: String,
-    pub public_url: Url,
-    pub ttl_seconds: u32,
+#[derive(Debug, Clone)]
+pub enum MediaProxyConfig {
+    Disabled,
+    Enabled {
+        listen: String,
+        public_url: Url,
+        ttl_seconds: u32,
+    },
+}
+
+impl<'de> Deserialize<'de> for MediaProxyConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged, rename_all = "kebab-case")]
+        #[allow(dead_code)]
+        enum MediaProxyConfig {
+            Disabled {
+                #[serde(default)]
+                enabled: serde_bool::False,
+            },
+            Enabled {
+                enabled: serde_bool::True,
+                listen: String,
+                public_url: Url,
+                ttl_seconds: u32,
+            },
+        }
+        MediaProxyConfig::deserialize(deserializer).map(|value| match value {
+            MediaProxyConfig::Disabled { enabled: _ } => Self::Disabled,
+            MediaProxyConfig::Enabled {
+                enabled: _,
+                listen,
+                public_url,
+                ttl_seconds,
+            } => Self::Enabled {
+                listen,
+                public_url,
+                ttl_seconds,
+            },
+        })
+    }
+}
+
+/// Returns the default Hitokoto service API URL,
+/// which is https://v1.hitokoto.cn
+fn hitokoto_config_default_base_url() -> Url {
+    "https://v1.hitokoto.cn".parse().unwrap()
+}
+
+/// Returns the default Hitokoto service API URL,
+/// which is https://v1.hitokoto.cn
+fn github_config_default_base_url() -> Url {
+    "https://api.github.com".parse().unwrap()
 }
 
 /// Returns the default duration of Matrix connection timeout,

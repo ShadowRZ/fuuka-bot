@@ -35,7 +35,9 @@ parking_lot = "0.12.5"
 pin-project-lite = "0.2.16"
 regex = "1.12.2"
 rpassword = { version = "7.4.0" }
+secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
+serde-bool = "0.1.4"
 serde_json = "1.0.145"
 sha2 = "0.10.9"
 shell-words = "1.1.0"

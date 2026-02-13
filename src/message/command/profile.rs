@@ -131,27 +131,13 @@ pub mod avatar {
 
             let media_proxy = &injected.media_proxy;
             let homeserver = { injected.config.borrow().matrix.homeserver.clone() };
-            let (public_url, ttl_seconds) = {
-                let config = injected.config.borrow();
-
-                let public_url = config
-                    .media_proxy
-                    .as_ref()
-                    .map(|cfg| cfg.public_url.clone());
-                let ttl_seconds = config.media_proxy.as_ref().map(|cfg| cfg.ttl_seconds);
-
-                (public_url, ttl_seconds)
-            };
-            let public_url = public_url.as_ref();
 
             let mut body = String::new();
             let current_avatar = member
                 .avatar_url()
                 .map(|uri| {
-                    if let (Some(media_proxy), Some(public_url), Some(ttl_seconds)) =
-                        (media_proxy, public_url, ttl_seconds)
-                    {
-                        media_proxy.create_media_url(public_url, uri, ttl_seconds)
+                    if let Some(media_proxy) = media_proxy {
+                        media_proxy.create_media_url(uri)
                     } else {
                         uri.http_url(&homeserver)
                     }
@@ -194,17 +180,8 @@ pub mod avatar {
                                     let timestamp =
                                         OffsetDateTime::from_unix_timestamp_nanos(nanos)?
                                             .format(&Rfc3339)?;
-                                    let avatar_link = if let (
-                                        Some(media_proxy),
-                                        Some(public_url),
-                                        Some(ttl_seconds),
-                                    ) = (media_proxy, public_url, ttl_seconds)
-                                    {
-                                        media_proxy.create_media_url(
-                                            public_url,
-                                            avatar_url,
-                                            ttl_seconds,
-                                        )?
+                                    let avatar_link = if let Some(media_proxy) = media_proxy {
+                                        media_proxy.create_media_url(avatar_url)?
                                     } else {
                                         avatar_url.http_url(&homeserver)?
                                     };
@@ -225,13 +202,8 @@ pub mod avatar {
                                 .content
                                 .avatar_url
                                 .map(|uri| {
-                                    if let (
-                                        Some(media_proxy),
-                                        Some(public_url),
-                                        Some(ttl_seconds),
-                                    ) = (media_proxy, public_url, ttl_seconds)
-                                    {
-                                        media_proxy.create_media_url(public_url, &uri, ttl_seconds)
+                                    if let Some(media_proxy) = media_proxy {
+                                        media_proxy.create_media_url(&uri)
                                     } else {
                                         uri.http_url(&homeserver)
                                     }

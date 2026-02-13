@@ -17,7 +17,7 @@ pub async fn process(
             .borrow()
             .services
             .as_ref()
-            .and_then(|s| s.hitokoto.clone())
+            .map(|s| s.hitokoto.base_url.clone())
     } {
         let resp = crate::services::hitokoto::request(&injected.http, hitokoto).await?;
         let content = crate::services::hitokoto::format(resp);
