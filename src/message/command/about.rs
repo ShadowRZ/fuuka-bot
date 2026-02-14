@@ -1,4 +1,4 @@
-use crate::message::Injected;
+use crate::Context;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -25,13 +25,13 @@ static HELP_HTML: &str = concat!(
     "/issues</p>",
 );
 
-#[tracing::instrument(name = "help", skip(ev, room, injected), err)]
+#[tracing::instrument(name = "help", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
-    let _ = injected;
+    let _ = context;
 
     room.send(
         RoomMessageEventContent::text_html(HELP_TEXT, HELP_HTML).make_reply_to(

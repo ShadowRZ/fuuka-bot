@@ -1,4 +1,4 @@
-use crate::message::Injected;
+use crate::Context;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -11,9 +11,9 @@ use matrix_sdk::{
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
-    let _ = injected;
+    let _ = context;
 
     let room_id: String = room.room_id().into();
     room.send(RoomMessageEventContent::text_plain(room_id).make_reply_to(

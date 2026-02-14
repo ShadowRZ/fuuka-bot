@@ -27,22 +27,12 @@ static HELP_TEXT: &str = concat!(
     "/issues",
 );
 
-/// Injected dependencies.
-#[derive(Clone)]
-pub struct Injected {
-    pub config: tokio::sync::watch::Receiver<crate::Config>,
-    pub prefix: String,
-    pub http: reqwest::Client,
-    pub pixiv: Option<Arc<pixrs::PixivClient>>,
-    pub media_proxy: Option<MediaProxy>,
-}
-
 /// Called when a message is sent.
 pub async fn on_sync_message(
     ev: OriginalSyncRoomMessageEvent,
     room: Room,
     client: matrix_sdk::Client,
-    injected: Ctx<Injected>,
+    context: Ctx<crate::Context>,
 ) {
     // It should be a joined room.
     if room.state() != RoomState::Joined {
@@ -58,7 +48,7 @@ pub async fn on_sync_message(
     let ev = ev.into_full_event(room_id);
 
     tokio::spawn(async move {
-        let result = process(&ev, &room, &injected).await;
+        let result = process(&ev, &room, &context).await;
 
         if let Err(e) = result {
             send_error_content(&room, e, &ev).await;
@@ -105,9 +95,9 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
 async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<crate::Context>,
 ) -> anyhow::Result<()> {
-    let prefix = &injected.prefix;
+    let prefix = &context.prefix;
     use matrix_sdk::ruma::events::room::message::sanitize::remove_plain_reply_fallback;
     let body = remove_plain_reply_fallback(ev.content.body()).trim();
 
@@ -117,7 +107,7 @@ async fn process(
         let args = shell_words::split(content)?;
         let args = Args::try_parse_from(args);
         match args {
-            Ok(args) => self::command::process(ev, room, injected, args).await?,
+            Ok(args) => self::command::process(ev, room, context, args).await?,
             Err(e) => {
                 let text = e.render().to_string();
                 let body = RoomMessageEventContent::text_plain(text).make_reply_to(
@@ -132,9 +122,9 @@ async fn process(
         let content = content.trim();
         tracing::debug!(content, "Received a @Nahida request");
         let url = Url::parse(content)?;
-        self::nahida::process(ev, room, injected, url).await?;
+        self::nahida::process(ev, room, context, url).await?;
     } else {
-        self::jerryxiao::process(ev, room, injected, body).await?;
+        self::jerryxiao::process(ev, room, context, body).await?;
     }
 
     Ok(())

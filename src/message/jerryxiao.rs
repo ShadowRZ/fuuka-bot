@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::RoomMemberExt;
+use crate::{Context, RoomMemberExt};
 use matrix_sdk::Room;
 use matrix_sdk::event_handler::Ctx;
 use matrix_sdk::room::RoomMember;
@@ -12,8 +12,6 @@ use matrix_sdk::ruma::events::room::message::{
 };
 use time::OffsetDateTime;
 use time::macros::format_description;
-
-use super::Injected;
 
 #[derive(Clone, Debug)]
 enum Type {
@@ -29,15 +27,10 @@ struct Remaining(String);
 pub(super) async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
     body: &str,
 ) -> anyhow::Result<()> {
-    if !injected
-        .config
-        .borrow()
-        .features
-        .room_jerryxiao_enabled(room.room_id())
-    {
+    if !context.features.room_jerryxiao_enabled(room.room_id()) {
         return Ok(());
     }
 

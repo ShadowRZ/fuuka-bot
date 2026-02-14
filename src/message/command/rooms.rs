@@ -1,4 +1,4 @@
-use crate::message::Injected;
+use crate::Context;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -11,11 +11,10 @@ use matrix_sdk::{
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
     let admin = {
-        let config = injected.config.borrow();
-        let admin = &config.admin_user;
+        let admin = &context.admin_user;
 
         *admin == Some(ev.sender.clone())
     };

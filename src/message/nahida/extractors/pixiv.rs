@@ -4,8 +4,6 @@ use matrix_sdk::{
     ruma::events::room::message::{OriginalRoomMessageEvent, RoomMessageEventContent},
 };
 
-use crate::config::PixivToplevelConfig;
-
 #[tracing::instrument(name = "illust", skip_all, fields(illust_id = %illust_id), err)]
 pub async fn pixiv_illust(
     ev: &OriginalRoomMessageEvent,
@@ -13,10 +11,10 @@ pub async fn pixiv_illust(
     pixiv: &pixrs::PixivClient,
     http: &reqwest::Client,
     illust_id: i32,
-    config: &PixivToplevelConfig,
+    context: &crate::services::pixiv::Context,
     send_r18: bool,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    crate::services::pixiv::illust::send(ev, room, pixiv, http, config, illust_id, send_r18)
+    crate::services::pixiv::illust::send(ev, room, pixiv, http, context, illust_id, send_r18)
         .await?;
 
     return Ok(None);

@@ -23,6 +23,8 @@ mod traits;
 pub mod types;
 
 pub use crate::config::Config;
+use crate::config::FeaturesConfig;
+use crate::config::HitokotoConfig;
 use crate::config::MediaProxyConfig;
 use crate::config::PixivConfig;
 pub use crate::media_proxy::MediaProxy;
@@ -33,8 +35,10 @@ use clap::Parser;
 use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::config::RequestConfig;
 use matrix_sdk::config::SyncSettings;
+use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::presence::PresenceState;
 use pixrs::PixivClient;
+use secrecy::ExposeSecret;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::signal;
@@ -56,12 +60,16 @@ static APP_PRESENCE_TEXT: &str = concat!(
     env!("CARGO_PKG_REPOSITORY")
 );
 
+#[derive(Clone)]
 pub struct Context {
     pub prefix: String,
-    pub admin_user: String,
+    pub admin_user: Option<OwnedUserId>,
     pub http: reqwest::Client,
     pub media_proxy: Option<MediaProxy>,
-    pub github: Option<crate::services::github::Context>,
+    pub pixiv: Option<(Arc<PixivClient>, Arc<crate::services::pixiv::Context>)>,
+    pub hitokoto: HitokotoConfig,
+    pub features: FeaturesConfig,
+    // pub github: Option<crate::services::github::Context>,
 }
 
 #[derive(Debug, clap::Parser)]
@@ -203,20 +211,33 @@ impl Client {
             media_proxy.start().await?;
         }
 
-        let pixiv = pixiv_client(&http, &config).await?;
+        let pixiv = match config.pixiv {
+            PixivConfig::Disabled => None,
+            PixivConfig::Enabled {
+                token,
+                r18,
+                tag_triggers,
+            } => {
+                let client =
+                    Arc::new(PixivClient::from_client(token.expose_secret(), &http).await?);
+                let context = crate::services::pixiv::Context { r18, tag_triggers };
+                Some((client, Arc::new(context)))
+            }
+        };
 
         let prefix = config.command.prefix.clone();
-        let (_, config) = tokio::sync::watch::channel(config);
 
-        let injected = crate::message::Injected {
-            config,
+        let context = Context {
             prefix,
             http,
             pixiv,
             media_proxy,
+            features: config.features,
+            hitokoto: config.services.hitokoto,
+            admin_user: config.admin_user,
         };
 
-        client.add_event_handler_context(injected);
+        client.add_event_handler_context(context);
         crate::matrix::log_encryption_info(&client).await?;
         let task: JoinHandle<()> = tokio::spawn(async move {
             tokio::select! {
@@ -258,16 +279,6 @@ fn media_proxy(client: &matrix_sdk::Client, config: &Config) -> anyhow::Result<O
         }
         MediaProxyConfig::Disabled => Ok(None),
     }
-}
-
-async fn pixiv_client(
-    http: &reqwest::Client,
-    config: &Config,
-) -> anyhow::Result<Option<Arc<PixivClient>>> {
-    let Some(ref token) = config.pixiv.token else {
-        return Ok(None);
-    };
-    Ok(Some(Arc::new(PixivClient::from_client(token, http).await?)))
 }
 
 /// A sharable graceful shutdown signal.

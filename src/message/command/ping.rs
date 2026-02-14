@@ -1,4 +1,4 @@
-use crate::message::Injected;
+use crate::Context;
 use matrix_sdk::ruma::MilliSecondsSinceUnixEpoch;
 use matrix_sdk::{
     Room,
@@ -9,13 +9,13 @@ use matrix_sdk::{
 };
 use time::Duration;
 
-#[tracing::instrument(name = "ping", skip(ev, room, injected), err)]
+#[tracing::instrument(name = "ping", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
-    let _ = injected;
+    let _ = context;
 
     let MilliSecondsSinceUnixEpoch(now) = MilliSecondsSinceUnixEpoch::now();
     let MilliSecondsSinceUnixEpoch(event_ts) = ev.origin_server_ts;

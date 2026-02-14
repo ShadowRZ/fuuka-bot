@@ -1,6 +1,6 @@
-use crate::message::{
-    Injected,
-    profile::{Category, ResponseType},
+use crate::{
+    Context,
+    message::profile::{Category, ResponseType},
 };
 use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::OriginalRoomMessageEvent};
 
@@ -8,29 +8,29 @@ use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::Original
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
     category: Category,
     response_type: ResponseType,
 ) -> anyhow::Result<()> {
     match (category, response_type) {
         (Category::Name, ResponseType::Current) => {
-            self::name::current::process(ev, room, injected).await
+            self::name::current::process(ev, room, context).await
         }
         (Category::Name, ResponseType::History) => {
-            self::name::changes::process(ev, room, injected).await
+            self::name::changes::process(ev, room, context).await
         }
         (Category::Avatar, ResponseType::Current) => {
-            self::avatar::current::process(ev, room, injected).await
+            self::avatar::current::process(ev, room, context).await
         }
         (Category::Avatar, ResponseType::History) => {
-            self::avatar::changes::process(ev, room, injected).await
+            self::avatar::changes::process(ev, room, context).await
         }
     }
 }
 
 pub mod avatar {
     pub mod current {
-        use crate::message::Injected;
+        use crate::Context;
         use matrix_sdk::{
             Room,
             event_handler::Ctx,
@@ -50,9 +50,9 @@ pub mod avatar {
         pub async fn process(
             ev: &OriginalRoomMessageEvent,
             room: &Room,
-            injected: &Ctx<Injected>,
+            context: &Ctx<Context>,
         ) -> anyhow::Result<()> {
-            let _ = injected;
+            let _ = context;
 
             use crate::RoomExt as _;
             use crate::RoomMemberExt as _;
@@ -100,7 +100,7 @@ pub mod avatar {
     }
 
     pub mod changes {
-        use crate::message::Injected;
+        use crate::Context;
         use futures_util::pin_mut;
         use matrix_sdk::Room;
         use matrix_sdk::event_handler::Ctx;
@@ -116,21 +116,20 @@ pub mod avatar {
         pub async fn process(
             ev: &OriginalRoomMessageEvent,
             room: &Room,
-            injected: &Ctx<Injected>,
+            context: &Ctx<Context>,
         ) -> anyhow::Result<()> {
             use crate::MxcUriExt as _;
             use crate::RoomExt as _;
             use futures_util::stream::StreamExt as _;
-
-            let room = &room;
 
             let user_id = room.in_reply_to_target_fallback(ev).await?;
             let Some(member) = room.get_member(&user_id).await? else {
                 return Ok(());
             };
 
-            let media_proxy = &injected.media_proxy;
-            let homeserver = { injected.config.borrow().matrix.homeserver.clone() };
+            let media_proxy = &context.media_proxy;
+            //let homeserver = { context.config.borrow().matrix.homeserver.clone() };
+            let homeserver = room.client().homeserver();
 
             let mut body = String::new();
             let current_avatar = member
@@ -236,7 +235,7 @@ pub mod avatar {
 
 pub mod name {
     pub mod current {
-        use crate::message::Injected;
+        use crate::Context;
         use matrix_sdk::{
             Room,
             event_handler::Ctx,
@@ -246,9 +245,9 @@ pub mod name {
         pub async fn process(
             ev: &OriginalRoomMessageEvent,
             room: &Room,
-            injected: &Ctx<Injected>,
+            context: &Ctx<Context>,
         ) -> anyhow::Result<()> {
-            let _ = injected;
+            let _ = context;
             use crate::RoomExt as _;
 
             let user_id = room.in_reply_to_target_fallback(ev).await?;
@@ -275,14 +274,14 @@ pub mod name {
         use time::OffsetDateTime;
         use time::format_description::well_known::Rfc3339;
 
-        use crate::message::Injected;
+        use crate::Context;
 
         pub async fn process(
             ev: &OriginalRoomMessageEvent,
             room: &Room,
-            injected: &Ctx<Injected>,
+            context: &Ctx<Context>,
         ) -> anyhow::Result<()> {
-            let _ = injected;
+            let _ = context;
             let _ = ev;
             use crate::RoomExt as _;
             use futures_util::stream::StreamExt as _;

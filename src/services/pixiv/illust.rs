@@ -13,11 +13,9 @@ use matrix_sdk::{
 use mime::Mime;
 use pixrs::{IllustInfo, Restriction};
 
-use crate::config::PixivToplevelConfig;
-
 pub fn format(
     resp: IllustInfo,
-    config: &PixivToplevelConfig,
+    context: &super::Context,
     send_r18: bool,
     room_id: &RoomId,
     _prefix: bool,
@@ -46,7 +44,9 @@ pub fn format(
         })
         .collect();
 
-    let triggers = config.traps.check_for_traps(&resp.tags, room_id);
+    let triggers = context
+        .tag_triggers
+        .check_for_tag_triggers(&resp.tags, room_id);
 
     let context = Context {
         id: resp.id,
@@ -70,7 +70,7 @@ pub async fn send(
     room: &Room,
     pixiv: &pixrs::PixivClient,
     http: &reqwest::Client,
-    config: &PixivToplevelConfig,
+    context: &super::Context,
     illust_id: i32,
     send_r18: bool,
 ) -> anyhow::Result<()> {
@@ -80,7 +80,7 @@ pub async fn send(
     let url = resp.urls.original.clone();
 
     if let Some((body, formatted_body)) =
-        crate::services::pixiv::illust::format(resp.clone(), config, send_r18, room_id, false)
+        crate::services::pixiv::illust::format(resp.clone(), context, send_r18, room_id, false)
     {
         use url::Url;
 

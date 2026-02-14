@@ -1,4 +1,4 @@
-use crate::message::Injected;
+use crate::Context;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -7,19 +7,18 @@ use matrix_sdk::{
     },
 };
 
-#[tracing::instrument(name = "ignore", skip(ev, room, injected), fields(will_ignore), err)]
+#[tracing::instrument(name = "ignore", skip(ev, room, context), fields(will_ignore), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
-    let _ = injected;
+    let _ = context;
     use crate::RoomExt as _;
 
     {
         let sender = &ev.sender;
-        let config = injected.config.borrow();
-        let admin = config.admin_user.as_ref();
+        let admin = context.admin_user.as_ref();
 
         if admin != Some(sender) {
             return Ok(());

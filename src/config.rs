@@ -23,15 +23,14 @@ pub struct Config {
     /// Admin user ID.
     pub admin_user: Option<OwnedUserId>,
     /// Pixiv related configs.
-    #[serde(default)]
-    pub pixiv: PixivToplevelConfig,
+    pub pixiv: PixivConfig,
     /// Optional room features.
     #[serde(default)]
     pub features: FeaturesConfig,
     /// Media proxy configuration.
     pub media_proxy: MediaProxyConfig,
     /// HTTP Services configuration.
-    pub services: Option<ServiceConfig>,
+    pub services: ServiceConfig,
     /// Stickers feature related configuration.
     pub stickers: Option<StickerConfig>,
     /// Nixpkgs PR configuration
@@ -55,21 +54,6 @@ pub struct MatrixConfig {
         deserialize_with = "deserialize_duration_from_seconds"
     )]
     pub timeout: Duration,
-}
-
-/// Pixiv feature related configs.
-#[derive(Deserialize, Debug, Clone, Default)]
-#[serde(rename_all = "kebab-case")]
-pub struct PixivToplevelConfig {
-    #[serde(default)]
-    pub enabled: bool,
-    #[serde(default)]
-    pub r18: bool,
-    /// Pixiv PHPSESSID.
-    /// See <https://pixivfe.pages.dev/obtaining-pixivfe-token/>
-    pub token: Option<String>,
-    #[serde(default)]
-    pub traps: TagTriggers,
 }
 
 /// Pixiv feature related configs.
@@ -338,7 +322,11 @@ impl TryFrom<String> for RepositoryParts {
 }
 
 impl TagTriggers {
-    pub fn check_for_traps(&self, tags: &pixrs::IllustTagsInfo, room_id: &RoomId) -> Option<&str> {
+    pub fn check_for_tag_triggers(
+        &self,
+        tags: &pixrs::IllustTagsInfo,
+        room_id: &RoomId,
+    ) -> Option<&str> {
         if let Some(infos) = self.room_scoped_config.get(room_id) {
             for item in infos {
                 if tags.has_any_tag(

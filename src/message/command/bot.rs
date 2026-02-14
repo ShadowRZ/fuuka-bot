@@ -1,7 +1,4 @@
-use crate::{
-    RoomExt,
-    message::{Injected, bot::BotCommand},
-};
+use crate::{Context, RoomExt, message::bot::BotCommand};
 use file_format::FileFormat;
 use matrix_sdk::{
     Room,
@@ -16,19 +13,18 @@ use matrix_sdk::{
     },
 };
 
-#[tracing::instrument(name = "help", skip(ev, room, injected), err)]
+#[tracing::instrument(name = "help", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
     command: BotCommand,
 ) -> anyhow::Result<()> {
     let client = room.client();
 
     {
         let sender = &ev.sender;
-        let config = injected.config.borrow();
-        let admin = config.admin_user.as_ref();
+        let admin = context.admin_user.as_ref();
 
         if admin != Some(sender) {
             return Ok(());

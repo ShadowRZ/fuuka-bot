@@ -1,6 +1,7 @@
-use crate::message::{
-    Injected,
-    pixiv::{PixivCommand, RankingMode},
+use crate::{
+    Context,
+    config::FeaturesConfig,
+    message::pixiv::{PixivCommand, RankingMode},
 };
 use futures_util::{StreamExt, pin_mut};
 use matrix_sdk::{
@@ -16,25 +17,24 @@ use pixrs::{PixivClient, RankingContent};
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    injected: &Ctx<Injected>,
+    context: &Ctx<Context>,
     command: PixivCommand,
 ) -> anyhow::Result<()> {
-    let Ctx(Injected {
+    let Ctx(Context {
         pixiv,
-        config,
         http,
+        features,
         ..
-    }) = injected;
+    }) = context;
 
-    let Some(pixiv) = pixiv else {
+    let Some((pixiv, context)) = pixiv else {
         return Ok(());
     };
 
     let content = match command {
         PixivCommand::Ranking(ranking) => format_ranking(pixiv, ranking).await?,
         PixivCommand::Illust(illust_id) => {
-            let config = config.borrow().clone();
-            send_illust(ev, room, pixiv, http, &config, illust_id).await?;
+            send_illust(ev, room, pixiv, http, context, features, illust_id).await?;
 
             return Ok(());
         }
@@ -98,11 +98,11 @@ async fn send_illust(
     room: &Room,
     pixiv: &pixrs::PixivClient,
     http: &reqwest::Client,
-    config: &crate::Config,
+    context: &crate::services::pixiv::Context,
+    features: &FeaturesConfig,
     illust_id: i32,
 ) -> anyhow::Result<()> {
     let room_id = room.room_id();
-    let send_r18 = config.pixiv.r18 && config.features.room_pixiv_r18_enabled(room_id);
-    crate::services::pixiv::illust::send(ev, room, pixiv, http, &config.pixiv, illust_id, send_r18)
-        .await
+    let send_r18 = context.r18 && features.room_pixiv_r18_enabled(room_id);
+    crate::services::pixiv::illust::send(ev, room, pixiv, http, context, illust_id, send_r18).await
 }
