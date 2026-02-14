@@ -1415,6 +1415,7 @@ dependencies = [
  "html-compare-rs",
  "http",
  "http-body",
+ "http-body-util",
  "imagesize",
  "jose-jwk",
  "matrix-sdk",

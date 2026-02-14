@@ -1,0 +1,25 @@
+query PullInfo($owner: String!, $name: String!, $pr_number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pr_number) {
+      number
+      author {
+        login
+        url
+      }
+      title
+      createdAt
+      lastEditedAt
+      state
+      locked
+      closedAt
+      isDraft
+      baseRefName
+      permalink
+      checksUrl
+      mergedAt
+      mergeCommit {
+        oid
+      }
+    }
+  }
+}

@@ -14,10 +14,10 @@
 mod config;
 mod env;
 pub mod format;
-mod layer;
 pub mod matrix;
 pub mod media_proxy;
 pub mod message;
+mod middleware;
 pub mod services;
 mod traits;
 pub mod types;
@@ -57,8 +57,11 @@ static APP_PRESENCE_TEXT: &str = concat!(
 );
 
 pub struct Context {
+    pub prefix: String,
+    pub admin_user: String,
+    pub http: reqwest::Client,
     pub media_proxy: Option<MediaProxy>,
-    pub pixiv: Option<(Arc<PixivClient>, PixivConfig)>,
+    pub github: Option<crate::services::github::Context>,
 }
 
 #[derive(Debug, clap::Parser)]

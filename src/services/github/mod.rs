@@ -1,20 +1,40 @@
+use std::sync::Arc;
+
 use graphql_client::GraphQLQuery;
-use octocrab::{AuthState, Octocrab, OctocrabBuilder, service::middleware::base_uri::BaseUriLayer};
+use octocrab::{
+    AuthState, Octocrab, OctocrabBuilder,
+    service::middleware::{base_uri::BaseUriLayer, cache::mem::InMemoryCache},
+};
+use regex::Regex;
 use secrecy::SecretString;
 
+use crate::middleware::cache::HttpCacheLayer;
+
+mod models;
 pub mod nixpkgs_pr;
+pub mod pr_tracker;
+
+pub struct Context {
+    octocrab: Octocrab,
+    pr_tracker: Option<PrTrackerContext>,
+}
+
+pub struct PrTrackerContext {
+    branches: Vec<(Regex, String)>,
+}
 
 static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
 
 pub fn octocrab(client: &reqwest::Client, token: SecretString) -> Octocrab {
     let service = tower::ServiceBuilder::new()
-        .layer(crate::layer::ReqwestLayer)
+        .layer(BaseUriLayer::new(http::Uri::from_static(
+            "https://api.github.com",
+        )))
+        .layer(HttpCacheLayer::new(Some(Arc::new(InMemoryCache::new()))))
+        .layer(crate::middleware::reqwest::ReqwestLayer)
         .service(client.clone());
     OctocrabBuilder::new_empty()
         .with_service(service)
-        .with_layer(&BaseUriLayer::new(http::Uri::from_static(
-            "https://api.github.com",
-        )))
         .with_auth(AuthState::AccessToken { token })
         .build()
         .unwrap()
@@ -76,6 +96,7 @@ impl std::fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+#[cfg(test)]
 mod tests {
     #[test]
     pub fn test_github_graphql_error_format() {

@@ -1,5 +1,3 @@
-//! [tower] Layers.
-
 use std::{
     pin::Pin,
     task::{Context, Poll},
