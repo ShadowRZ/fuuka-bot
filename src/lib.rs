@@ -14,6 +14,7 @@
 mod config;
 mod env;
 pub mod format;
+mod layer;
 pub mod matrix;
 pub mod media_proxy;
 pub mod message;

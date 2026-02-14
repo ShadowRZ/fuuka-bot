@@ -1,5 +1,6 @@
 use std::future::Future;
 
+use graphql_client::GraphQLQuery;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
@@ -152,5 +153,22 @@ impl RoomExt for matrix_sdk::Room {
         fut.await?;
         self.typing_notice(false).await?;
         Ok(())
+    }
+}
+
+pub trait OctocrabExt {
+    fn graphql<Q: GraphQLQuery>(
+        &self,
+        variables: Q::Variables,
+    ) -> impl Future<Output = octocrab::Result<graphql_client::Response<Q::ResponseData>>>;
+}
+
+impl OctocrabExt for octocrab::Octocrab {
+    async fn graphql<Q: GraphQLQuery>(
+        &self,
+        variables: Q::Variables,
+    ) -> octocrab::Result<graphql_client::Response<Q::ResponseData>> {
+        let body = Q::build_query(variables);
+        self.graphql(&body).await
     }
 }

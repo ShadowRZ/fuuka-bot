@@ -1,8 +1,24 @@
 use graphql_client::GraphQLQuery;
+use octocrab::{AuthState, Octocrab, OctocrabBuilder, service::middleware::base_uri::BaseUriLayer};
+use secrecy::SecretString;
 
 pub mod nixpkgs_pr;
 
 static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
+
+pub fn octocrab(client: &reqwest::Client, token: SecretString) -> Octocrab {
+    let service = tower::ServiceBuilder::new()
+        .layer(crate::layer::ReqwestLayer)
+        .service(client.clone());
+    OctocrabBuilder::new_empty()
+        .with_service(service)
+        .with_layer(&BaseUriLayer::new(http::Uri::from_static(
+            "https://api.github.com",
+        )))
+        .with_auth(AuthState::AccessToken { token })
+        .build()
+        .unwrap()
+}
 
 async fn post_github_graphql<Q: GraphQLQuery>(
     client: &reqwest::Client,
