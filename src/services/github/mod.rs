@@ -1,35 +1,38 @@
 use std::sync::Arc;
 
+use cronchik::CronSchedule;
 use graphql_client::GraphQLQuery;
 use octocrab::{
     AuthState, Octocrab, OctocrabBuilder,
     service::middleware::{base_uri::BaseUriLayer, cache::mem::InMemoryCache},
 };
-use regex::Regex;
 use secrecy::SecretString;
 
-use crate::middleware::cache::HttpCacheLayer;
+use crate::{
+    config::RepositoryParts,
+    middleware::cache::HttpCacheLayer,
+    services::github::models::{PartialPullRequest, PullInfo, PullInfoVariables},
+};
 
-mod models;
-pub mod nixpkgs_pr;
+pub mod models;
 pub mod pr_tracker;
 
+#[derive(Clone)]
 pub struct Context {
-    octocrab: Octocrab,
-    pr_tracker: Option<PrTrackerContext>,
+    pub octocrab: Octocrab,
+    pub cron: Option<Box<CronSchedule>>,
+    pub pr_tracker: Arc<pr_tracker::PrTrackerContext>,
 }
 
-pub struct PrTrackerContext {
-    branches: Vec<(Regex, String)>,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Params {
+    pub repository: RepositoryParts,
+    pub pr_number: i32,
 }
 
-static GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
-
-pub fn octocrab(client: &reqwest::Client, token: SecretString) -> Octocrab {
+pub fn octocrab(client: &reqwest::Client, base_url: http::Uri, token: SecretString) -> Octocrab {
     let service = tower::ServiceBuilder::new()
-        .layer(BaseUriLayer::new(http::Uri::from_static(
-            "https://api.github.com",
-        )))
+        .layer(BaseUriLayer::new(base_url))
         .layer(HttpCacheLayer::new(Some(Arc::new(InMemoryCache::new()))))
         .layer(crate::middleware::reqwest::ReqwestLayer)
         .service(client.clone());
@@ -40,20 +43,62 @@ pub fn octocrab(client: &reqwest::Client, token: SecretString) -> Octocrab {
         .unwrap()
 }
 
-async fn post_github_graphql<Q: GraphQLQuery>(
-    client: &reqwest::Client,
-    token: &str,
-    vars: Q::Variables,
-) -> Result<graphql_client::Response<Q::ResponseData>, reqwest::Error> {
-    let body = Q::build_query(vars);
-    let reqwest_response = client
-        .post(GRAPHQL_ENDPOINT)
-        .bearer_auth(token)
-        .json(&body)
-        .send()
+pub async fn pull_request(
+    octocrab: &Octocrab,
+    params: Params,
+) -> anyhow::Result<PartialPullRequest> {
+    let Params {
+        repository,
+        pr_number,
+    } = params;
+    let RepositoryParts { owner, repo } = repository;
+
+    let resp = octocrab
+        .graphql::<graphql_client::Response<PullInfo>>(&PullInfo::build_query(PullInfoVariables {
+            owner,
+            name: repo,
+            pr_number,
+        }))
         .await?;
 
-    reqwest_response.json().await
+    if let Some(errors) = resp.errors {
+        return Err(Error(errors).into());
+    }
+    let Some(data) = resp.data else {
+        return Err(crate::Error::UnexpectedError("Server returned no valid data!").into());
+    };
+
+    let Some(repository) = data.repository else {
+        use graphql_client::PathFragment;
+        return Err(Error(vec![graphql_client::Error {
+            message: "Could not resolve to a Repository with the name NixOS/nixpkgs.".to_string(),
+            locations: None,
+            path: Some(vec![PathFragment::Key("repository".to_string())]),
+            extensions: None,
+        }])
+        .into());
+    };
+
+    let Some(pull_request) = repository.pull_request else {
+        use graphql_client::PathFragment;
+        return Err(
+            // GraphQL: Could not resolve to a PullRequest with the number of ${pr_number}. (repository.pullRequest)
+            Error(vec![graphql_client::Error {
+                message: format!(
+                    "Could not resolve to a PullRequest with the number of {pr_number}."
+                ),
+                locations: None,
+                path: Some(vec![
+                    PathFragment::Key("repository".to_string()),
+                    PathFragment::Key("pullRequest".to_string()),
+                ]),
+                extensions: None,
+            }])
+            .into(),
+        );
+    };
+
+    Ok(pull_request)
 }
 
 #[derive(Debug)]

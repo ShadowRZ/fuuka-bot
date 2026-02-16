@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use clap::Parser;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::{
@@ -11,8 +9,6 @@ use matrix_sdk::{
     },
 };
 use url::Url;
-
-use crate::MediaProxy;
 
 pub mod command;
 pub mod jerryxiao;

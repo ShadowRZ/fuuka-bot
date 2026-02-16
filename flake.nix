@@ -60,6 +60,8 @@
             (craneLib.fileset.commonCargoSources ./.)
             # Also keep any markdown files
             (lib.fileset.fileFilter (file: file.hasExt "jinja") ./.)
+            # Keep GraphQL queries
+            (lib.fileset.fileFilter (file: file.hasExt "graphql") ./.)
           ];
         };
 

@@ -256,6 +256,7 @@ pub struct GitHubConfig {
     /// GitHub API endpoint.
     #[serde(default = "github_config_default_base_url")]
     pub base_url: Url,
+    pub token: SecretString,
     pub pr_tracker: PrTrackerConfig,
 }
 
@@ -264,8 +265,8 @@ pub enum PrTrackerConfig {
     #[default]
     Disabled,
     Enabled {
-        cron: Box<Option<CronSchedule>>,
-        targets: BTreeMap<RepositoryParts, BTreeMap<String, String>>,
+        cron: Option<Box<CronSchedule>>,
+        targets: BTreeMap<RepositoryParts, BTreeMap<String, Vec<String>>>,
     },
 }
 
@@ -284,8 +285,8 @@ impl<'de> Deserialize<'de> for PrTrackerConfig {
             },
             Enabled {
                 enabled: serde_bool::True,
-                cron: Box<Option<CronSchedule>>,
-                targets: BTreeMap<RepositoryParts, BTreeMap<String, String>>,
+                cron: Option<Box<CronSchedule>>,
+                targets: BTreeMap<RepositoryParts, BTreeMap<String, Vec<String>>>,
             },
         }
         PrTrackerConfig::deserialize(deserializer).map(|value| match value {

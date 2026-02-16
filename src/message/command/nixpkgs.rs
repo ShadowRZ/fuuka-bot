@@ -1,8 +1,10 @@
-use std::time::Duration;
+use octocrab::models::commits::GithubCommitStatus;
 
-use futures_util::{StreamExt, pin_mut};
-
-use crate::Context;
+use crate::{
+    Context,
+    config::RepositoryParts,
+    services::github::{Params, models::PullRequestState},
+};
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -19,140 +21,141 @@ pub async fn process(
     pr_number: i32,
     track: bool,
 ) -> anyhow::Result<()> {
-    // TODO: Implment this
-    /*    use crate::services::github::nixpkgs_pr::fetch_nixpkgs_pr;
+    let Ctx(Context { github, .. }) = context;
 
-        let Ctx(Injected { http, .. }) = context;
+    let repository = RepositoryParts {
+        owner: "NixOS".to_string(),
+        repo: "nixpkgs".to_string(),
+    };
 
-        let Some(nixpkgs_pr) = ({ context.config.borrow().nixpkgs_pr.clone() }) else {
-            return Ok(());
-        };
-        let result = fetch_nixpkgs_pr(http, &nixpkgs_pr.token, pr_number)
-            .await
-            .map_err(crate::Error::GitHubError)?;
+    let Some(github) = github else {
+        return Ok(());
+    };
+    let result = crate::services::github::pull_request(
+        &github.octocrab,
+        Params {
+            repository: repository.clone(),
+            pr_number,
+        },
+    )
+    .await
+    .map_err(crate::Error::GitHubError)?;
 
-        if track {
-            if !room.is_direct().await? {
-                room.send(
-                    RoomMessageEventContent::text_plain(
-                        "Tracking Nixpkgs PR is only avaliable in a DM!",
-                    )
-                    .make_reply_to(ev, ForwardThread::No, AddMentions::Yes),
-                )
+    // if track {
+    //     if !room.is_direct().await? {
+    //         room.send(
+    //             RoomMessageEventContent::text_plain(
+    //                 "Tracking Nixpkgs PR is only avaliable in a DM!",
+    //             )
+    //             .make_reply_to(ev, ForwardThread::No, AddMentions::Yes),
+    //         )
+    //         .await?;
+    //         return Ok(());
+    //     }
+    //     let pr_info = result.clone();
+
+    //     let room = room.clone();
+    //     let client = http.clone();
+    //     tokio::spawn(async move {
+    //         use crate::services::github::nixpkgs_pr::track_nixpkgs_pr;
+
+    //         let Some(ref cron) = nixpkgs_pr.cron else {
+    //             return;
+    //         };
+    //         let token = &nixpkgs_pr.token;
+
+    //         tokio::time::sleep(Duration::from_secs(1)).await;
+
+    //         let stream = track_nixpkgs_pr(&client, cron, token, pr_number, pr_info);
+    //         pin_mut!(stream);
+
+    //         tracing::debug!("Start tracking Nixpkgs PR #{pr_number}");
+    //         while let Some(status) = stream.next().await {
+    //             use crate::services::github::nixpkgs_pr::TrackStatus;
+    //             match status {
+    //                 TrackStatus::Pending { new_branch, .. } => {
+    //                     if let Some(new_branch) = new_branch {
+    //                         use crate::services::github::nixpkgs_pr::NewBranch;
+    //                         let format_str = match new_branch {
+    //                             NewBranch::StagingNext => "staging-next",
+    //                             NewBranch::Master => "master",
+    //                             NewBranch::UnstableSmall => "nixos-unstable-small",
+    //                             NewBranch::NixpkgsUnstable => "nixpkgs-unstable",
+    //                             NewBranch::Unstable => "nixos-unstable",
+    //                         };
+    //                         if let Err(e) = room
+    //                             .send(RoomMessageEventContent::text_plain(format!(
+    //                                 "PR #{pr_number} is now in branch {format_str}!"
+    //                             )))
+    //                             .await
+    //                         {
+    //                             tracing::warn!("Failed to send status: {e}");
+    //                         }
+    //                     }
+    //                 }
+    //                 TrackStatus::Done => {
+    //                     if let Err(e) = room
+    //                         .send(RoomMessageEventContent::text_plain(format!(
+    //                             "PR #{pr_number} is now in all branches!"
+    //                         )))
+    //                         .await
+    //                     {
+    //                         tracing::warn!("Failed to send status: {e}");
+    //                     }
+    //                     return;
+    //                 }
+    //             }
+    //         }
+    //     });
+    // }
+
+    let all_branches = github
+        .pr_tracker
+        .all_branches(&repository, &result.base_ref_name);
+
+    let mut in_branches_data: Vec<(String, bool)> = Vec::new();
+
+    if let PullRequestState::MERGED { merge_commit, .. } = result.state {
+        for branch in all_branches {
+            let compare = github
+                .octocrab
+                .commits(&repository.owner, &repository.repo)
+                .compare(&branch, &merge_commit.oid)
+                .per_page(1)
+                .send()
                 .await?;
-                return Ok(());
-            }
-            let pr_info = result.clone();
-
-            let room = room.clone();
-            let client = http.clone();
-            tokio::spawn(async move {
-                use crate::services::github::nixpkgs_pr::track_nixpkgs_pr;
-
-                let Some(ref cron) = nixpkgs_pr.cron else {
-                    return;
-                };
-                let token = &nixpkgs_pr.token;
-
-                tokio::time::sleep(Duration::from_secs(1)).await;
-
-                let stream = track_nixpkgs_pr(&client, cron, token, pr_number, pr_info);
-                pin_mut!(stream);
-
-                tracing::debug!("Start tracking Nixpkgs PR #{pr_number}");
-                while let Some(status) = stream.next().await {
-                    use crate::services::github::nixpkgs_pr::TrackStatus;
-                    match status {
-                        TrackStatus::Pending { new_branch, .. } => {
-                            if let Some(new_branch) = new_branch {
-                                use crate::services::github::nixpkgs_pr::NewBranch;
-                                let format_str = match new_branch {
-                                    NewBranch::StagingNext => "staging-next",
-                                    NewBranch::Master => "master",
-                                    NewBranch::UnstableSmall => "nixos-unstable-small",
-                                    NewBranch::NixpkgsUnstable => "nixpkgs-unstable",
-                                    NewBranch::Unstable => "nixos-unstable",
-                                };
-                                if let Err(e) = room
-                                    .send(RoomMessageEventContent::text_plain(format!(
-                                        "PR #{pr_number} is now in branch {format_str}!"
-                                    )))
-                                    .await
-                                {
-                                    tracing::warn!("Failed to send status: {e}");
-                                }
-                            }
-                        }
-                        TrackStatus::Done => {
-                            if let Err(e) = room
-                                .send(RoomMessageEventContent::text_plain(format!(
-                                    "PR #{pr_number} is now in all branches!"
-                                )))
-                                .await
-                            {
-                                tracing::warn!("Failed to send status: {e}");
-                            }
-                            return;
-                        }
-                    }
-                }
-            });
+            let in_branch = matches!(
+                compare.status,
+                GithubCommitStatus::Behind | GithubCommitStatus::Identical
+            );
+            in_branches_data.push((branch, in_branch));
         }
+    };
 
-        let in_branches = result
-            .in_branches
-            .as_ref()
-            .map(|in_branches| {
-                format!(
-                    "\n\
-                        staging-next {staging} \
-                        master {master} \
-                        nixos-unstable-small {nixos_unstable_small} \
-                        nixpkgs-unstable {nixpkgs_unstable} \
-                        nixos-unstable {nixos_unstable}",
-                    staging = if in_branches.staging { "✅" } else { "-" },
-                    master = if in_branches.master { "✅" } else { "-" },
-                    nixos_unstable_small = if in_branches.nixos_unstable_small {
-                        "✅"
-                    } else {
-                        "-"
-                    },
-                    nixpkgs_unstable = if in_branches.nixpkgs_unstable {
-                        "✅"
-                    } else {
-                        "-"
-                    },
-                    nixos_unstable = if in_branches.nixos_unstable {
-                        "✅"
-                    } else {
-                        "-"
-                    },
-                )
-            })
-            .unwrap_or_default();
-        let in_branches_html = result.in_branches.as_ref().map(|in_branches| {
-                    format!(
-                        "<p>\
-                        <{staging_tag}>staging-next</{staging_tag}> {staging}<br/>\
-                        <{master_tag}>master</{master_tag}> {master}<br/>\
-                        <{nixos_unstable_small_tag}>nixos-unstable-small</{nixos_unstable_small_tag}> {nixos_unstable_small}<br/>\
-                        <{nixpkgs_unstable_tag}>nixpkgs-unstable</{nixpkgs_unstable_tag}> {nixpkgs_unstable}<br/>\
-                        <{nixos_unstable_tag}>nixos-unstable</{nixos_unstable_tag}> {nixos_unstable}\
-                        </p>",
-                        staging = if in_branches.staging { "✅" } else { "" },
-                        master = if in_branches.master { "✅" } else { "" },
-                        nixos_unstable_small = if in_branches.nixos_unstable_small { "✅" } else { "" },
-                        nixpkgs_unstable = if in_branches.nixpkgs_unstable { "✅" } else { "" },
-                        nixos_unstable = if in_branches.nixos_unstable { "✅" } else { "" },
-                        staging_tag = if in_branches.staging { "b" } else { "del" },
-                        master_tag = if in_branches.master { "b" } else { "del" },
-                        nixos_unstable_small_tag = if in_branches.nixos_unstable_small { "b" } else { "del" },
-                        nixpkgs_unstable_tag = if in_branches.nixpkgs_unstable { "b" } else { "del" },
-                        nixos_unstable_tag = if in_branches.nixos_unstable { "b" } else { "del" },
-                    )
-                }).unwrap_or_default();
+    let mut in_branches = String::new();
 
-        room.send(RoomMessageEventContent::text_html(
+    for (branch, in_branch) in in_branches_data.iter() {
+        in_branches.push_str(&format!(
+            "\n{branch} {compare}",
+            compare = if *in_branch { "✅" } else { "-" }
+        ));
+    }
+
+    let mut in_branches_html = String::new();
+
+    if !in_branches_data.is_empty() {
+        in_branches_html.push_str("<p>");
+        for (branch, in_branch) in in_branches_data.iter() {
+            in_branches_html.push_str(&format!(
+                "<{tag}>{branch}</{tag}>{compare}",
+                tag = if *in_branch { "b" } else { "del" },
+                compare = if *in_branch { " ✅<br/>" } else { "<br/>" }
+            ));
+        }
+        in_branches_html.push_str("</p>");
+    }
+
+    room.send(RoomMessageEventContent::text_html(
                     format!(
                         "{track_or_not}PR #{pr_number}: {title} https://github.com/NixOS/nixpkgs/pull/{pr_number}{in_branches}",
                         track_or_not = if track { "Tracking " } else { "" },
@@ -170,6 +173,6 @@ pub async fn process(
                     ForwardThread::No,
                     AddMentions::Yes,
                 )).await?;
-    */
+
     Ok(())
 }

@@ -24,6 +24,7 @@ pub mod types;
 
 pub use crate::config::Config;
 use crate::config::FeaturesConfig;
+use crate::config::GitHubConfig;
 use crate::config::HitokotoConfig;
 use crate::config::MediaProxyConfig;
 use crate::config::PixivConfig;
@@ -69,7 +70,7 @@ pub struct Context {
     pub pixiv: Option<(Arc<PixivClient>, Arc<crate::services::pixiv::Context>)>,
     pub hitokoto: HitokotoConfig,
     pub features: FeaturesConfig,
-    // pub github: Option<crate::services::github::Context>,
+    pub github: Option<crate::services::github::Context>,
 }
 
 #[derive(Debug, clap::Parser)]
@@ -225,13 +226,36 @@ impl Client {
             }
         };
 
-        let prefix = config.command.prefix.clone();
+        let prefix = config.command.prefix;
+
+        let GitHubConfig {
+            base_url,
+            pr_tracker,
+            token,
+        } = config.services.github;
+
+        let github = match pr_tracker {
+            config::PrTrackerConfig::Enabled { cron, targets } => {
+                use crate::services::github::pr_tracker::PrTrackerContext;
+                use std::str::FromStr;
+                let base_url = http::Uri::from_str(base_url.as_str())?;
+                let octocrab = crate::services::github::octocrab(&http, base_url, token);
+
+                Some(crate::services::github::Context {
+                    octocrab,
+                    cron,
+                    pr_tracker: Arc::new(PrTrackerContext::new(targets)?),
+                })
+            }
+            config::PrTrackerConfig::Disabled => None,
+        };
 
         let context = Context {
             prefix,
             http,
             pixiv,
             media_proxy,
+            github,
             features: config.features,
             hitokoto: config.services.hitokoto,
             admin_user: config.admin_user,
