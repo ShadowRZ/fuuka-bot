@@ -268,6 +268,7 @@ where
     }
 }
 
+#[cfg(test)]
 mod tests {
 
     #[test]

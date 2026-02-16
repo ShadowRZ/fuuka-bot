@@ -47,7 +47,7 @@ pub mod html {
     }
 }
 
-#[allow(unused)]
+#[cfg(test)]
 mod tests {
     use super::{Author, Context, Tag};
     use minijinja::Environment;

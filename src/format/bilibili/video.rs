@@ -52,11 +52,9 @@ pub mod html {
     }
 }
 
-#[allow(unused)]
+#[cfg(test)]
 mod tests {
     use super::{Author, Context, Counts};
-    use minijinja::Environment;
-    use std::sync::LazyLock;
 
     use crate::format::ENVIRONMENT;
 
