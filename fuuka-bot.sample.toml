@@ -25,16 +25,16 @@ homeserver = "https://matrix.example.com"
 # See https://docs.github.com/en/rest/authentication/authenticating-to-the-rest-api
 token = ""
 [services.github.pr-tracker.targets.'NixOS/nixpkgs']
-'\Astaging\z' = "staging-next"
-'\Astaging-next\z' = "master"
-'\Astaging-next-([\d.]+)\z' = "release-$1"
-'\Ahaskell-updates\z' = "staging"
+'\Astaging\z' = ["staging-next"]
+'\Astaging-next\z' = ["master"]
+'\Astaging-next-([\d.]+)\z' = ["release-$1"]
+'\Ahaskell-updates\z' = ["staging"]
 '\Amaster\z' = ["nixpkgs-unstable", "nixos-unstable-small"]
-'\Anixos-(.*)-small\z' = "nixos-$1"
+'\Anixos-(.*)-small\z' = ["nixos-$1"]
 '\Arelease-([\d.]+)\z' = ["nixos-$1-small", "nixpkgs-$1-darwin"]
-'\Astaging-((1.|20)\.\d{2})\z' = "release-$1"
-'\Astaging-((2[1-9]|[3-90].)\.\d{2})\z' = "staging-next-$1"
-'\Astaging-nixos\z' = "master"
+'\Astaging-((1.|20)\.\d{2})\z' = ["release-$1"]
+'\Astaging-((2[1-9]|[3-90].)\.\d{2})\z' = ["staging-next-$1"]
+'\Astaging-nixos\z' = ["master"]
 
 [pixiv]
 enabled = false
