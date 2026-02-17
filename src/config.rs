@@ -23,11 +23,13 @@ pub struct Config {
     /// Admin user ID.
     pub admin_user: Option<OwnedUserId>,
     /// Pixiv related configs.
+    #[serde(default)]
     pub pixiv: PixivConfig,
     /// Optional room features.
     #[serde(default)]
     pub features: FeaturesConfig,
     /// Media proxy configuration.
+    #[serde(default)]
     pub media_proxy: MediaProxyConfig,
     /// HTTP Services configuration.
     pub services: ServiceConfig,
@@ -57,8 +59,9 @@ pub struct MatrixConfig {
 }
 
 /// Pixiv feature related configs.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum PixivConfig {
+    #[default]
     Disabled,
     Enabled {
         token: SecretString,
@@ -365,8 +368,9 @@ pub struct NixpkgsPrConfig {
     pub cron: Option<CronSchedule>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum MediaProxyConfig {
+    #[default]
     Disabled,
     Enabled {
         listen: String,
