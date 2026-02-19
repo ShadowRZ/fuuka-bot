@@ -1,0 +1,17 @@
+[advisories]
+ignore = [
+  # Marvin Attack: potential key recovery through timing sidechannels
+  "RUSTSEC-2023-0071", # Code doesn't use GitHub App authorization, so JWK is not involved
+  # fxhash - no longer maintained
+  "RUSTSEC-2025-0057", # Only for tests
+  # `derivative` is unmaintained; consider using an alternative
+  "RUSTSEC-2024-0388", # Only for IndexedDB support which is unrelated with this bot
+]
+
+[output]
+quiet = false
+deny = ["warnings"]
+
+[target]
+arch = ["x86_64"]
+os = ["linux", "windows", "macos"]
