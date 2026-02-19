@@ -180,10 +180,10 @@ where
         let this = self.project();
         match this.inner.poll_frame(cx) {
             Poll::Ready(frame) => {
-                if let Some(Ok(ref data)) = frame {
-                    if let Some(data) = data.data_ref() {
-                        this.writer.write_body(data);
-                    }
+                if let Some(Ok(ref data)) = frame
+                    && let Some(data) = data.data_ref()
+                {
+                    this.writer.write_body(data);
                 }
 
                 Poll::Ready(frame)

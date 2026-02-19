@@ -6,8 +6,7 @@ no-default-features = false
 [advisories]
 unmaintained = "workspace"
 unsound = "all"
-ignore = []
-git-fetch-with-cli = true
+ignore = [{ id = "RUSTSEC-2023-0071", reason = "JWK not used" }]
 
 [licenses]
 allow = [
@@ -21,7 +20,7 @@ allow = [
   "Unicode-3.0",
   "Zlib",
   "BSL-1.0",
-  "AGPL-3.0",
+  "AGPL-3.0-or-later",
 ]
 confidence-threshold = 0.8
 
@@ -44,14 +43,12 @@ skip = [
   "rand_core@0.6.4",
   "rand_chacha@0.3.1",
   "rand@0.8.5",
-  "openssl-probe@0.1.6",
   "itertools@0.10.5",
   "hashbrown@0.15.5",
   "getrandom@0.2.17",
+  "getrandom@0.3.4",
   { crate = "thiserror@1.0.69", reason = "envsubst, oauth2 uses this old version" },
   { crate = "thiserror-impl@1.0.69", reason = "envsubst, oauth2 uses this old version" },
-  { crate = "prost@0.13.5", reason = "vodozemac uses this old version" },
-  { crate = "prost-derive@0.13.5", reason = "vodozemac uses this old version" },
 ]
 
 [sources]
