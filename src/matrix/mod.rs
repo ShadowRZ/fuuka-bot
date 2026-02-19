@@ -1,3 +1,4 @@
+pub mod federation;
 pub mod streams;
 
 use anyhow::Context;

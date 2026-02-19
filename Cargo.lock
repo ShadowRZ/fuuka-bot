@@ -1418,6 +1418,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rpassword",
+ "ruma",
  "secrecy",
  "serde",
  "serde-bool",
@@ -3688,6 +3689,7 @@ dependencies = [
  "ruma-events",
  "ruma-federation-api",
  "ruma-html",
+ "ruma-signatures",
  "web-time",
 ]
 
@@ -3779,7 +3781,9 @@ dependencies = [
  "headers",
  "http",
  "http-auth",
+ "httparse",
  "js_int",
+ "memchr",
  "mime",
  "ruma-common",
  "ruma-events",

@@ -1,17 +1,18 @@
-pub(super) mod about;
-pub(super) mod bilibili;
-pub(super) mod bot;
-pub(super) mod delete;
-pub(super) mod hitokoto;
-pub(super) mod ignore;
-pub(super) mod nixpkgs;
-pub(super) mod ping;
-pub(super) mod pixiv;
-pub(super) mod profile;
-pub(super) mod room_id;
-pub(super) mod rooms;
-pub(super) mod unignore;
-pub(super) mod user_id;
+mod about;
+mod bilibili;
+mod bot;
+mod delete;
+mod hitokoto;
+mod ignore;
+mod nixpkgs;
+mod ping;
+mod pixiv;
+mod profile;
+mod room_id;
+mod rooms;
+mod server;
+mod unignore;
+mod user_id;
 
 use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::OriginalRoomMessageEvent};
 
@@ -48,5 +49,6 @@ pub(super) async fn process(
         Args::BiliBili { id } => self::bilibili::process(ev, room, context, &id).await,
         Args::Delete => self::delete::process(ev, room, context).await,
         Args::Bot(command) => self::bot::process(ev, room, context, command).await,
+        Args::Server { server_name } => self::server::process(ev, room, context, server_name).await,
     }
 }

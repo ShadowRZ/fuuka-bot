@@ -1,4 +1,5 @@
 use clap::Parser;
+use matrix_sdk::ruma::OwnedServerName;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::{
     Room, RoomState,
@@ -180,6 +181,10 @@ pub enum Args {
     /// Send infomation of a BiliBili video.
     #[command(name = "bilibili")]
     BiliBili { id: String },
+    /// Ger server infomation.
+    Server {
+        server_name: Option<OwnedServerName>,
+    },
 }
 
 pub mod profile {

@@ -21,6 +21,7 @@ mod middleware;
 pub mod services;
 mod traits;
 pub mod types;
+pub mod utils;
 
 pub use crate::config::Config;
 use crate::config::FeaturesConfig;
