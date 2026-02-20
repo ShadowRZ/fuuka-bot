@@ -83,7 +83,7 @@ git = "https://github.com/ShadowRZ/pixrs"
 [dependencies.ruma]
 features = ["unstable-msc2545"]
 git = "https://github.com/ruma/ruma"
-rev = "289bee87974bd3c2ad14a6c15801c80b683b67dc"
+rev = "aff5afe90e876f5bf0ebf6fb59994ff7ed492b45"
 
 [dev-dependencies]
 html-compare-rs = "0.3.0"

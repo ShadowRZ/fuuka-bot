@@ -1418,7 +1418,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rpassword",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
  "secrecy",
  "serde",
  "serde-bool",
@@ -2483,7 +2483,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "reqwest",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde_html_form",
  "serde_json",
@@ -2518,7 +2518,7 @@ dependencies = [
  "matrix-sdk-store-encryption",
  "once_cell",
  "regex",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -2538,7 +2538,7 @@ dependencies = [
  "futures-util",
  "gloo-timers",
  "imbl",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -2574,7 +2574,7 @@ dependencies = [
  "pbkdf2",
  "rand 0.8.5",
  "rmp-serde",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde_json",
  "sha2",
@@ -2607,7 +2607,7 @@ dependencies = [
  "matrix-sdk-store-encryption",
  "matrix_indexed_db_futures",
  "rmp-serde",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -2636,7 +2636,7 @@ dependencies = [
  "matrix-sdk-store-encryption",
  "num_cpus",
  "rmp-serde",
- "ruma",
+ "ruma 0.14.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "rusqlite",
  "serde",
  "serde_json",
@@ -3685,11 +3685,24 @@ dependencies = [
  "js_int",
  "js_option",
  "ruma-client-api",
- "ruma-common",
- "ruma-events",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "ruma-events 0.32.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "ruma-federation-api",
  "ruma-html",
  "ruma-signatures",
+ "web-time",
+]
+
+[[package]]
+name = "ruma"
+version = "0.14.1"
+source = "git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45#aff5afe90e876f5bf0ebf6fb59994ff7ed492b45"
+dependencies = [
+ "assign",
+ "js_int",
+ "js_option",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
+ "ruma-events 0.32.1 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
  "web-time",
 ]
 
@@ -3706,8 +3719,8 @@ dependencies = [
  "js_int",
  "js_option",
  "maplit",
- "ruma-common",
- "ruma-events",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "ruma-events 0.32.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde_html_form",
  "serde_json",
@@ -3734,8 +3747,8 @@ dependencies = [
  "percent-encoding",
  "rand 0.8.5",
  "regex",
- "ruma-identifiers-validation",
- "ruma-macros",
+ "ruma-identifiers-validation 0.12.0 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "ruma-macros 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde",
  "serde_html_form",
  "serde_json",
@@ -3744,6 +3757,33 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+ "web-time",
+ "wildmatch",
+ "zeroize",
+]
+
+[[package]]
+name = "ruma-common"
+version = "0.17.1"
+source = "git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45#aff5afe90e876f5bf0ebf6fb59994ff7ed492b45"
+dependencies = [
+ "as_variant",
+ "base64",
+ "bytes",
+ "form_urlencoded",
+ "indexmap 2.13.0",
+ "js_int",
+ "percent-encoding",
+ "regex",
+ "ruma-identifiers-validation 0.12.0 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
+ "ruma-macros 0.17.1 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
+ "serde",
+ "serde_html_form",
+ "serde_json",
+ "thiserror 2.0.18",
+ "time",
+ "tracing",
+ "url",
  "web-time",
  "wildmatch",
  "zeroize",
@@ -3760,9 +3800,33 @@ dependencies = [
  "js_option",
  "percent-encoding",
  "regex",
- "ruma-common",
- "ruma-identifiers-validation",
- "ruma-macros",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "ruma-identifiers-validation 0.12.0 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "ruma-macros 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tracing",
+ "url",
+ "web-time",
+ "wildmatch",
+ "zeroize",
+]
+
+[[package]]
+name = "ruma-events"
+version = "0.32.1"
+source = "git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45#aff5afe90e876f5bf0ebf6fb59994ff7ed492b45"
+dependencies = [
+ "as_variant",
+ "indexmap 2.13.0",
+ "js_int",
+ "js_option",
+ "percent-encoding",
+ "regex",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
+ "ruma-identifiers-validation 0.12.0 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
+ "ruma-macros 0.17.1 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -3785,8 +3849,8 @@ dependencies = [
  "js_int",
  "memchr",
  "mime",
- "ruma-common",
- "ruma-events",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "ruma-events 0.32.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "ruma-signatures",
  "serde",
  "serde_json",
@@ -3815,6 +3879,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ruma-identifiers-validation"
+version = "0.12.0"
+source = "git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45#aff5afe90e876f5bf0ebf6fb59994ff7ed492b45"
+dependencies = [
+ "js_int",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "ruma-macros"
 version = "0.17.1"
 source = "git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc#289bee87974bd3c2ad14a6c15801c80b683b67dc"
@@ -3824,7 +3897,23 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "ruma-identifiers-validation",
+ "ruma-identifiers-validation 0.12.0 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
+ "serde",
+ "syn 2.0.116",
+ "toml",
+]
+
+[[package]]
+name = "ruma-macros"
+version = "0.17.1"
+source = "git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45#aff5afe90e876f5bf0ebf6fb59994ff7ed492b45"
+dependencies = [
+ "as_variant",
+ "cfg-if",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "ruma-identifiers-validation 0.12.0 (git+https://github.com/ruma/ruma?rev=aff5afe90e876f5bf0ebf6fb59994ff7ed492b45)",
  "serde",
  "syn 2.0.116",
  "toml",
@@ -3839,7 +3928,7 @@ dependencies = [
  "ed25519-dalek",
  "pkcs8",
  "rand 0.8.5",
- "ruma-common",
+ "ruma-common 0.17.1 (git+https://github.com/ruma/ruma?rev=289bee87974bd3c2ad14a6c15801c80b683b67dc)",
  "serde_json",
  "sha2",
  "thiserror 2.0.18",
