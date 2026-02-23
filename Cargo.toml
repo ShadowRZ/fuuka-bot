@@ -79,6 +79,7 @@ version = "0.12.28"
 [dependencies.pixrs]
 default-features = false
 git = "https://github.com/ShadowRZ/pixrs"
+rev = "42294c35e4deacbf49f98374b767dfae29bb38ea"
 
 [dependencies.ruma]
 features = ["unstable-msc2545"]
