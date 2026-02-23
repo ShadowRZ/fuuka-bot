@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use cronchik::CronSchedule;
 use graphql_client::GraphQLQuery;
@@ -7,6 +7,7 @@ use octocrab::{
     service::middleware::{base_uri::BaseUriLayer, cache::mem::InMemoryCache},
 };
 use secrecy::SecretString;
+use tower::limit::{ConcurrencyLimitLayer, RateLimitLayer};
 
 use crate::{
     config::RepositoryParts,
@@ -34,6 +35,8 @@ pub fn octocrab(client: &reqwest::Client, base_url: http::Uri, token: SecretStri
     let service = tower::ServiceBuilder::new()
         .layer(BaseUriLayer::new(base_url))
         .layer(HttpCacheLayer::new(Some(Arc::new(InMemoryCache::new()))))
+        .layer(RateLimitLayer::new(1, Duration::from_secs(1)))
+        .layer(ConcurrencyLimitLayer::new(1))
         .layer(crate::middleware::reqwest::ReqwestLayer)
         .service(client.clone());
     OctocrabBuilder::new_empty()
