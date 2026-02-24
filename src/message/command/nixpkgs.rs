@@ -135,9 +135,26 @@ pub async fn process(
             .await;
 
             match result {
-                Ok(result) => {
-                    let in_branch = matches!(result.state, PullRequestState::MERGED { .. });
-                    if in_branch {
+                Ok(result) => match result.state {
+                    PullRequestState::CLOSED { .. } => {
+                        if let Err(error) = room
+                            .send_queue()
+                            .send(
+                                RoomMessageEventContent::text_plain(format!(
+                                    "PR #{pr_number} is closed! 😞"
+                                ))
+                                .into(),
+                            )
+                            .await
+                        {
+                            tracing::warn!(
+                                room_id = %room.room_id(),
+                                "Failed to queue merge info to send: {error}",
+                            );
+                        }
+                        return Ok(());
+                    }
+                    PullRequestState::MERGED { .. } => {
                         if let Err(error) = room
                             .send_queue()
                             .send(
@@ -155,7 +172,8 @@ pub async fn process(
                         }
                         break result;
                     }
-                }
+                    _ => {}
+                },
                 Err(error) => tracing::warn!(
                     "Failed to compare {owner}/{repo}#{pr_number}: {error}",
                     owner = &repository.owner,
