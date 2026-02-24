@@ -138,6 +138,21 @@ pub async fn process(
                 Ok(result) => {
                     let in_branch = matches!(result.state, PullRequestState::MERGED { .. });
                     if in_branch {
+                        if let Err(error) = room
+                            .send_queue()
+                            .send(
+                                RoomMessageEventContent::text_plain(format!(
+                                    "PR #{pr_number} is now merged!"
+                                ))
+                                .into(),
+                            )
+                            .await
+                        {
+                            tracing::warn!(
+                                room_id = %room.room_id(),
+                                "Failed to queue merge info to send: {error}",
+                            );
+                        }
                         break result;
                     }
                 }

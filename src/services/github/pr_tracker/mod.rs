@@ -132,6 +132,7 @@ pub(crate) async fn track(
                             .await
                     {
                         tracing::warn!(
+                            %room_id,
                             "Failed to queue in branch info to send to room {room_id}: {error}"
                         );
                     }
