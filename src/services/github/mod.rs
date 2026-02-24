@@ -6,7 +6,6 @@ use octocrab::{
     service::middleware::{base_uri::BaseUriLayer, cache::mem::InMemoryCache},
 };
 use secrecy::SecretString;
-use tower::limit::{ConcurrencyLimitLayer, RateLimitLayer};
 
 use crate::{
     config::RepositoryParts,
@@ -35,10 +34,11 @@ pub struct Params {
 
 pub fn octocrab(client: &reqwest::Client, base_url: http::Uri, token: SecretString) -> Octocrab {
     let service = tower::ServiceBuilder::new()
+        .buffer(1024)
+        .concurrency_limit(1)
+        .rate_limit(1, Duration::from_secs(1))
         .layer(BaseUriLayer::new(base_url))
         .layer(HttpCacheLayer::new(Some(Arc::new(InMemoryCache::new()))))
-        .layer(RateLimitLayer::new(1, Duration::from_secs(1)))
-        .layer(ConcurrencyLimitLayer::new(1))
         .layer(crate::middleware::reqwest::ReqwestLayer)
         .service(client.clone());
     OctocrabBuilder::new_empty()
