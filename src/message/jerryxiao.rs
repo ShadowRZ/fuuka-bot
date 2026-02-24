@@ -183,8 +183,8 @@ pub(super) async fn process(
     name = "normal",
     skip(from_member, to_member),
     fields(
-        from_sender = %from_member.user_id(),
-        to_sender = %to_member.user_id(),
+        fuuka_bot.jerryxiao.from_sender = %from_member.user_id(),
+        fuuka_bot.jerryxiao.to_sender = %to_member.user_id(),
     ),
     err
 )]
@@ -279,8 +279,8 @@ async fn jerryxiao(
     name = "formatted",
     skip(from_member, to_member),
     fields(
-        from_sender = %from_member.user_id(),
-        to_sender = %to_member.user_id(),
+        fuuka_bot.jerryxiao.from_sender = %from_member.user_id(),
+        fuuka_bot.jerryxiao.to_sender = %to_member.user_id(),
     ),
     err
 )]
@@ -318,7 +318,7 @@ async fn jerryxiao_formatted(
 #[tracing::instrument(
     skip(member),
     fields(
-        user_id = %member.user_id(),
+        fuuka_bot.fortune.user_id = %member.user_id(),
     ),
     err
 )]

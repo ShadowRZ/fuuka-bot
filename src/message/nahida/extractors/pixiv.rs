@@ -4,7 +4,7 @@ use matrix_sdk::{
     ruma::events::room::message::{OriginalRoomMessageEvent, RoomMessageEventContent},
 };
 
-#[tracing::instrument(name = "illust", skip_all, fields(illust_id = %illust_id), err)]
+#[tracing::instrument(name = "illust", skip_all, fields(fuuka_bot.pixiv.illust_id = %illust_id), err)]
 pub async fn pixiv_illust(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

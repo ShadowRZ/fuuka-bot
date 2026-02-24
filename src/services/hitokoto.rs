@@ -28,7 +28,10 @@ pub fn format(resp: Response) -> RoomMessageEventContent {
 }
 
 pub async fn request(client: &reqwest::Client, base: Url) -> anyhow::Result<Response> {
-    tracing::Span::current().record("hitokoto_api", tracing::field::display(&base));
+    tracing::Span::current().record(
+        "fuuka_bot.hitokoto.base_url",
+        tracing::field::display(&base),
+    );
     let raw = client.get(base).send().await?.error_for_status()?;
     let resp: Response = raw.json().await?;
 

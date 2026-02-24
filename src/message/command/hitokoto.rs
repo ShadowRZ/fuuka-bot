@@ -5,7 +5,7 @@ use matrix_sdk::{
     ruma::events::room::message::{AddMentions, ForwardThread, OriginalRoomMessageEvent},
 };
 
-#[tracing::instrument(name = "hitokoto", skip(ev, room, context), fields(hitokoto_api), err)]
+#[tracing::instrument(name = "hitokoto", skip(ev, room, context), fields(fuuka_bot.hitokoto.base_url), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

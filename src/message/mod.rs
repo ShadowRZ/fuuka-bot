@@ -85,8 +85,8 @@ async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMess
     name = "message",
     skip_all,
     fields(
-        event_id = %ev.event_id,
-        room_id = %room.room_id()
+        fuuka_bot.origin.event_id = %ev.event_id,
+        fuuka_bot.origin.room_id = %room.room_id()
     )
 )]
 async fn process(

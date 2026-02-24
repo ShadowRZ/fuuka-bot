@@ -7,7 +7,7 @@ use matrix_sdk::{
     },
 };
 
-#[tracing::instrument(name = "ignore", skip(ev, room, context), fields(will_ignore), err)]
+#[tracing::instrument(name = "ignore", skip(ev, room, context), fields(fuuka_bot.will_ignore), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
@@ -29,7 +29,7 @@ pub async fn process(
         .in_reply_to_target(ev)
         .await?
         .ok_or(crate::Error::RequiresReply)?;
-    tracing::Span::current().record("will_ignore", tracing::field::display(&user_id));
+    tracing::Span::current().record("fuuka_bot.will_ignore", tracing::field::display(&user_id));
     let account = room.client().account();
     account.ignore_user(&user_id).await?;
 

@@ -257,7 +257,7 @@ pub(crate) async fn log_encryption_info(client: &matrix_sdk::Client) -> anyhow::
     if let Some(device) = encryption.get_own_device().await? {
         let device_id = device.device_id();
         tracing::debug!(
-            "Own device ID: {device_id}, Cross signing status: {cross_signing_status:#?}, is_cross_signed_by_owner = {is_cross_signed_by_owner}, is_verified = {is_verified}, is_verified_with_cross_signing = {is_verified_with_cross_signing}",
+            "Own device ID: {device_id}, Cross signing status: {cross_signing_status:?}, is_cross_signed_by_owner = {is_cross_signed_by_owner}, is_verified = {is_verified}, is_verified_with_cross_signing = {is_verified_with_cross_signing}",
             is_cross_signed_by_owner = device.is_cross_signed_by_owner(),
             is_verified = device.is_verified(),
             is_verified_with_cross_signing = device.is_verified_with_cross_signing(),
@@ -315,7 +315,7 @@ pub(super) async fn on_stripped_member(
             while let Err(e) = room.join().await {
                 use tokio::time::{Duration, sleep};
                 tracing::warn!(
-                    %room_id,
+                    fuuka_bot.origin.room_id = %room_id,
                     "Failed to join room {room_id} ({e:#}), retrying in {delay}s",
                 );
                 sleep(Duration::from_secs(delay)).await;
@@ -323,7 +323,7 @@ pub(super) async fn on_stripped_member(
 
                 if delay > 3600 {
                     tracing::error!(
-                        %room_id,
+                        fuuka_bot.origin.room_id = %room_id,
                         "Can't join room {room_id} ({e:#})"
                     );
                     break;
@@ -338,7 +338,7 @@ pub(super) async fn on_stripped_member(
 #[tracing::instrument(
     skip_all,
     fields(
-        room_id = %room.room_id(),
+        fuuka_bot.origin.room_id = %room.room_id(),
     ),
 )]
 pub(super) async fn on_room_replace(
@@ -346,44 +346,28 @@ pub(super) async fn on_room_replace(
     room: matrix_sdk::Room,
     client: matrix_sdk::Client,
 ) {
-    tokio::spawn(async move {
-        let room_id: OwnedRoomOrAliasId = ev.content.replacement_room.into();
-        tracing::info!(
-            room_id = %room.room_id(),
-            "Room replaced, Autojoining new room {}",
-            room_id
-        );
-        let sender = ev.sender;
-        let server_name = sender.server_name();
-        let mut delay = 2;
-        while let Err(e) = client
-            .join_room_by_id_or_alias(&room_id, &[server_name.into()])
-            .await
-        {
-            use tokio::time::{Duration, sleep};
-            tracing::warn!(
-                %room_id,
-                "Failed to join replacement room {room_id} ({e:#}), retrying in {delay}s"
-            );
-            sleep(Duration::from_secs(delay)).await;
-            delay *= 2;
+    let room_id: OwnedRoomOrAliasId = ev.content.replacement_room.into();
+    tracing::info!("Room replaced, Autojoining new room {}", room_id);
+    let sender = ev.sender;
+    let server_name = sender.server_name();
+    let mut delay = 2;
+    while let Err(e) = client
+        .join_room_by_id_or_alias(&room_id, &[server_name.into()])
+        .await
+    {
+        use tokio::time::{Duration, sleep};
+        tracing::warn!("Failed to join replacement room {room_id} ({e:#}), retrying in {delay}s");
+        sleep(Duration::from_secs(delay)).await;
+        delay *= 2;
 
-            if delay > 3600 {
-                tracing::error!(
-                    %room_id,
-                    "Can't join replacement room {room_id} ({e:#}), please join manually."
-                );
-                break;
-            }
+        if delay > 3600 {
+            tracing::error!("Can't join replacement room {room_id} ({e:#}), please join manually.");
+            break;
         }
-        tokio::spawn(async move {
-            if let Err(e) = room.leave().await {
-                tracing::error!(
-                    room_id = %room.room_id(),
-                    "Can't leave the original room {} ({e:#})",
-                    room.room_id()
-                );
-            }
-        });
+    }
+    tokio::spawn(async move {
+        if let Err(e) = room.leave().await {
+            tracing::error!("Can't leave the original room {} ({e:#})", room.room_id());
+        }
     });
 }

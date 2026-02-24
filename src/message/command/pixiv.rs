@@ -46,7 +46,7 @@ pub async fn process(
     Ok(())
 }
 
-#[tracing::instrument(name = "ranking", skip_all, fields(ranking = "daily"), err)]
+#[tracing::instrument(name = "ranking", skip_all, fields(fuuka_bot.pixiv.ranking = "daily"), err)]
 async fn format_ranking(
     pixiv: &PixivClient,
     ranking: RankingMode,
@@ -92,7 +92,7 @@ async fn format_ranking(
     Ok(RoomMessageEventContent::text_html(body, html_body))
 }
 
-#[tracing::instrument(name = "illust", skip_all, fields(illust_id = %illust_id), err)]
+#[tracing::instrument(name = "illust", skip_all, fields(fuuka_bot.pixiv.illust_id = %illust_id), err)]
 async fn send_illust(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
