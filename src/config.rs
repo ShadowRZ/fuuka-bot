@@ -87,6 +87,7 @@ impl<'de> Deserialize<'de> for PixivConfig {
                 enabled: serde_bool::True,
                 token: SecretString,
                 r18: bool,
+                #[serde(default)]
                 tag_triggers: TagTriggers,
             },
         }
