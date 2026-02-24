@@ -25,10 +25,11 @@ pub async fn process(
         };
     }
 
-    let user_id = room
-        .in_reply_to_target(ev)
-        .await?
-        .ok_or(crate::Error::RequiresReply)?;
+    let Some(user_id) = room.in_reply_to_target(ev).await? else {
+        room.send_requires_reply().await?;
+        return Ok(());
+    };
+
     tracing::Span::current().record("fuuka_bot.will_ignore", tracing::field::display(&user_id));
     let account = room.client().account();
     account.ignore_user(&user_id).await?;

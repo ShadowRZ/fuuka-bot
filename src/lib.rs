@@ -32,7 +32,6 @@ use crate::config::PixivConfig;
 pub use crate::media_proxy::MediaProxy;
 use crate::services::github::pr_tracker::streams::CronStream;
 pub use crate::traits::*;
-pub use crate::types::Error;
 
 use clap::Parser;
 use matrix_sdk::authentication::matrix::MatrixSession;
@@ -43,7 +42,6 @@ use matrix_sdk::ruma::presence::PresenceState;
 use pixrs::PixivClient;
 use secrecy::ExposeSecret;
 use std::sync::Arc;
-use thiserror::Error;
 use tokio::signal;
 use tokio::task::JoinHandle;
 

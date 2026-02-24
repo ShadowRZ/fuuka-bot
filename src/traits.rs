@@ -5,6 +5,7 @@ use matrix_sdk::ruma::events::AnyTimelineEvent;
 use matrix_sdk::ruma::events::room::message::OriginalRoomMessageEvent;
 use matrix_sdk::ruma::events::room::message::Relation;
 use matrix_sdk::{room::RoomMember, ruma::MxcUri};
+use ruma::events::room::message::RoomMessageEventContent;
 use url::Url;
 
 use crate::matrix::streams::membership::MembershipStream;
@@ -91,6 +92,7 @@ pub trait RoomExt {
     where
         F: IntoFuture<Output = anyhow::Result<()>> + Send,
         <F as IntoFuture>::IntoFuture: Send;
+    fn send_requires_reply(&self) -> impl Future<Output = anyhow::Result<()>>;
 }
 
 impl RoomExt for matrix_sdk::Room {
@@ -151,6 +153,14 @@ impl RoomExt for matrix_sdk::Room {
         self.typing_notice(true).await?;
         fut.await?;
         self.typing_notice(false).await?;
+        Ok(())
+    }
+
+    async fn send_requires_reply(&self) -> anyhow::Result<()> {
+        self.send(RoomMessageEventContent::text_plain(
+            "Replying to a event is required for this command.",
+        ))
+        .await?;
         Ok(())
     }
 }

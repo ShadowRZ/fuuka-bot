@@ -1425,7 +1425,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "shell-words",
- "thiserror 2.0.18",
  "time",
  "tl",
  "tokio",

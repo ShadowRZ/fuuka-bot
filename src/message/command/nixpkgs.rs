@@ -1,3 +1,4 @@
+use anyhow::Context as _;
 use octocrab::models::commits::GithubCommitStatus;
 
 use crate::{
@@ -39,7 +40,11 @@ pub async fn process(
         },
     )
     .await
-    .map_err(crate::Error::GitHubError)?;
+    .context(format!(
+        "Error while fetching infomation {owner}/{repo}#{pr_number}",
+        owner = &repository.owner,
+        repo = &repository.repo
+    ))?;
 
     let all_branches = github
         .pr_tracker

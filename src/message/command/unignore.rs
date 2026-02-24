@@ -1,3 +1,5 @@
+use anyhow::Context as _;
+
 use crate::Context;
 use matrix_sdk::{
     Room,
@@ -29,7 +31,10 @@ pub async fn process(
     }
 
     let account = room.client().account();
-    account.unignore_user(&user_id).await?;
+    account
+        .unignore_user(&user_id)
+        .await
+        .context("Failed to unignore user")?;
 
     room.send(RoomMessageEventContent::text_plain("Done.").make_reply_to(
         ev,

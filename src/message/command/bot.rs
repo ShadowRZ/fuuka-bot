@@ -33,10 +33,10 @@ pub async fn process(
 
     match command {
         BotCommand::SetAvatar => {
-            let ev = room
-                .in_reply_to_event(ev)
-                .await?
-                .ok_or(crate::Error::RequiresReply)?;
+            let Some(ev) = room.in_reply_to_event(ev).await? else {
+                room.send_requires_reply().await?;
+                return Ok(());
+            };
 
             if let AnyTimelineEvent::MessageLike(AnyMessageLikeEvent::RoomMessage(
                 RoomMessageEvent::Original(ev),

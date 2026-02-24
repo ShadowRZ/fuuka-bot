@@ -54,26 +54,16 @@ pub async fn on_sync_message(
 }
 
 async fn send_error_content(room: &Room, e: anyhow::Error, ev: &OriginalRoomMessageEvent) {
-    use crate::Error;
-
-    let body = RoomMessageEventContent::text_plain(match e.downcast::<crate::Error>() {
-        Ok(Error::RequiresReply) => "Replying to a event is required for this command.".to_string(),
-        Ok(Error::InvaildArgument { arg, source }) => {
-            format!("Invaild argument for {arg}: {source}")
-        }
-        Ok(Error::MissingArgument(arg)) => format!("Missing argument: {arg}"),
-        Ok(Error::UnknownCommand(command)) => format!("Unknown command {command}"),
-        Ok(Error::UnexpectedError(e)) => e.to_string(),
-        Ok(Error::GitHubError(source)) => {
-            format!("Error when fetching infomation from GitHub: {source}")
-        }
-        Err(e) => {
-            format!("Unexpected error happened: {e:#}")
-        }
-    })
-    .make_reply_to(ev, ForwardThread::No, AddMentions::Yes);
-
-    if let Err(e) = room.send(body).await {
+    if let Err(e) = room
+        .send(
+            RoomMessageEventContent::text_plain(format!("{e:#}")).make_reply_to(
+                ev,
+                ForwardThread::No,
+                AddMentions::Yes,
+            ),
+        )
+        .await
+    {
         tracing::error!(
             room_id = %room.room_id(),
             "Unexpected error happened while sending error content: {e:#}"

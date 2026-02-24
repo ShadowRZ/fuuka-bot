@@ -14,6 +14,7 @@
 mod extractors;
 mod link_type;
 
+use anyhow::Context as _;
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -35,7 +36,10 @@ pub(super) async fn process(
     context: &Ctx<Context>,
     url: Url,
 ) -> anyhow::Result<()> {
-    if let Some(content) = crate::message::nahida::dispatch(url, ev, room, context).await? {
+    if let Some(content) = crate::message::nahida::dispatch(url.clone(), ev, room, context)
+        .await
+        .context(format!("Failed to process {url}"))?
+    {
         room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
             .await?;
     }
@@ -75,7 +79,7 @@ async fn dispatch(
         },
         LinkType::Generic(url) => self::extractors::generic::extract(client, url).await,
         LinkType::CannotBeABase => {
-            Result::Err(crate::Error::UnexpectedError("URL is a cannot-be-a-base!").into())
+            anyhow::bail!("URL is a cannot-be-a-base!")
         }
     }
 }

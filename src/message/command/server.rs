@@ -1,3 +1,4 @@
+use anyhow::Context as _;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk::ruma::events::room::message::{AddMentions, ForwardThread};
 use matrix_sdk::ruma::{OwnedServerName, events::room::message::OriginalRoomMessageEvent};
@@ -16,10 +17,15 @@ pub async fn process(
     let server_name = server_name.unwrap_or_else(|| room.own_user_id().server_name().to_owned());
 
     let federation_server =
-        crate::matrix::federation::discover_federation_endpoint(http, &server_name).await?;
+        crate::matrix::federation::discover_federation_endpoint(http, &server_name)
+            .await
+            .context(format!(
+                "Failed to query federation endpoint for {server_name}"
+            ))?;
 
-    let server_version =
-        crate::matrix::federation::server_version(http, federation_server.server).await?;
+    let server_version = crate::matrix::federation::server_version(http, federation_server.server)
+        .await
+        .context(format!("Failed to query server version for {server_name}"))?;
 
     let (name, version) = server_version
         .server

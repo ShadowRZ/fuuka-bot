@@ -1,3 +1,5 @@
+use anyhow::Context as _;
+
 use crate::{
     Context,
     config::FeaturesConfig,
@@ -32,9 +34,13 @@ pub async fn process(
     };
 
     let content = match command {
-        PixivCommand::Ranking(ranking) => format_ranking(pixiv, ranking).await?,
+        PixivCommand::Ranking(ranking) => format_ranking(pixiv, ranking)
+            .await
+            .context("Failed to query Pixiv ranking")?,
         PixivCommand::Illust(illust_id) => {
-            send_illust(ev, room, pixiv, http, context, features, illust_id).await?;
+            send_illust(ev, room, pixiv, http, context, features, illust_id)
+                .await
+                .context(format!("Failed to query Pixiv illust {illust_id}"))?;
 
             return Ok(());
         }

@@ -1,3 +1,5 @@
+use anyhow::Context as _;
+
 use crate::Context;
 use matrix_sdk::{
     Room,
@@ -12,7 +14,9 @@ pub async fn process(
     context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
     let hitokoto = context.hitokoto.base_url.clone();
-    let resp = crate::services::hitokoto::request(&context.http, hitokoto).await?;
+    let resp = crate::services::hitokoto::request(&context.http, hitokoto)
+        .await
+        .context("Failed to request hitokoto")?;
     let content = crate::services::hitokoto::format(resp);
     room.send(content.make_reply_to(ev, ForwardThread::No, AddMentions::Yes))
         .await?;

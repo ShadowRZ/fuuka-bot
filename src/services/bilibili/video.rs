@@ -24,7 +24,7 @@ pub async fn request(client: &reqwest::Client, id: &str) -> anyhow::Result<Video
         .await?;
     let captures = REGEX
         .captures(&body)
-        .ok_or(crate::Error::UnexpectedError("No captures!"))?; // TODO: Better errors
+        .ok_or(anyhow::anyhow!("No captures!"))?; // TODO: Better errors
     let json_str = &captures["json"];
 
     Ok(serde_json::from_str(json_str)?)

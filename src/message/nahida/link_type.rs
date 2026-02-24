@@ -1,3 +1,4 @@
+use anyhow::Context;
 use url::{Host, Url};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,7 +28,7 @@ impl LinkType {
         }
     }
 
-    fn parse_pixiv(url: Url) -> Result<LinkType, crate::Error> {
+    fn parse_pixiv(url: Url) -> anyhow::Result<LinkType> {
         let Some(mut paths) = url.path_segments() else {
             return Ok(LinkType::CannotBeABase);
         };
@@ -45,10 +46,7 @@ impl LinkType {
             .next()
             .map(|i| i.parse::<i32>())
             .transpose()
-            .map_err(|e| crate::Error::InvaildArgument {
-                arg: "Artwork ID",
-                source: e.into(),
-            })?;
+            .context("Failed to parse Pixiv artwork ID")?;
 
         match artwork_id {
             Some(artwork_id) => Ok(LinkType::Pixiv(PixivLinkType::Artwork(artwork_id))),
@@ -58,7 +56,7 @@ impl LinkType {
 }
 
 impl TryFrom<Url> for LinkType {
-    type Error = crate::Error;
+    type Error = anyhow::Error;
 
     fn try_from(value: Url) -> Result<Self, Self::Error> {
         if value.cannot_be_a_base() {

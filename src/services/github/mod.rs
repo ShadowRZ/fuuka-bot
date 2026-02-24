@@ -69,8 +69,9 @@ pub async fn pull_request(
     if let Some(errors) = resp.errors {
         return Err(Error(errors).into());
     }
+
     let Some(data) = resp.data else {
-        return Err(crate::Error::UnexpectedError("Server returned no valid data!").into());
+        anyhow::bail!("Server returned no valid data!")
     };
 
     let Some(repository) = data.repository else {
