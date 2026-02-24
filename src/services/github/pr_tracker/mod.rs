@@ -1,8 +1,13 @@
 use std::{borrow::Cow, collections::BTreeMap};
 
+use matrix_sdk::ruma::OwnedRoomId;
+use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
+use octocrab::models::commits::GithubCommitStatus;
 use regex::{Regex, RegexSet};
 
 use crate::config::RepositoryParts;
+
+pub(crate) mod streams;
 
 pub struct PrTrackerRegexes {
     all_regexs: RegexSet,
@@ -81,6 +86,78 @@ impl PrTrackerContext {
         }
 
         Ok(Self { branches })
+    }
+}
+
+pub(crate) async fn track(
+    client: matrix_sdk::Client,
+    context: super::Context,
+    repository: RepositoryParts,
+    room_id: OwnedRoomId,
+    pr_number: i32,
+    base: String,
+    head: String,
+) {
+    let Some(ref cron) = context.cron else {
+        return;
+    };
+
+    loop {
+        cron.wait_for_next_tick().await;
+
+        let compare = context
+            .octocrab
+            .commits(&repository.owner, &repository.repo)
+            .compare(&base, &head)
+            .per_page(1)
+            .send()
+            .await;
+        match compare {
+            Ok(compare) => {
+                let in_branch = matches!(
+                    compare.status,
+                    GithubCommitStatus::Behind | GithubCommitStatus::Identical
+                );
+                if in_branch {
+                    let head = head.clone();
+                    if let Some(room) = client.get_room(&room_id)
+                        && let Err(error) = room
+                            .send_queue()
+                            .send(
+                                RoomMessageEventContent::text_plain(format!(
+                                    "PR #{pr_number} is now in branch {base}!"
+                                ))
+                                .into(),
+                            )
+                            .await
+                    {
+                        tracing::warn!(
+                            "Failed to queue in branch info to send to room {room_id}: {error}"
+                        );
+                    }
+
+                    let next_branches = context.pr_tracker.next_branches(&repository, &base);
+                    for branch in next_branches {
+                        let client = client.clone();
+                        let context = context.clone();
+                        let head = head.clone();
+                        let room_id = room_id.clone();
+                        let repository = repository.clone();
+                        tokio::task::spawn_local(async move {
+                            track(
+                                client, context, repository, room_id, pr_number, branch, head,
+                            )
+                            .await;
+                        });
+                    }
+                }
+            }
+            Err(error) => tracing::warn!(
+                "Failed to compare {owner}/{repo}/{base}...{head}: {error}",
+                owner = &repository.owner,
+                repo = &repository.repo
+            ),
+        }
     }
 }
 

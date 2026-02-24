@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use cronchik::CronSchedule;
 use graphql_client::GraphQLQuery;
 use octocrab::{
     AuthState, Octocrab, OctocrabBuilder,
@@ -12,7 +11,10 @@ use tower::limit::{ConcurrencyLimitLayer, RateLimitLayer};
 use crate::{
     config::RepositoryParts,
     middleware::cache::HttpCacheLayer,
-    services::github::models::{PartialPullRequest, PullInfo, PullInfoVariables},
+    services::github::{
+        models::{PartialPullRequest, PullInfo, PullInfoVariables},
+        pr_tracker::streams::CronStream,
+    },
 };
 
 pub mod models;
@@ -21,7 +23,7 @@ pub mod pr_tracker;
 #[derive(Clone)]
 pub struct Context {
     pub octocrab: Octocrab,
-    pub cron: Option<Box<CronSchedule>>,
+    pub cron: Option<Arc<CronStream>>,
     pub pr_tracker: Arc<pr_tracker::PrTrackerContext>,
 }
 

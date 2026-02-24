@@ -30,6 +30,7 @@ use crate::config::HitokotoConfig;
 use crate::config::MediaProxyConfig;
 use crate::config::PixivConfig;
 pub use crate::media_proxy::MediaProxy;
+use crate::services::github::pr_tracker::streams::CronStream;
 pub use crate::traits::*;
 pub use crate::types::Error;
 
@@ -241,6 +242,7 @@ impl Client {
                 use std::str::FromStr;
                 let base_url = http::Uri::from_str(base_url.as_str())?;
                 let octocrab = crate::services::github::octocrab(&http, base_url, token);
+                let cron = cron.map(CronStream::new).map(Arc::new);
 
                 Some(crate::services::github::Context {
                     octocrab,
