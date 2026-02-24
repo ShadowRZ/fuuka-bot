@@ -178,6 +178,7 @@ impl Client {
         } = self;
         let client = builder.build().await?;
         client.restore_session(session).await?;
+        client.send_queue().set_enabled(true).await;
 
         if let Some(command) = args.command {
             match command {
@@ -347,6 +348,14 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
             tracing::warn!("Failed to set presence: {e:#}");
         }
     }
+
+    let send_queue = client.send_queue();
+
+    tokio::spawn(async move {
+        send_queue
+            .respawn_tasks_for_rooms_with_unsent_requests()
+            .await
+    });
 
     let h1 = client.add_event_handler(crate::message::on_sync_message);
     let h2 = client.add_event_handler(crate::matrix::on_stripped_member);
