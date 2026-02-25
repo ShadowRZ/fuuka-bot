@@ -6,10 +6,61 @@ use url::Url;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[allow(missing_docs)]
 pub struct Response {
+    pub id: u64,
     pub uuid: String,
     pub hitokoto: String,
+    #[serde(rename = "type")]
+    pub type_: Type,
     pub from: String,
     pub from_who: Option<String>,
+    pub creator: String,
+    pub creator_uid: u64,
+    pub reviewer: u64,
+    pub commit_from: String,
+    pub created_at: String,
+    length: u64,
+}
+
+/// <https://developer.hitokoto.cn/sentence/#%E5%8F%A5%E5%AD%90%E7%B1%BB%E5%9E%8B-%E5%8F%82%E6%95%B0>
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[non_exhaustive]
+pub enum Type {
+    /// 动画
+    #[serde(rename = "a")]
+    Anime,
+    /// 漫画
+    #[serde(rename = "b")]
+    Comic,
+    /// 游戏
+    #[serde(rename = "c")]
+    Game,
+    /// 文学
+    #[serde(rename = "d")]
+    Literature,
+    /// 原创
+    #[serde(rename = "e")]
+    Original,
+    /// 来自网络
+    #[serde(rename = "f")]
+    Internet,
+    /// 其他
+    #[serde(rename = "g")]
+    Other,
+    /// 影视
+    #[serde(rename = "h")]
+    Video,
+    /// 诗词
+    #[serde(rename = "i")]
+    Poetry,
+    /// 网易云
+    #[serde(rename = "j")]
+    NetEase,
+    /// 哲学
+    #[serde(rename = "k")]
+    Philosophy,
+    /// 抖机灵
+    #[serde(rename = "l")]
+    Joke,
 }
 
 pub fn format(resp: Response) -> RoomMessageEventContent {
