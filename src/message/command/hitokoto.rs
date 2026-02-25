@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use anyhow::Context as _;
 
 use crate::Context;
@@ -13,8 +15,9 @@ pub async fn process(
     room: &Room,
     context: &Ctx<Context>,
 ) -> anyhow::Result<()> {
-    let hitokoto = context.hitokoto.base_url.clone();
-    let resp = crate::services::hitokoto::request(&context.http, hitokoto)
+    let Ctx(Context { hitokoto, .. }) = context;
+    let resp = hitokoto
+        .request(BTreeSet::new())
         .await
         .context("Failed to request hitokoto")?;
     let content = crate::services::hitokoto::format(resp);

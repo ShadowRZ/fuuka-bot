@@ -26,7 +26,6 @@ pub mod utils;
 pub use crate::config::Config;
 use crate::config::FeaturesConfig;
 use crate::config::GitHubConfig;
-use crate::config::HitokotoConfig;
 use crate::config::MediaProxyConfig;
 use crate::config::PixivConfig;
 pub use crate::media_proxy::MediaProxy;
@@ -41,6 +40,7 @@ use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::presence::PresenceState;
 use pixrs::PixivClient;
 use secrecy::ExposeSecret;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::signal;
 use tokio::task::JoinHandle;
@@ -66,9 +66,9 @@ pub struct Context {
     pub prefix: String,
     pub admin_user: Option<OwnedUserId>,
     pub http: reqwest::Client,
+    pub hitokoto: crate::services::hitokoto::HitokotoClient,
     pub media_proxy: Option<MediaProxy>,
     pub pixiv: Option<(Arc<PixivClient>, Arc<crate::services::pixiv::Context>)>,
-    pub hitokoto: HitokotoConfig,
     pub features: FeaturesConfig,
     pub github: Option<crate::services::github::Context>,
 }
@@ -252,6 +252,11 @@ impl Client {
             config::PrTrackerConfig::Disabled => None,
         };
 
+        let hitokoto = {
+            let base_url = http::Uri::from_str(config.services.hitokoto.base_url.as_str())?;
+            crate::services::hitokoto::HitokotoClient::from_reqwest_client(&http, base_url)
+        };
+
         let context = Context {
             prefix,
             http,
@@ -259,7 +264,7 @@ impl Client {
             media_proxy,
             github,
             features: config.features,
-            hitokoto: config.services.hitokoto,
+            hitokoto,
             admin_user: config.admin_user,
         };
 
