@@ -1,15 +1,20 @@
-use std::{sync::Arc, time::Duration};
+use http_body_util::BodyExt;
+use std::{backtrace::Backtrace, sync::Arc, time::Duration};
+use tower::BoxError;
+use tower_http::map_response_body::MapResponseBodyLayer;
 
 use graphql_client::GraphQLQuery;
 use octocrab::{
     AuthState, Octocrab, OctocrabBuilder,
-    service::middleware::{base_uri::BaseUriLayer, cache::mem::InMemoryCache},
+    service::middleware::{
+        base_uri::BaseUriLayer,
+        cache::{HttpCacheLayer, mem::InMemoryCache},
+    },
 };
 use secrecy::SecretString;
 
 use crate::{
     config::RepositoryParts,
-    middleware::cache::HttpCacheLayer,
     services::github::{
         models::{PartialPullRequest, PullInfo, PullInfoVariables},
         pr_tracker::streams::CronStream,
@@ -34,11 +39,17 @@ pub struct Params {
 
 pub fn octocrab(client: &reqwest::Client, base_url: http::Uri, token: SecretString) -> Octocrab {
     let service = tower::ServiceBuilder::new()
-        .buffer(1024)
         .concurrency_limit(1)
         .rate_limit(1, Duration::from_secs(1))
         .layer(BaseUriLayer::new(base_url))
         .layer(HttpCacheLayer::new(Some(Arc::new(InMemoryCache::new()))))
+        .layer(MapResponseBodyLayer::new(|resp: reqwest::Body| {
+            resp.map_err(|error| octocrab::Error::Service {
+                source: Box::new(error) as BoxError,
+                backtrace: Backtrace::capture(),
+            })
+            .boxed()
+        }))
         .layer(crate::middleware::reqwest::ReqwestLayer)
         .service(client.clone());
     OctocrabBuilder::new_empty()
