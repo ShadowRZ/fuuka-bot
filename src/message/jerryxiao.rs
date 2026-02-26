@@ -1,7 +1,5 @@
 //! Implments various Jerry Xiao like functions.
 
-use std::collections::HashMap;
-
 use crate::{Context, RoomMemberExt};
 use matrix_sdk::Room;
 use matrix_sdk::event_handler::Ctx;
@@ -289,18 +287,20 @@ async fn jerryxiao_formatted(
     to_member: &RoomMember,
     text: &str,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    if text.contains("${from}") && text.contains("${to}") {
+    if text.contains("{from}") && text.contains("{to}") {
         let text = text.trim();
-        let mut text_context = HashMap::new();
-        text_context.insert("from".to_string(), format!("@{}", from_member.name_or_id()));
-        text_context.insert("to".to_string(), format!("@{}", to_member.name_or_id()));
-        let mut html_context = HashMap::new();
-        html_context.insert("from".to_string(), from_member.make_pill());
-        html_context.insert("to".to_string(), to_member.make_pill());
         Ok(Some(
             RoomMessageEventContent::text_html(
-                envsubst::substitute(text, &text_context)?,
-                envsubst::substitute(text, &html_context)?,
+                formatx::formatx!(
+                    text,
+                    from = format!("@{}", from_member.name_or_id()),
+                    to = format!("@{}", to_member.name_or_id()),
+                )?,
+                formatx::formatx!(
+                    text,
+                    from = from_member.make_pill(),
+                    to = to_member.make_pill(),
+                )?,
             )
             .add_mentions(Mentions::with_user_ids([
                 from_member.user_id().to_owned(),
@@ -309,7 +309,7 @@ async fn jerryxiao_formatted(
         ))
     } else {
         Ok(Some(RoomMessageEventContent::text_plain(
-            "No format slot ${from} ${to} found!",
+            "No format slot {from} {to} found!",
         )))
     }
 }

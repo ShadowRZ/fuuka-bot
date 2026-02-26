@@ -15,9 +15,9 @@ bytes = "1.11.0"
 clap = { version = "4.5.57", features = ["derive"] }
 crc32fast = "1.5.0"
 cronchik = { version = "2.0.4", features = ["time", "serde"] }
-envsubst = "0.2.1"
 fastrand = "2.3.0"
 file-format = "0.28.0"
+formatx = "0.2.4"
 futures-util = "0.3.31"
 graphql_client = { version = "0.16.0", default-features = false }
 hmac = "0.12.1"
