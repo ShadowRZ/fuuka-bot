@@ -695,6 +695,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "crates-api"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "http",
+ "http-body-util",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "thiserror 2.0.18",
+ "tower",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1389,6 +1403,7 @@ dependencies = [
  "axum",
  "bytes",
  "clap",
+ "crates-api",
  "crc32fast",
  "cronchik",
  "fastrand",
@@ -1396,6 +1411,7 @@ dependencies = [
  "formatx",
  "futures-util",
  "graphql_client",
+ "hitokoto-api",
  "hmac",
  "html-compare-rs",
  "http",
@@ -1651,6 +1667,20 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "hitokoto-api"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "http",
+ "http-body-util",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "thiserror 2.0.18",
+ "tower",
+]
 
 [[package]]
 name = "hkdf"

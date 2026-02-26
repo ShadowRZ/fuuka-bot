@@ -1,13 +1,12 @@
-use std::time::Duration;
-
 use bytes::Bytes;
 use http_body_util::BodyExt;
 use serde::Deserialize;
 use tower::Service;
 use tower::{BoxError, ServiceExt, buffer::Buffer, util::BoxService};
-use tower_http::ServiceBuilderExt;
 
-type BoxBody = http_body_util::combinators::BoxBody<Bytes, Error>;
+type BoxBody = http_body_util::combinators::BoxBody<Bytes, crate::Error>;
+
+pub type Result<T> = std::result::Result<T, crate::Error>;
 
 pub type CratesService = Buffer<
     http::Request<BoxBody>,
@@ -65,22 +64,6 @@ pub struct CratesClient {
 }
 
 impl CratesClient {
-    pub fn from_reqwest_client(client: &reqwest::Client, base_url: http::Uri) -> Self {
-        let service = tower::ServiceBuilder::new()
-            .concurrency_limit(1)
-            .rate_limit(1, Duration::from_secs(1))
-            .map_response_body(|resp: reqwest::Body| {
-                resp.map_err(|error| Error {
-                    inner: Kind::Other(error.into()),
-                })
-                .boxed()
-            })
-            .layer(crate::middleware::reqwest::ReqwestLayer)
-            .service(client.clone());
-
-        Self::new(service, base_url)
-    }
-
     pub fn new<S>(service: S, base_url: http::Uri) -> Self
     where
         S: tower::Service<http::Request<BoxBody>, Response = http::Response<BoxBody>>
@@ -94,63 +77,43 @@ impl CratesClient {
         Self { service, base_url }
     }
 
-    pub async fn crate_info(&self, name: String) -> Result<CrateMetadata, Error> {
+    pub async fn crate_info(&self, name: String) -> crate::Result<CrateMetadata> {
         let builder = http::uri::Builder::from(self.base_url.clone());
         let uri = builder
             .path_and_query(format!("/api/v1/crates/{name}"))
             .build()
-            .map_err(|e| Error {
-                inner: Kind::Http(e),
-            })?;
+            .map_err(Error::Http)?;
 
         let request = http::Request::builder()
             .method("GET")
             .uri(uri)
             .body(
                 http_body_util::Empty::<Bytes>::new()
-                    .map_err(|e| Error {
-                        inner: Kind::Other(Box::new(e) as BoxError),
-                    })
+                    .map_err(|e| Error::Other(Box::new(e) as BoxError))
                     .boxed(),
             )
-            .map_err(|e| Error {
-                inner: Kind::Http(e),
-            })?;
+            .map_err(Error::Http)?;
         let mut service = self.service.clone();
         let response = service
             .ready()
             .await
-            .map_err(|e| Error {
-                inner: Kind::Service(e),
-            })?
+            .map_err(Error::Service)?
             .call(request)
             .await
-            .map_err(|e| Error {
-                inner: Kind::Service(e),
-            })?;
+            .map_err(Error::Service)?;
 
         let body = response.into_body();
         let bytes = body.collect().await?.to_bytes();
-        let json = String::from_utf8(bytes.to_vec()).map_err(|e| Error {
-            inner: Kind::InvalidUtf8(e),
-        })?;
+        let json = String::from_utf8(bytes.to_vec()).map_err(Error::InvalidUtf8)?;
         let de = &mut serde_json::Deserializer::from_str(&json);
 
-        let response: InnerResponse = serde_path_to_error::deserialize(de).map_err(|e| Error {
-            inner: Kind::Json(e),
-        })?;
+        let response: InnerResponse = serde_path_to_error::deserialize(de).map_err(Error::Json)?;
 
         if response.errors.is_empty() {
             let response = response.inner.unwrap();
-            Ok(
-                serde_path_to_error::deserialize(response).map_err(|e| Error {
-                    inner: Kind::Json(e),
-                })?,
-            )
+            Ok(serde_path_to_error::deserialize(response).map_err(Error::Json)?)
         } else {
-            Err(Error {
-                inner: Kind::ServerError(response.errors[0].detail.clone()),
-            })
+            Err(Error::ServerError(response.errors[0].detail.clone()))
         }
     }
 }
@@ -169,14 +132,7 @@ struct InnerResponse {
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error(transparent)]
-pub struct Error {
-    #[from]
-    inner: Kind,
-}
-
-#[derive(thiserror::Error, Debug)]
-enum Kind {
+pub enum Error {
     #[error("HTTP Error")]
     Http(#[source] http::Error),
     #[error("Failed to convert data into response as it's not in UTF-8")]
@@ -188,5 +144,5 @@ enum Kind {
     #[error("{0}")]
     ServerError(String),
     #[error(transparent)]
-    Other(BoxError),
+    Other(#[from] BoxError),
 }

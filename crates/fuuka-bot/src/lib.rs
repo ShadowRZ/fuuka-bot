@@ -41,6 +41,7 @@ use pixrs::PixivClient;
 use secrecy::ExposeSecret;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::signal;
 use tokio::task::JoinHandle;
 
@@ -65,8 +66,8 @@ pub struct Context {
     pub prefix: String,
     pub admin_user: Option<OwnedUserId>,
     pub http: reqwest::Client,
-    pub hitokoto: crate::services::hitokoto::HitokotoClient,
-    pub crates: crate::services::crates::CratesClient,
+    pub hitokoto: hitokoto_api::HitokotoClient,
+    pub crates: crates_api::CratesClient,
     pub media_proxy: Option<MediaProxy>,
     pub pixiv: Option<(Arc<PixivClient>, Arc<crate::services::pixiv::Context>)>,
     pub features: FeaturesConfig,
@@ -253,12 +254,38 @@ impl Client {
         };
 
         let hitokoto = {
+            use http_body_util::BodyExt;
+            use tower::BoxError;
+            use tower_http::ServiceBuilderExt;
+
             let base_url = http::Uri::from_str(config.services.hitokoto.base_url.as_str())?;
-            crate::services::hitokoto::HitokotoClient::from_reqwest_client(&http, base_url)
+            let service = tower::ServiceBuilder::new()
+                .concurrency_limit(1)
+                .rate_limit(1, Duration::from_secs(1))
+                .map_response_body(|resp: reqwest::Body| {
+                    resp.map_err(|e| Into::into(Box::new(e) as BoxError))
+                        .boxed()
+                })
+                .layer(crate::middleware::reqwest::ReqwestLayer)
+                .service(http.clone());
+            hitokoto_api::HitokotoClient::new(service, base_url)
         };
         let crates = {
+            use http_body_util::BodyExt;
+            use tower::BoxError;
+            use tower_http::ServiceBuilderExt;
+
             let base_url = http::Uri::from_static("https://crates.io");
-            crate::services::crates::CratesClient::from_reqwest_client(&http, base_url)
+            let service = tower::ServiceBuilder::new()
+                .concurrency_limit(1)
+                .rate_limit(1, Duration::from_secs(1))
+                .map_response_body(|resp: reqwest::Body| {
+                    resp.map_err(|e| Into::into(Box::new(e) as BoxError))
+                        .boxed()
+                })
+                .layer(crate::middleware::reqwest::ReqwestLayer)
+                .service(http.clone());
+            crates_api::CratesClient::new(service, base_url)
         };
 
         let context = Context {

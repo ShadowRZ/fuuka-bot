@@ -6,7 +6,7 @@ use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 pub async fn crates_crate(
     name: String,
     version: Option<String>,
-    client: &crate::services::crates::CratesClient,
+    client: &crates_api::CratesClient,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     let resp = client.crate_info(name).await?;
     let version = version

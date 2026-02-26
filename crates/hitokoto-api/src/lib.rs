@@ -8,14 +8,13 @@ use std::str::FromStr;
 
 use bytes::Bytes;
 use http_body_util::BodyExt;
-use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use serde::{Deserialize, Serialize};
 use tower::{BoxError, buffer::Buffer, util::BoxService};
 use tower::{Service, ServiceExt};
-use tower_http::ServiceBuilderExt;
-use url::Url;
 
-type BoxBody = http_body_util::combinators::BoxBody<Bytes, Error>;
+type BoxBody = http_body_util::combinators::BoxBody<Bytes, crate::Error>;
+
+pub type Result<T> = std::result::Result<T, crate::Error>;
 
 pub type HitokotoService = Buffer<
     http::Request<BoxBody>,
@@ -85,32 +84,6 @@ pub enum Type {
     Joke,
 }
 
-pub fn format(resp: Response) -> RoomMessageEventContent {
-    let from_who = resp.from_who.unwrap_or_default();
-
-    RoomMessageEventContent::text_html(
-        format!(
-            "『{0}』——{1}「{2}」\nFrom https://hitokoto.cn/?uuid={3}",
-            resp.hitokoto, from_who, resp.from, resp.uuid
-        ),
-        format!(
-            "<p><b>『{0}』</b><br/>——{1}「{2}」</p><p>From https://hitokoto.cn/?uuid={3}</p>",
-            resp.hitokoto, from_who, resp.from, resp.uuid
-        ),
-    )
-}
-
-pub async fn request(client: &reqwest::Client, base: Url) -> anyhow::Result<Response> {
-    tracing::Span::current().record(
-        "fuuka_bot.hitokoto.base_url",
-        tracing::field::display(&base),
-    );
-    let raw = client.get(base).send().await?.error_for_status()?;
-    let resp: Response = raw.json().await?;
-
-    Ok(resp)
-}
-
 #[derive(Clone)]
 pub struct HitokotoClient {
     base_url: http::Uri,
@@ -118,20 +91,6 @@ pub struct HitokotoClient {
 }
 
 impl HitokotoClient {
-    pub fn from_reqwest_client(client: &reqwest::Client, base_url: http::Uri) -> Self {
-        let service = tower::ServiceBuilder::new()
-            .map_response_body(|resp: reqwest::Body| {
-                resp.map_err(|error| Error {
-                    inner: Kind::Other(error.into()),
-                })
-                .boxed()
-            })
-            .layer(crate::middleware::reqwest::ReqwestLayer)
-            .service(client.clone());
-
-        Self::new(service, base_url)
-    }
-
     pub fn new<S>(service: S, base_url: http::Uri) -> Self
     where
         S: tower::Service<http::Request<BoxBody>, Response = http::Response<BoxBody>>
@@ -145,7 +104,7 @@ impl HitokotoClient {
         Self { service, base_url }
     }
 
-    pub async fn request(&self, types: BTreeSet<Type>) -> Result<Response, Error> {
+    pub async fn request(&self, types: BTreeSet<Type>) -> crate::Result<Response> {
         use http::uri::PathAndQuery;
 
         const LITERAL_BASE: PathAndQuery = PathAndQuery::from_static("/");
@@ -185,66 +144,43 @@ impl HitokotoClient {
 
         let path_and_query =
             PathAndQuery::from_str(&format!("{path}{query}", path = path_and_query.path()))
-                .map_err(|e| Error {
-                    inner: Kind::Uri(e),
-                })?;
+                .map_err(Error::Uri)?;
 
         let mut parts = self.base_url.clone().into_parts();
         parts.path_and_query.replace(path_and_query);
-        let uri = http::Uri::from_parts(parts).map_err(|e| Error {
-            inner: Kind::UriParts(e),
-        })?;
+        let uri = http::Uri::from_parts(parts).map_err(Error::UriParts)?;
 
         let request = http::Request::builder()
             .method("GET")
             .uri(uri)
             .body(
                 http_body_util::Empty::<Bytes>::new()
-                    .map_err(|e| Error {
-                        inner: Kind::Other(Box::new(e) as BoxError),
-                    })
+                    .map_err(|e| Error::Other(Box::new(e) as BoxError))
                     .boxed(),
             )
-            .map_err(|e| Error {
-                inner: Kind::Http(e),
-            })?;
+            .map_err(Error::Http)?;
 
         let mut service = self.service.clone();
         let response = service
             .ready()
             .await
-            .map_err(|e| Error {
-                inner: Kind::Service(e),
-            })?
+            .map_err(Error::Service)?
             .call(request)
             .await
-            .map_err(|e| Error {
-                inner: Kind::Service(e),
-            })?;
+            .map_err(Error::Service)?;
 
         let body = response.into_body();
         let bytes = body.collect().await?.to_bytes();
-        let json = String::from_utf8(bytes.to_vec()).map_err(|e| Error {
-            inner: Kind::InvalidUtf8(e),
-        })?;
+        let json = String::from_utf8(bytes.to_vec()).map_err(Error::InvalidUtf8)?;
         let de = &mut serde_json::Deserializer::from_str(&json);
-        let response = serde_path_to_error::deserialize(de).map_err(|e| Error {
-            inner: Kind::Json(e),
-        })?;
+        let response = serde_path_to_error::deserialize(de).map_err(Error::Json)?;
 
         Ok(response)
     }
 }
 
 #[derive(thiserror::Error, Debug)]
-#[error(transparent)]
-pub struct Error {
-    #[from]
-    inner: Kind,
-}
-
-#[derive(thiserror::Error, Debug)]
-enum Kind {
+pub enum Error {
     #[error("Invalid URI")]
     Uri(#[source] http::uri::InvalidUri),
     #[error("Invalid URI")]
@@ -258,5 +194,5 @@ enum Kind {
     #[error("Error while queuing client for request")]
     Service(#[source] BoxError),
     #[error(transparent)]
-    Other(BoxError),
+    Other(#[from] BoxError),
 }

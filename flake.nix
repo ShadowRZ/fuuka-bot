@@ -92,6 +92,7 @@
           // {
             inherit cargoArtifacts;
             doCheck = false;
+            cargoExtraArgs = "-p fuuka-bot";
           }
         );
       in
