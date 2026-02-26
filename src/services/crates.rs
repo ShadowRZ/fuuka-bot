@@ -177,16 +177,16 @@ pub struct Error {
 
 #[derive(thiserror::Error, Debug)]
 enum Kind {
-    #[error("HTTP Error: {0}")]
+    #[error("HTTP Error")]
     Http(#[source] http::Error),
-    #[error("Failed to convert data into response as it's not in UTF-8: {0}")]
+    #[error("Failed to convert data into response as it's not in UTF-8")]
     InvalidUtf8(#[source] std::string::FromUtf8Error),
-    #[error("Invalid JSON: {0}")]
+    #[error("Invalid JSON")]
     Json(#[source] serde_path_to_error::Error<serde_json::Error>),
-    #[error("Error while queuing client for request: {0}")]
+    #[error("Error while queuing client for request")]
     Service(#[source] BoxError),
     #[error("{0}")]
     ServerError(String),
-    #[error("Unexpected error occurred: {0}")]
-    Other(#[source] BoxError),
+    #[error(transparent)]
+    Other(BoxError),
 }
