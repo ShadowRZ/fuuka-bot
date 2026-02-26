@@ -20,7 +20,6 @@ pub mod message;
 mod middleware;
 pub mod services;
 mod traits;
-pub mod types;
 pub mod utils;
 
 pub use crate::config::Config;
@@ -67,6 +66,7 @@ pub struct Context {
     pub admin_user: Option<OwnedUserId>,
     pub http: reqwest::Client,
     pub hitokoto: crate::services::hitokoto::HitokotoClient,
+    pub crates: crate::services::crates::CratesClient,
     pub media_proxy: Option<MediaProxy>,
     pub pixiv: Option<(Arc<PixivClient>, Arc<crate::services::pixiv::Context>)>,
     pub features: FeaturesConfig,
@@ -256,6 +256,10 @@ impl Client {
             let base_url = http::Uri::from_str(config.services.hitokoto.base_url.as_str())?;
             crate::services::hitokoto::HitokotoClient::from_reqwest_client(&http, base_url)
         };
+        let crates = {
+            let base_url = http::Uri::from_static("https://crates.io");
+            crate::services::crates::CratesClient::from_reqwest_client(&http, base_url)
+        };
 
         let context = Context {
             prefix,
@@ -265,6 +269,7 @@ impl Client {
             github,
             features: config.features,
             hitokoto,
+            crates,
             admin_user: config.admin_user,
         };
 

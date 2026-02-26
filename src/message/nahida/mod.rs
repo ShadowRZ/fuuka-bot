@@ -59,12 +59,13 @@ async fn dispatch(
     let Context {
         http: client,
         features,
+        crates,
         ..
     } = context;
 
     match url.try_into()? {
         LinkType::Crates(CrateLinkType::CrateInfo { name, version }) => {
-            self::extractors::crates::crates_crate(name, version, client).await
+            self::extractors::crates::crates_crate(name, version, crates).await
         }
         LinkType::Pixiv(PixivLinkType::Artwork(artwork_id)) => match &context.pixiv {
             Some((pixiv, context)) => {

@@ -1,24 +1,14 @@
 //! Extracts crates.io URLs.
 
-use anyhow::Context;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
-
-use crate::types::CrateMetadata;
 
 #[tracing::instrument(name = "crates", skip(client), err)]
 pub async fn crates_crate(
     name: String,
     version: Option<String>,
-    client: &reqwest::Client,
+    client: &crate::services::crates::CratesClient,
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
-    let resp: CrateMetadata = client
-        .get(format!("https://crates.io/api/v1/crates/{name}"))
-        .send()
-        .await?
-        .error_for_status()
-        .context("Server reported failure")?
-        .json()
-        .await?;
+    let resp = client.crate_info(name).await?;
     let version = version
         .as_ref()
         .unwrap_or(&resp.crate_info.max_stable_version);
@@ -38,10 +28,12 @@ pub async fn crates_crate(
         .documentation
         .map(|s| format!("\nDocs: {s}"))
         .unwrap_or_else(|| format!("\nDocs: https://docs.rs/{name}/{version}"));
-    let version_info = resp.versions.iter().find(|i| i.num == *version);
+    let version_info = resp
+        .versions
+        .and_then(|versions| versions.into_iter().find(|i| i.num == *version));
 
     let msrv_str = version_info
-        .and_then(|info| info.rust_version.as_ref())
+        .and_then(|info| info.rust_version)
         .map(|msrv| format!("\nMSRV: {msrv}",))
         .unwrap_or_default();
 
