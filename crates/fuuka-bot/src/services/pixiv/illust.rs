@@ -11,7 +11,7 @@ use matrix_sdk::{
     ruma::RoomId,
 };
 use mime::Mime;
-use pixrs::{IllustInfo, Restriction};
+use pixiv_ajax_api::{common::Restriction, illust::IllustInfo};
 
 pub fn format(
     resp: IllustInfo,
@@ -68,7 +68,7 @@ pub fn format(
 pub async fn send(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    pixiv: &pixrs::PixivClient,
+    pixiv: &pixiv_ajax_api::PixivClient,
     http: &reqwest::Client,
     context: &super::Context,
     illust_id: i32,

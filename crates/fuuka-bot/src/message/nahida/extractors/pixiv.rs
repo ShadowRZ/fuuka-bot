@@ -8,7 +8,7 @@ use matrix_sdk::{
 pub async fn pixiv_illust(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    pixiv: &pixrs::PixivClient,
+    pixiv: &pixiv_ajax_api::PixivClient,
     http: &reqwest::Client,
     illust_id: i32,
     context: &crate::services::pixiv::Context,

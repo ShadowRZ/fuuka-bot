@@ -64,7 +64,7 @@ pub trait IllustTagsInfoExt {
     fn has_any_tag(&self, tags: &[&str]) -> bool;
 }
 
-impl IllustTagsInfoExt for pixrs::IllustTagsInfo {
+impl IllustTagsInfoExt for pixiv_ajax_api::illust::IllustTagsInfo {
     fn has_tag(&self, tag: &str) -> bool {
         self.tags.iter().any(|il| il.tag == tag)
     }

@@ -37,8 +37,7 @@ use matrix_sdk::config::RequestConfig;
 use matrix_sdk::config::SyncSettings;
 use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::ruma::presence::PresenceState;
-use pixrs::PixivClient;
-use secrecy::ExposeSecret;
+use pixiv_ajax_api::PixivClient;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -221,8 +220,21 @@ impl Client {
                 r18,
                 tag_triggers,
             } => {
-                let client =
-                    Arc::new(PixivClient::from_client(token.expose_secret(), &http).await?);
+                use http_body_util::BodyExt;
+                use tower::BoxError;
+                use tower_http::ServiceBuilderExt;
+
+                let service = tower::ServiceBuilder::new()
+                    .concurrency_limit(1)
+                    .rate_limit(1, Duration::from_secs(1))
+                    .map_response_body(|resp: reqwest::Body| {
+                        resp.map_err(|e| Into::into(Box::new(e) as BoxError))
+                            .boxed()
+                    })
+                    .map_err(|e| Box::new(e) as BoxError)
+                    .layer(crate::middleware::reqwest::ReqwestLayer)
+                    .service(http.clone());
+                let client = Arc::new(PixivClient::new(service, token));
                 let context = crate::services::pixiv::Context { r18, tag_triggers };
                 Some((client, Arc::new(context)))
             }

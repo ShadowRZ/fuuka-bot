@@ -13,7 +13,7 @@ use matrix_sdk::{
         AddMentions, ForwardThread, OriginalRoomMessageEvent, RoomMessageEventContent,
     },
 };
-use pixrs::{PixivClient, RankingContent};
+use pixiv_ajax_api::{PixivClient, ranking::RankingContent};
 
 #[tracing::instrument(name = "pixiv", skip_all)]
 pub async fn process(
@@ -102,7 +102,7 @@ async fn format_ranking(
 async fn send_illust(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
-    pixiv: &pixrs::PixivClient,
+    pixiv: &pixiv_ajax_api::PixivClient,
     http: &reqwest::Client,
     context: &crate::services::pixiv::Context,
     features: &FeaturesConfig,

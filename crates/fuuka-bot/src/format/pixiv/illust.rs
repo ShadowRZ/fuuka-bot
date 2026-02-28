@@ -1,6 +1,6 @@
 #[derive(serde::Serialize)]
 pub struct Context<'a> {
-    pub id: i32,
+    pub id: u64,
     pub title: &'a str,
     pub tags: &'a [Tag<'a>],
     pub author: Author<'a>,
@@ -15,7 +15,7 @@ pub struct Tag<'a> {
 
 #[derive(serde::Serialize)]
 pub struct Author<'a> {
-    pub id: i32,
+    pub id: u64,
     pub name: &'a str,
 }
 

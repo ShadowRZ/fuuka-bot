@@ -1,0 +1,20 @@
+[package]
+name = "pixiv-ajax-api"
+license = "MIT"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+async-stream = "0.3.6"
+bytes.workspace = true
+futures-core.workspace = true
+http.workspace = true
+http-body-util.workspace = true
+secrecy.workspace = true
+serde.workspace = true
+serde-bool = "0.1.4"
+serde_json.workspace = true
+serde_path_to_error.workspace = true
+serde_urlencoded = "0.7.1"
+thiserror.workspace = true
+tower.workspace = true

@@ -269,7 +269,7 @@ pub mod pixiv {
         R18G,
     }
 
-    impl From<RankingMode> for pixrs::RankingMode {
+    impl From<RankingMode> for pixiv_ajax_api::ranking::RankingMode {
         fn from(value: RankingMode) -> Self {
             match value {
                 RankingMode::Daily => Self::Daily,

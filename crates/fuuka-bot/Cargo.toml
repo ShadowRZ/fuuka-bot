@@ -41,7 +41,7 @@ parking_lot = "0.12.5"
 pin-project-lite = "0.2.16"
 regex = "1.12.2"
 rpassword = { version = "7.4.0" }
-secrecy = { version = "0.10.3", features = ["serde"] }
+secrecy.workspace = true
 serde.workspace = true
 serde-bool = "0.1.4"
 serde_json.workspace = true
@@ -97,6 +97,9 @@ path = "../crates-api"
 
 [dependencies.hitokoto-api]
 path = "../hitokoto-api"
+
+[dependencies.pixiv-ajax-api]
+path = "../pixiv-ajax-api"
 
 [dev-dependencies]
 html-compare-rs = "0.3.0"

@@ -329,7 +329,7 @@ impl TryFrom<String> for RepositoryParts {
 impl TagTriggers {
     pub fn check_for_tag_triggers(
         &self,
-        tags: &pixrs::IllustTagsInfo,
+        tags: &pixiv_ajax_api::illust::IllustTagsInfo,
         room_id: &RoomId,
     ) -> Option<&str> {
         if let Some(infos) = self.room_scoped_config.get(room_id) {
