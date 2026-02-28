@@ -699,6 +699,7 @@ name = "crates-api"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "futures-core",
  "http",
  "http-body-util",
  "serde",
@@ -1674,6 +1675,7 @@ name = "hitokoto-api"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "futures-core",
  "http",
  "http-body-util",
  "serde",

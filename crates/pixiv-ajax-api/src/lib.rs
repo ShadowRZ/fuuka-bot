@@ -9,7 +9,7 @@ use std::{marker::PhantomData, str::FromStr};
 use ::serde::{Deserialize, Deserializer, Serialize, de::DeserializeOwned};
 use bytes::Bytes;
 use futures_core::{Stream, future::BoxFuture};
-use http::{HeaderValue, Request, Response, Uri, uri::PathAndQuery};
+use http::{HeaderValue, Response, Uri, uri::PathAndQuery};
 use http_body_util::BodyExt;
 use secrecy::{ExposeSecret, SecretString};
 use tower::{BoxError, Service, ServiceExt, buffer::Buffer, util::BoxService};
@@ -30,7 +30,8 @@ pub type Result<T> = std::result::Result<T, crate::Error>;
 
 pub type BoxBody = http_body_util::combinators::BoxBody<Bytes, crate::Error>;
 
-type PixivService = Buffer<Request<BoxBody>, BoxFuture<'static, Result<Response<BoxBody>>>>;
+type PixivService =
+    Buffer<http::Request<BoxBody>, BoxFuture<'static, Result<http::Response<BoxBody>>>>;
 
 static BASE_URL: &str = "https://www.pixiv.net";
 static USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
@@ -48,9 +49,12 @@ impl PixivClient {
             + Send
             + 'static,
         S::Future: Send + 'static,
-        S::Error: Into<crate::Error>,
+        S::Error: Into<BoxError>,
     {
-        let service = Buffer::new(BoxService::new(service.map_err(Into::into)), 1024);
+        let service = Buffer::new(
+            BoxService::new(service.map_err(|e| Error::Service(e.into()))),
+            1024,
+        );
 
         Self { service, token }
     }

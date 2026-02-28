@@ -7,6 +7,7 @@ use std::collections::BTreeSet;
 use std::str::FromStr;
 
 use bytes::Bytes;
+use futures_core::future::BoxFuture;
 use http_body_util::BodyExt;
 use serde::{Deserialize, Serialize};
 use tower::{BoxError, buffer::Buffer, util::BoxService};
@@ -16,12 +17,8 @@ type BoxBody = http_body_util::combinators::BoxBody<Bytes, crate::Error>;
 
 pub type Result<T> = std::result::Result<T, crate::Error>;
 
-pub type HitokotoService = Buffer<
-    http::Request<BoxBody>,
-    <BoxService<http::Request<BoxBody>, http::Response<BoxBody>, BoxError> as tower::Service<
-        http::Request<BoxBody>,
-    >>::Future,
->;
+pub type HitokotoService =
+    Buffer<http::Request<BoxBody>, BoxFuture<'static, Result<http::Response<BoxBody>>>>;
 
 /// <https://developer.hitokoto.cn/sentence/#%E8%BF%94%E5%9B%9E%E4%BF%A1%E6%81%AF>
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -99,7 +96,10 @@ impl HitokotoClient {
         S::Future: Send + 'static,
         S::Error: Into<BoxError>,
     {
-        let service = Buffer::new(BoxService::new(service.map_err(Into::into)), 1024);
+        let service = Buffer::new(
+            BoxService::new(service.map_err(|e| Error::Service(e.into()))),
+            1024,
+        );
 
         Self { service, base_url }
     }

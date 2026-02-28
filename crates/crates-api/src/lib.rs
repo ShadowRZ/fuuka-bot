@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use futures_core::future::BoxFuture;
 use http_body_util::BodyExt;
 use serde::Deserialize;
 use tower::Service;
@@ -8,12 +9,8 @@ type BoxBody = http_body_util::combinators::BoxBody<Bytes, crate::Error>;
 
 pub type Result<T> = std::result::Result<T, crate::Error>;
 
-pub type CratesService = Buffer<
-    http::Request<BoxBody>,
-    <BoxService<http::Request<BoxBody>, http::Response<BoxBody>, BoxError> as tower::Service<
-        http::Request<BoxBody>,
-    >>::Future,
->;
+pub type CratesService =
+    Buffer<http::Request<BoxBody>, BoxFuture<'static, Result<http::Response<BoxBody>>>>;
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(missing_docs)]
@@ -72,7 +69,10 @@ impl CratesClient {
         S::Future: Send + 'static,
         S::Error: Into<BoxError>,
     {
-        let service = Buffer::new(BoxService::new(service.map_err(Into::into)), 1024);
+        let service = Buffer::new(
+            BoxService::new(service.map_err(|e| Error::Service(e.into()))),
+            1024,
+        );
 
         Self { service, base_url }
     }
