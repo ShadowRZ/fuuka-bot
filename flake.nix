@@ -6,10 +6,6 @@
       url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     };
 
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-    };
-
     crane = {
       url = "github:ipetkov/crane";
     };
@@ -17,11 +13,6 @@
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
 
     advisory-db = {
@@ -36,11 +27,37 @@
       nixpkgs,
       crane,
       advisory-db,
-      flake-utils,
       rust-overlay,
       ...
     }:
-    flake-utils.lib.eachDefaultSystem (
+    let
+      # From Crane.
+      eachSystem =
+        systems: f:
+        let
+          # Merge together the outputs for all systems.
+          op =
+            attrs: system:
+            let
+              ret = f system;
+              op =
+                attrs: key:
+                attrs
+                // {
+                  ${key} = (attrs.${key} or { }) // {
+                    ${system} = ret.${key};
+                  };
+                };
+            in
+            builtins.foldl' op attrs (builtins.attrNames ret);
+        in
+        builtins.foldl' op { } systems;
+      eachDefaultSystem = eachSystem [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+    in
+    eachDefaultSystem (
       system:
       let
         pkgs = import nixpkgs {
