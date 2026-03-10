@@ -101,9 +101,9 @@ impl RoomExt for matrix_sdk::Room {
         ev: &OriginalRoomMessageEvent,
     ) -> anyhow::Result<Option<AnyTimelineEvent>> {
         match &ev.content.relates_to {
-            Some(Relation::Reply { in_reply_to }) => {
+            Some(Relation::Reply(in_reply_to)) => {
                 use matrix_sdk::deserialized_responses::TimelineEventKind;
-                let event_id = &in_reply_to.event_id;
+                let event_id = &in_reply_to.in_reply_to.event_id;
                 let event = match self.event(event_id, None).await?.kind {
                     TimelineEventKind::PlainText { event } => event
                         .deserialize()?
