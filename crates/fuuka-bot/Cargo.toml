@@ -41,7 +41,6 @@ parking_lot = "0.12.5"
 pin-project-lite = "0.2.16"
 regex = "1.12.2"
 rpassword = { version = "7.4.0" }
-rustls = { version = "0.23.37", default-features = false, features = ["ring"] }
 secrecy.workspace = true
 serde.workspace = true
 serde-bool = "0.1.4"
