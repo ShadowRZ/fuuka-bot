@@ -20,7 +20,7 @@ file-format = "0.29.0"
 formatx = "0.2.4"
 futures-util = "0.3.31"
 graphql_client = { version = "0.16.0", default-features = false }
-hmac = "0.12.1"
+hmac = "0.13.0"
 http.workspace = true
 http-body = "1.0.1"
 http-body-util.workspace = true
