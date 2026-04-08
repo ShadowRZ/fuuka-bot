@@ -47,7 +47,7 @@ serde.workspace = true
 serde-bool = "0.1.4"
 serde_json.workspace = true
 serde_path_to_error.workspace = true
-sha2 = "0.11.0"
+sha2 = "0.10.9"
 shell-words = "1.1.0"
 thiserror.workspace = true
 time = { version = "0.3.44", features = ["macros", "formatting", "serde"] }
