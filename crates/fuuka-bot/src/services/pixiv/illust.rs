@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use matrix_sdk::ruma::events::{
     Mentions,
-    room::message::{OriginalRoomMessageEvent, TextMessageEventContent},
+    room::message::{AddMentions, OriginalRoomMessageEvent, TextMessageEventContent},
 };
 use matrix_sdk::{
     Room,
@@ -119,6 +119,7 @@ pub async fn send(
             .reply(Some(Reply {
                 event_id: ev.event_id.clone(),
                 enforce_thread: EnforceThread::MaybeThreaded,
+                add_mentions: AddMentions::Yes,
             }));
 
         let content_type =

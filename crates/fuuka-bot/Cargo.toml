@@ -91,7 +91,7 @@ version = "0.13.2"
 [dependencies.ruma]
 features = ["unstable-msc2545"]
 git = "https://github.com/ruma/ruma"
-rev = "2455c71ec8bd16318397865d9c6e231e792cb15e"
+rev = "7680eebd9586669e1a4e5b1fd1c2c691221369d4"
 
 [dependencies.crates-api]
 path = "../crates-api"
@@ -107,8 +107,4 @@ html-compare-rs = "0.3.0"
 pretty_assertions = "1.4.1"
 
 [features]
-default = ["rustls-tls"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
-
-native-tls = ["reqwest/native-tls", "matrix-sdk/native-tls"]
-rustls-tls = ["reqwest/rustls-no-provider", "matrix-sdk/rustls-tls"]

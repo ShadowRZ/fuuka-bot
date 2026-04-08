@@ -37,7 +37,7 @@ pub(crate) async fn bootstrap_cross_signing_if_needed(
             std::io::stdout().flush()?;
             let password = read_password()?;
             let mut password = uiaa::Password::new(
-                uiaa::UserIdentifier::UserIdOrLocalpart(client.user_id().unwrap().to_string()),
+                uiaa::UserIdentifier::Matrix(client.user_id().unwrap().to_owned().into()),
                 password,
             );
             password.session = response.session.clone();
@@ -70,7 +70,7 @@ pub(crate) async fn bootstrap_cross_signing(client: &matrix_sdk::Client) -> anyh
             std::io::stdout().flush()?;
             let password = read_password()?;
             let mut password = uiaa::Password::new(
-                uiaa::UserIdentifier::UserIdOrLocalpart(client.user_id().unwrap().to_string()),
+                uiaa::UserIdentifier::Matrix(client.user_id().unwrap().to_owned().into()),
                 password,
             );
             password.session = response.session.clone();
@@ -106,7 +106,7 @@ pub(crate) async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::
                 std::io::stdout().flush()?;
                 let password = read_password()?;
                 let mut password = uiaa::Password::new(
-                    uiaa::UserIdentifier::UserIdOrLocalpart(client.user_id().unwrap().to_string()),
+                    uiaa::UserIdentifier::Matrix(client.user_id().unwrap().to_owned().into()),
                     password,
                 );
                 password.session = uiaa.session.clone();
