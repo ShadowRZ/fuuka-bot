@@ -105,6 +105,12 @@ pub(crate) async fn track(
     loop {
         cron.wait_for_next_tick().await;
 
+        tracing::debug!(
+            "Starting a next track at {owner}/{repo}#{pr_number}",
+            owner = &repository.owner,
+            repo = &repository.repo
+        );
+
         let compare = context
             .octocrab
             .commits(&repository.owner, &repository.repo)

@@ -43,6 +43,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::signal;
 use tokio::task::JoinHandle;
+use tracing::Instrument;
 
 static APP_USER_AGENT: &str = concat!(
     env!("CARGO_PKG_NAME"),
@@ -176,7 +177,6 @@ impl Client {
         } = self;
         let client = builder.build().await?;
         client.restore_session(session).await?;
-        client.send_queue().set_enabled(true).await;
 
         if let Some(command) = args.command {
             match command {
@@ -397,12 +397,64 @@ async fn sync(client: &matrix_sdk::Client) -> anyhow::Result<()> {
     }
 
     let send_queue = client.send_queue();
+    tokio::spawn(
+        async move {
+            use matrix_sdk::send_queue::{RoomSendQueueUpdate, SendQueueUpdate};
 
-    tokio::spawn(async move {
-        send_queue
-            .respawn_tasks_for_rooms_with_unsent_requests()
-            .await
-    });
+            tracing::debug!("Respawning send queue");
+            send_queue.set_enabled(true).await;
+            send_queue
+                .respawn_tasks_for_rooms_with_unsent_requests()
+                .await;
+            let mut updates = send_queue.subscribe();
+            while let Ok(SendQueueUpdate { room_id, update }) = updates.recv().await {
+                match update {
+                    RoomSendQueueUpdate::NewLocalEvent(local_echo) => tracing::debug!(
+                        fuuka_bot.origin.room_id = %room_id,
+                        fuuka_bot.send_queue.transcation_id = %local_echo.transaction_id,
+                        "Spawning an local echo"
+                    ),
+                    RoomSendQueueUpdate::CancelledLocalEvent { transaction_id } => tracing::debug!(
+                        fuuka_bot.origin.room_id = %room_id,
+                        fuuka_bot.send_queue.transcation_id = %transaction_id,
+                        "Send cancalled"
+                    ),
+                    RoomSendQueueUpdate::ReplacedLocalEvent {
+                        transaction_id,
+                        new_content: _,
+                    } => tracing::debug!(
+                        fuuka_bot.origin.room_id = %room_id,
+                        fuuka_bot.send_queue.transcation_id = %transaction_id,
+                        "Event content replaced"
+                    ),
+                    RoomSendQueueUpdate::SendError {
+                        transaction_id,
+                        error,
+                        is_recoverable,
+                    } => tracing::debug!(
+                        fuuka_bot.origin.room_id = %room_id,
+                        fuuka_bot.send_queue.transcation_id = %transaction_id,
+                        "Send errored: {error}, is_recoverable={is_recoverable}"
+                    ),
+                    RoomSendQueueUpdate::RetryEvent { transaction_id } => tracing::debug!(
+                        fuuka_bot.origin.room_id = %room_id,
+                        fuuka_bot.send_queue.transcation_id = %transaction_id,
+                        "Retrying"
+                    ),
+                    RoomSendQueueUpdate::SentEvent {
+                        transaction_id,
+                        event_id,
+                    } => tracing::debug!(
+                        fuuka_bot.origin.room_id = %room_id,
+                        fuuka_bot.send_queue.transcation_id = %transaction_id,
+                        "Sent, event_id={event_id}"
+                    ),
+                    _ => {}
+                };
+            }
+        }
+        .instrument(tracing::debug_span!("send_queue")),
+    );
 
     let h1 = client.add_event_handler(crate::message::on_sync_message);
     let h2 = client.add_event_handler(crate::matrix::on_stripped_member);

@@ -130,6 +130,11 @@ pub async fn process(
         let result = loop {
             cron.wait_for_next_tick().await;
 
+            tracing::debug!(
+                "Starting a next track at {owner}/{repo}#{pr_number}",
+                owner = &repository.owner,
+                repo = &repository.repo
+            );
             let result = crate::services::github::pull_request(
                 &github.octocrab,
                 Params {
