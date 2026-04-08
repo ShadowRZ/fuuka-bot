@@ -8,7 +8,7 @@ use axum::{
 use bytes::{BufMut, Bytes, BytesMut};
 use core::str;
 use file_format::FileFormat;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use jose_jwk::{
     Jwk,
     jose_b64::{base64ct::Encoding, serde::Secret},

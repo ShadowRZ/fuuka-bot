@@ -20,7 +20,7 @@ file-format = "0.29.0"
 formatx = "0.2.4"
 futures-util = "0.3.31"
 graphql_client = { version = "0.16.0", default-features = false }
-hmac = "0.12.1"
+hmac = "0.13.0"
 http.workspace = true
 http-body = "1.0.1"
 http-body-util.workspace = true
@@ -46,7 +46,7 @@ serde.workspace = true
 serde-bool = "0.1.4"
 serde_json.workspace = true
 serde_path_to_error.workspace = true
-sha2 = "0.10.9"
+sha2 = "0.11.0"
 shell-words = "1.1.0"
 thiserror.workspace = true
 time = { version = "0.3.44", features = ["macros", "formatting", "serde"] }
