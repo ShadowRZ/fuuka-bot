@@ -69,21 +69,13 @@ pub async fn pull_request(
     } = params;
     let RepositoryParts { owner, repo } = repository;
 
-    let resp = octocrab
-        .graphql::<graphql_client::Response<PullInfo>>(&PullInfo::build_query(PullInfoVariables {
+    let data = octocrab
+        .graphql::<PullInfo>(&PullInfo::build_query(PullInfoVariables {
             owner,
             name: repo,
             pr_number,
         }))
         .await?;
-
-    if let Some(errors) = resp.errors {
-        return Err(Error(errors).into());
-    }
-
-    let Some(data) = resp.data else {
-        anyhow::bail!("Server returned no valid data!")
-    };
 
     let Some(repository) = data.repository else {
         use graphql_client::PathFragment;
