@@ -80,7 +80,7 @@ impl PrTrackerContext {
                 key,
                 PrTrackerRegexes {
                     all_regexs,
-                    regex_map: res.into_iter().zip(target.into_iter()).collect(),
+                    regex_map: res.into_iter().zip(target).collect(),
                 },
             );
         }
