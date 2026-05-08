@@ -103,8 +103,8 @@ path = "../hitokoto-api"
 path = "../pixiv-ajax-api"
 
 [dev-dependencies]
-html-compare-rs = "0.3.0"
-pretty_assertions = "1.4.1"
+html-compare-rs = "=0.3.0"
+pretty_assertions = "=1.4.1"
 
 [features]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
