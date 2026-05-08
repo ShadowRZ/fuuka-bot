@@ -6,9 +6,11 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write
     steps:
@@ -26,6 +28,4 @@ jobs:
           OUTPUT: .CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
       - name: Release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
-        with:
-          body_path: .CHANGELOG.md
+        run: gh release create -d -F .CHANGELOG.md
