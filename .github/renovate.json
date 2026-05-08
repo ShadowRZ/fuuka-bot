@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "labels": ["dependencies"],
+  "minimumReleaseAge": "3 days",
+  "ignoreDeps": ["ruma", "pixrs"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "minimumReleaseAge": null
+  },
+  "nix": {
+    "enabled": true
+  }
+}
