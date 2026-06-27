@@ -289,18 +289,14 @@ async fn jerryxiao_formatted(
 ) -> anyhow::Result<Option<RoomMessageEventContent>> {
     if text.contains("{from}") && text.contains("{to}") {
         let text = text.trim();
+        let from_text = format!("@{}", from_member.name_or_id());
+        let to_text = format!("@{}", to_member.name_or_id());
+        let from_html = from_member.make_pill();
+        let to_html = to_member.make_pill();
         Ok(Some(
             RoomMessageEventContent::text_html(
-                formatx::formatx!(
-                    text,
-                    from = format!("@{}", from_member.name_or_id()),
-                    to = format!("@{}", to_member.name_or_id()),
-                )?,
-                formatx::formatx!(
-                    text,
-                    from = from_member.make_pill(),
-                    to = to_member.make_pill(),
-                )?,
+                formatx::formatx!(text, from = from_text, to = to_text)?,
+                formatx::formatx!(text, from = from_html, to = to_html)?,
             )
             .add_mentions(Mentions::with_user_ids([
                 from_member.user_id().to_owned(),
