@@ -89,9 +89,8 @@ version = "0.13.2"
 
 [dependencies.ruma]
 features = ["unstable-msc2545"]
-version = "0.15.1"
-# git = "https://github.com/ruma/ruma"
-# rev = "7680eebd9586669e1a4e5b1fd1c2c691221369d4"
+git = "https://github.com/ruma/ruma"
+rev = "8beb557b466a43b057c9c155277c77fe8766fadf"
 
 [dependencies.crates-api]
 path = "../crates-api"

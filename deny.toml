@@ -24,11 +24,6 @@ allow = [
 ]
 confidence-threshold = 0.8
 
-# Bundling of webpki-roots is unsupported
-[[licenses.exceptions]]
-allow = ["CDLA-Permissive-2.0"]
-name = "webpki-roots"
-
 # This section is considered when running `cargo deny check bans`.
 # More documentation about the 'bans' section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/bans/cfg.html
