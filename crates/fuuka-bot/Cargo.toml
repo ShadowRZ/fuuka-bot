@@ -24,7 +24,7 @@ hmac = "0.13.0"
 http.workspace = true
 http-body = "1.0.1"
 http-body-util.workspace = true
-imagesize = "0.14.0"
+imagesize = "0.15.0"
 jose-jwk = { version = "0.1.2", default-features = false }
 mime = "0.3.17"
 minijinja = { version = "2.12.0", default-features = false, features = [
