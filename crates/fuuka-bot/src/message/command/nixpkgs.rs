@@ -42,8 +42,8 @@ pub async fn process(
     .await
     .context(format!(
         "Error while fetching infomation {owner}/{repo}#{pr_number}",
-        owner = &repository.owner,
-        repo = &repository.repo
+        owner = repository.owner,
+        repo = repository.repo
     ))?;
 
     let all_branches = github
