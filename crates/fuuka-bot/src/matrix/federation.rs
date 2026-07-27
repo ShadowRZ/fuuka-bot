@@ -1,7 +1,7 @@
 use bytes::BytesMut;
 use matrix_sdk::ruma::ServerName;
 use matrix_sdk::ruma::api::IncomingResponse;
-use matrix_sdk::ruma::api::OutgoingRequest;
+use matrix_sdk::ruma::api::OutgoingRequestExt as _;
 use matrix_sdk::ruma::api::federation::discovery::discover_homeserver::Request as DiscoverRequest;
 use matrix_sdk::ruma::api::federation::discovery::discover_homeserver::Response as DiscoverRespose;
 use matrix_sdk::ruma::api::federation::discovery::get_server_version::v1::Request as ServerVersionRequest;
