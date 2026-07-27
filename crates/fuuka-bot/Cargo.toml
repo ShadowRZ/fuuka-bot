@@ -87,11 +87,6 @@ version = "0.13.2"
 # git = "https://github.com/ShadowRZ/pixrs"
 # rev = "42294c35e4deacbf49f98374b767dfae29bb38ea"
 
-[dependencies.ruma]
-features = ["unstable-msc2545"]
-git = "https://github.com/ruma/ruma"
-rev = "8beb557b466a43b057c9c155277c77fe8766fadf"
-
 [dependencies.crates-api]
 path = "../crates-api"
 
