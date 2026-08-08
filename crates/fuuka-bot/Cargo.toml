@@ -101,4 +101,6 @@ html-compare-rs = "=0.3.0"
 pretty_assertions = "=1.4.1"
 
 [features]
+default = ["rustls-aws-lc-rs"]
 bundled-sqlite = ["matrix-sdk/bundled-sqlite"]
+rustls-aws-lc-rs = ["matrix-sdk/rustls-aws-lc-rs"]
