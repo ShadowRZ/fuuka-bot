@@ -1,6 +1,6 @@
 use bytes::BytesMut;
 use matrix_sdk::ruma::ServerName;
-use matrix_sdk::ruma::api::IncomingResponse;
+use matrix_sdk::ruma::api::IncomingResponseExt as _;
 use matrix_sdk::ruma::api::OutgoingRequestExt as _;
 use matrix_sdk::ruma::api::federation::discovery::discover_homeserver::Request as DiscoverRequest;
 use matrix_sdk::ruma::api::federation::discovery::discover_homeserver::Response as DiscoverRespose;
@@ -23,9 +23,10 @@ pub async fn discover_federation_endpoint<S: AsRef<ServerName>>(
         .map(|body| body.freeze());
     let request = reqwest::Request::try_from(request)?;
     let response = client.execute(request).await?;
-    Ok(DiscoverRespose::try_from_http_response(
-        crate::utils::response_to_http_response(response).await?,
-    )?)
+    let response = crate::utils::response_to_http_response(response).await?;
+    let (parts, body) = response.into_parts();
+    let response = http::Response::from_parts(parts, body.as_ref());
+    Ok(DiscoverRespose::try_from_http_response(response)?)
 }
 
 pub async fn server_version<S: AsRef<ServerName>>(
@@ -44,7 +45,8 @@ pub async fn server_version<S: AsRef<ServerName>>(
         .map(|body| body.freeze());
     let request = reqwest::Request::try_from(request)?;
     let response = client.execute(request).await?;
-    Ok(ServerVersionRespose::try_from_http_response(
-        crate::utils::response_to_http_response(response).await?,
-    )?)
+    let response = crate::utils::response_to_http_response(response).await?;
+    let (parts, body) = response.into_parts();
+    let response = http::Response::from_parts(parts, body.as_ref());
+    Ok(ServerVersionRespose::try_from_http_response(response)?)
 }
