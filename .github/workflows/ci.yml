@@ -47,6 +47,4 @@ jobs:
           extraPullNames: nix-community,devenv
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Check Flake
-        run: nix run github:Mic92/nix-fast-build -- --debug --skip-cached --no-nom --cachix-cache shadowrz
-        env:
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: nix flake check
