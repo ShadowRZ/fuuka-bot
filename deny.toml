@@ -6,7 +6,10 @@ no-default-features = false
 [advisories]
 unmaintained = "workspace"
 unsound = "all"
-ignore = [{ id = "RUSTSEC-2023-0071", reason = "JWK not used" }]
+ignore = [
+  { id = "RUSTSEC-2023-0071", reason = "JWK not used" },
+  "RUSTSEC-2025-0167",
+]
 
 [licenses]
 allow = [
@@ -35,13 +38,7 @@ workspace-default-features = "allow"
 external-default-features = "allow"
 allow-workspace = false
 skip = [
-  "rand_core@0.6.4",
-  "rand_chacha@0.3.1",
-  "rand@0.8.5",
-  "itertools@0.10.5",
-  "hashbrown@0.15.5",
-  "getrandom@0.2.17",
-  "getrandom@0.3.4",
+  "syn@2.0.119",
   { crate = "thiserror@1.0.69", reason = "envsubst, oauth2 uses this old version" },
   { crate = "thiserror-impl@1.0.69", reason = "envsubst, oauth2 uses this old version" },
 ]
@@ -52,6 +49,7 @@ unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
   "https://github.com/matrix-org/matrix-rust-sdk",
+  "https://github.com/matrix-org/vodozemac",
   "https://github.com/ruma/ruma",
 ]
 
