@@ -6,8 +6,10 @@ ignore = [
   "RUSTSEC-2025-0057", # Only for tests
   # `derivative` is unmaintained; consider using an alternative
   "RUSTSEC-2024-0388", # Only for IndexedDB support which is unrelated with this bot
-  # proc-macro-error2 is unmaintained
-  "RUSTSEC-2026-0173", # https://github.com/matrix-org/matrix-rust-sdk/issues/6654
+  # bitmaps is unmaintained
+  # `Bitmap::try_from(&[u8])` can create invalid values
+  "RUSTSEC-2026-0247", # https://github.com/matrix-org/matrix-rust-sdk/issues/6859
+  "RUSTSEC-2025-0167",
 ]
 
 [output]
