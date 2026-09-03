@@ -4,6 +4,7 @@
   "labels": ["dependencies"],
   "minimumReleaseAge": "3 days",
   "ignoreDeps": ["ruma", "pixrs"],
+  "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
     "minimumReleaseAge": null
