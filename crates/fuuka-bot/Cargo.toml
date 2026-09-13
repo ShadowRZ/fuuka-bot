@@ -52,7 +52,7 @@ thiserror.workspace = true
 time = { version = "0.3.55", features = ["macros", "formatting", "serde"] }
 tl = "0.7.8"
 tokio = { version = "1.53.1", features = ["full"] }
-toml = "1.1.5"
+toml = "1.1.6"
 tower.workspace = true
 tower-http = { version = "0.7.1", features = [
   "map-request-body",
