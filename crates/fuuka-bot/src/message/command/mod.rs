@@ -1,4 +1,5 @@
 mod about;
+mod at;
 mod bilibili;
 mod bot;
 mod delete;
@@ -50,5 +51,6 @@ pub(super) async fn process(
         Args::Delete => self::delete::process(ev, room, context).await,
         Args::Bot(command) => self::bot::process(ev, room, context, command).await,
         Args::Server { server_name } => self::server::process(ev, room, context, server_name).await,
+        Args::At { user_id } => self::at::process(ev, room, context, user_id).await,
     }
 }
