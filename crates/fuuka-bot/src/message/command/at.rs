@@ -29,12 +29,18 @@ pub async fn process(
         return Ok(());
     };
 
-    let Some(member) = room.get_member(&ev.sender).await? else {
+    let Some(from_member) = room.get_member(&ev.sender).await? else {
         return Ok(());
     };
 
-    let text = format!("@{}", member.name_or_id());
-    let html = member.make_pill();
+    let Some(to_member) = room.get_member(&user_id).await? else {
+        return Ok(());
+    };
+
+    let from_text = format!("@{}", from_member.name_or_id());
+    let from_html = from_member.make_pill();
+    let to_text = format!("@{}", to_member.name_or_id());
+    let to_html = to_member.make_pill();
 
     let url = room
         .matrix_to_event_permalink(reply_target.event_id())
@@ -43,8 +49,8 @@ pub async fn process(
 
     room.send(
         RoomMessageEventContent::text_html(
-            format!("{} wants your attention on {}", text, url),
-            format!("{} wants your attention on {}", html, url),
+            format!("{}, {} wants your attention on {}", to_text, from_text, url),
+            format!("{}, {} wants your attention on {}", to_html, from_html, url),
         )
         .make_reply_to(ev, ForwardThread::No, AddMentions::Yes)
         .add_mentions(Mentions::with_user_ids([user_id])),
