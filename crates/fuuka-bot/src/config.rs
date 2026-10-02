@@ -76,13 +76,14 @@ impl<'de> Deserialize<'de> for PixivConfig {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        #[serde(untagged, rename_all = "kebab-case")]
+        #[serde(untagged)]
         #[allow(dead_code)]
         enum PixivConfig {
             Disabled {
                 #[serde(default)]
                 enabled: serde_bool::False,
             },
+            #[serde(rename_all = "kebab-case")]
             Enabled {
                 enabled: serde_bool::True,
                 token: SecretString,
@@ -280,13 +281,14 @@ impl<'de> Deserialize<'de> for PrTrackerConfig {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        #[serde(untagged, rename_all = "kebab-case")]
+        #[serde(untagged)]
         #[allow(dead_code)]
         enum PrTrackerConfig {
             Disabled {
                 #[serde(default)]
                 enabled: serde_bool::False,
             },
+            #[serde(rename_all = "kebab-case")]
             Enabled {
                 enabled: serde_bool::True,
                 cron: Option<Box<CronSchedule>>,
@@ -386,13 +388,14 @@ impl<'de> Deserialize<'de> for MediaProxyConfig {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        #[serde(untagged, rename_all = "kebab-case")]
+        #[serde(untagged)]
         #[allow(dead_code)]
         enum MediaProxyConfig {
             Disabled {
                 #[serde(default)]
                 enabled: serde_bool::False,
             },
+            #[serde(rename_all = "kebab-case")]
             Enabled {
                 enabled: serde_bool::True,
                 listen: String,
