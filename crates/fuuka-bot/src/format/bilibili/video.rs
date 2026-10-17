@@ -26,11 +26,11 @@ pub struct Counts {
 }
 pub mod text {
     use super::Context;
-    use minijinja::Environment;
+    use minijinja::{Environment, value::Serde};
 
     pub fn format<'a>(env: &Environment, context: &'a Context<'a>) -> anyhow::Result<String> {
         let text = env.get_template("[fuuka-bot]/templates/bilibili/video.txt")?;
-        Ok(text.render(context)?)
+        Ok(text.render(Serde(context))?)
     }
 
     pub fn default() -> &'static str {
@@ -40,11 +40,11 @@ pub mod text {
 
 pub mod html {
     use super::Context;
-    use minijinja::Environment;
+    use minijinja::{Environment, value::Serde};
 
     pub fn format<'a>(env: &Environment, context: &'a Context<'a>) -> anyhow::Result<String> {
         let text = env.get_template("[fuuka-bot]/templates/bilibili/video.html")?;
-        Ok(text.render(context)?)
+        Ok(text.render(Serde(context))?)
     }
 
     pub fn default() -> &'static str {

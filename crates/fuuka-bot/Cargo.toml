@@ -27,11 +27,10 @@ http-body-util.workspace = true
 imagesize = "0.15.0"
 jose-jwk = { version = "0.1.2", default-features = false }
 mime = "0.3.17"
-minijinja = { version = "2.24.0", default-features = false, features = [
+minijinja = { version = "3.0.0", default-features = false, features = [
   "builtins",
   "serde",
   "std_collections",
-  "loader",
   "speedups",
 ] }
 octocrab = { version = "0.54.4", default-features = false, features = [
