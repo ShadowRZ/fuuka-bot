@@ -76,6 +76,7 @@ features = [
   "federation-api",
 ]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
+rev = "8769f1ab4e7b5f4e4a89089370ff472f89e1d1c3"
 
 [dependencies.reqwest]
 default-features = false

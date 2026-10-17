@@ -109,11 +109,9 @@ pub(crate) async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::
                     uiaa::UserIdentifier::Matrix(client.user_id().unwrap().to_owned().into()),
                     password,
                 );
-                password.session = uiaa.session.clone();
+                password.session = Some(uiaa.session.clone());
 
-                handle
-                    .auth(Some(uiaa::AuthData::Password(password)))
-                    .await?;
+                handle.auth(uiaa::AuthData::Password(password)).await?;
             }
             CrossSigningResetAuthType::OAuth(o) => {
                 println!(
@@ -121,7 +119,7 @@ pub(crate) async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::
                             you first need to approve it at {}",
                     o.approval_url
                 );
-                handle.auth(None).await?;
+                handle.auth(o.as_auth_data()).await?;
             }
         }
     }
