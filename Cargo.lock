@@ -1473,7 +1473,6 @@ dependencies = [
  "file-format",
  "formatx",
  "futures-util",
- "graphql_client",
  "hitokoto-api",
  "hmac 0.13.0",
  "html-compare-rs",
@@ -1615,16 +1614,6 @@ dependencies = [
  "serde_json",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "graphql_client"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0f04840854efa7b06377d86fab117f598f5f5c95727067463417ccaf8aa7635"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]

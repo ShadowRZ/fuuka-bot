@@ -1,11 +1,7 @@
 use anyhow::Context as _;
 use octocrab::models::commits::GithubCommitStatus;
 
-use crate::{
-    Context,
-    config::RepositoryParts,
-    services::github::{Params, models::PullRequestState},
-};
+use crate::{Context, config::RepositoryParts, services::github::Params};
 use matrix_sdk::{
     Room,
     event_handler::Ctx,
@@ -48,16 +44,17 @@ pub async fn process(
 
     let all_branches = github
         .pr_tracker
-        .all_branches(&repository, &result.base_ref_name);
+        .all_branches(&repository, &result.base.ref_field);
 
     let mut in_branches_data: Vec<(String, bool)> = Vec::new();
 
-    if let PullRequestState::MERGED { merge_commit, .. } = result.state {
+    if result.merged_at.is_some() {
+        let merge_commit_sha = result.merge_commit_sha.unwrap().clone();
         for branch in all_branches {
             let compare = github
                 .octocrab
                 .commits(&repository.owner, &repository.repo)
-                .compare(&branch, &merge_commit.oid)
+                .compare(&branch, &merge_commit_sha)
                 .per_page(1)
                 .send()
                 .await?;
@@ -96,13 +93,13 @@ pub async fn process(
         format!(
             "{track_or_not}PR #{pr_number}: {title} https://github.com/NixOS/nixpkgs/pull/{pr_number}{in_branches}",
             track_or_not = if track { "Tracking " } else { "" },
-            title = result.title,
+            title = result.title.as_ref().unwrap(),
             in_branches = in_branches,
         ),
         format!(
             "<p>{track_or_not}<a href='https://github.com/NixOS/nixpkgs/pull/{pr_number}'>PR #{pr_number}: {title}</a>{in_branches}",
             track_or_not = if track { "Tracking " } else { "" },
-            title = result.title,
+            title = result.title.as_ref().unwrap(),
             in_branches = in_branches_html,
         ),
     ).make_reply_to(
@@ -145,45 +142,35 @@ pub async fn process(
             .await;
 
             match result {
-                Ok(result) => match result.state {
-                    PullRequestState::CLOSED { .. } => {
+                Ok(result) => {
+                    if result.merged.unwrap_or_default() {
                         if let Err(error) = room
-                            .send_queue()
-                            .send(
-                                RoomMessageEventContent::text_plain(format!(
-                                    "PR #{pr_number} is closed! 😞"
-                                ))
-                                .into(),
-                            )
+                            .send(RoomMessageEventContent::text_plain(format!(
+                                "PR #{pr_number} is now merged!"
+                            )))
                             .await
                         {
                             tracing::warn!(
                                 room_id = %room.room_id(),
-                                "Failed to queue merge info to send: {error}",
+                                "Failed to send: {error}",
+                            );
+                        }
+                        break result;
+                    } else if result.closed_at.is_some() {
+                        if let Err(error) = room
+                            .send(RoomMessageEventContent::text_plain(format!(
+                                "PR #{pr_number} is closed! 😞"
+                            )))
+                            .await
+                        {
+                            tracing::warn!(
+                                room_id = %room.room_id(),
+                                "Failed to send: {error}",
                             );
                         }
                         return Ok(());
                     }
-                    PullRequestState::MERGED { .. } => {
-                        if let Err(error) = room
-                            .send_queue()
-                            .send(
-                                RoomMessageEventContent::text_plain(format!(
-                                    "PR #{pr_number} is now merged!"
-                                ))
-                                .into(),
-                            )
-                            .await
-                        {
-                            tracing::warn!(
-                                room_id = %room.room_id(),
-                                "Failed to queue merge info to send: {error}",
-                            );
-                        }
-                        break result;
-                    }
-                    _ => {}
-                },
+                }
                 Err(error) => tracing::warn!(
                     "Failed to compare {owner}/{repo}#{pr_number}: {error}",
                     owner = &repository.owner,
@@ -194,12 +181,9 @@ pub async fn process(
 
         let client = room.client();
         let room_id = room.room_id().to_owned();
-        let base = result.base_ref_name.clone();
-        if let PullRequestState::MERGED {
-            ref merge_commit, ..
-        } = result.state
-        {
-            let head = merge_commit.oid.clone();
+        let base = result.base.ref_field.clone();
+        if result.merged_at.is_some() {
+            let head = result.merge_commit_sha.unwrap().clone();
             let github = github.clone();
             let repository = repository.clone();
             tokio::spawn(async move {
