@@ -28,6 +28,20 @@ pub async fn process(
     let Some(github) = github else {
         return Ok(());
     };
+
+    if track {
+        if !room.is_direct().await? {
+            room.send(
+                RoomMessageEventContent::text_plain(
+                    "Tracking Nixpkgs PR is only avaliable in a DM!",
+                )
+                .make_reply_to(ev, ForwardThread::No, AddMentions::Yes),
+            )
+            .await?;
+            return Ok(());
+        }
+    }
+
     let result = crate::services::github::pull_request(
         &github.octocrab,
         Params {
@@ -109,17 +123,6 @@ pub async fn process(
     )).await?;
 
     if track {
-        if !room.is_direct().await? {
-            room.send(
-                RoomMessageEventContent::text_plain(
-                    "Tracking Nixpkgs PR is only avaliable in a DM!",
-                )
-                .make_reply_to(ev, ForwardThread::No, AddMentions::Yes),
-            )
-            .await?;
-            return Ok(());
-        }
-
         let Some(ref cron) = github.cron else {
             return Ok(());
         };
