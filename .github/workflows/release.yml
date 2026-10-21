@@ -27,6 +27,7 @@ jobs:
         env:
           OUTPUT: .CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
       - name: Release
         run: gh release create -d -F .CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
