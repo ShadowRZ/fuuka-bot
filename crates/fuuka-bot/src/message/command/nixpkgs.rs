@@ -29,17 +29,13 @@ pub async fn process(
         return Ok(());
     };
 
-    if track {
-        if !room.is_direct().await? {
-            room.send(
-                RoomMessageEventContent::text_plain(
-                    "Tracking Nixpkgs PR is only avaliable in a DM!",
-                )
+    if track && !room.is_direct().await? {
+        room.send(
+            RoomMessageEventContent::text_plain("Tracking Nixpkgs PR is only avaliable in a DM!")
                 .make_reply_to(ev, ForwardThread::No, AddMentions::Yes),
-            )
-            .await?;
-            return Ok(());
-        }
+        )
+        .await?;
+        return Ok(());
     }
 
     let result = crate::services::github::pull_request(
