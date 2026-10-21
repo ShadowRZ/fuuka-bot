@@ -175,6 +175,8 @@ pub enum Args {
     Server {
         server_name: Option<OwnedServerName>,
     },
+    /// Ger all servers' infomation in a room.
+    Versions,
     /// Creates a attention on a user.
     At { user_id: OwnedUserId },
 }

@@ -14,6 +14,7 @@ mod rooms;
 mod server;
 mod unignore;
 mod user_id;
+mod versions;
 
 use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::OriginalRoomMessageEvent};
 
@@ -52,5 +53,6 @@ pub(super) async fn process(
         Args::Bot(command) => self::bot::process(ev, room, context, command).await,
         Args::Server { server_name } => self::server::process(ev, room, context, server_name).await,
         Args::At { user_id } => self::at::process(ev, room, context, user_id).await,
+        Args::Versions => self::versions::process(ev, room, context).await,
     }
 }
