@@ -65,6 +65,7 @@ pub struct Context {
     pub prefix: String,
     pub admin_user: Option<OwnedUserId>,
     pub http: reqwest::Client,
+    pub resolver: hickory_resolver::TokioResolver,
     pub hitokoto: hitokoto_api::HitokotoClient,
     pub crates: crates_api::CratesClient,
     pub media_proxy: Option<MediaProxy>,
@@ -298,10 +299,12 @@ impl Client {
                 .service(http.clone());
             crates_api::CratesClient::new(service, base_url)
         };
+        let resolver = hickory_resolver::TokioResolver::builder_tokio()?.build()?;
 
         let context = Context {
             prefix,
             http,
+            resolver,
             pixiv,
             media_proxy,
             github,

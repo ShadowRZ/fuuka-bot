@@ -13,17 +13,13 @@ pub async fn process(
     context: &Ctx<Context>,
     server_name: Option<OwnedServerName>,
 ) -> anyhow::Result<()> {
-    let Ctx(Context { http, .. }) = context;
+    let Ctx(Context { http, resolver, .. }) = context;
     let server_name = server_name.unwrap_or_else(|| room.own_user_id().server_name().to_owned());
 
     let federation_server =
-        crate::matrix::federation::discover_federation_endpoint(http, &server_name)
-            .await
-            .context(format!(
-                "Failed to query federation endpoint for {server_name}"
-            ))?;
+        crate::matrix::federation::lookup_server(resolver, http, &server_name).await?;
 
-    let server_version = crate::matrix::federation::server_version(http, federation_server.server)
+    let server_version = crate::matrix::federation::server_version(http, federation_server)
         .await
         .context(format!("Failed to query server version for {server_name}"))?;
 
