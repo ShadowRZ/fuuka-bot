@@ -16,7 +16,7 @@ use matrix_sdk::{
 };
 use tokio::task::JoinSet;
 
-#[tracing::instrument(name = "delete", skip(ev, room, context), err)]
+#[tracing::instrument(name = "versions", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

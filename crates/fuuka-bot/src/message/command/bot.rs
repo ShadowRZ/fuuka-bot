@@ -13,7 +13,7 @@ use matrix_sdk::{
     },
 };
 
-#[tracing::instrument(name = "help", skip(ev, room, context), err)]
+#[tracing::instrument(name = "bot", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

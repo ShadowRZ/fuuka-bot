@@ -1,7 +1,7 @@
 use crate::{Context, RoomExt};
 use matrix_sdk::{Room, event_handler::Ctx, ruma::events::room::message::OriginalRoomMessageEvent};
 
-#[tracing::instrument(name = "help", skip(ev, room, context), err)]
+#[tracing::instrument(name = "delete", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,

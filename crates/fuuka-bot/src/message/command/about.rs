@@ -25,7 +25,7 @@ static HELP_HTML: &str = concat!(
     "/issues</p>",
 );
 
-#[tracing::instrument(name = "help", skip(ev, room, context), err)]
+#[tracing::instrument(name = "about", skip(ev, room, context), err)]
 pub async fn process(
     ev: &OriginalRoomMessageEvent,
     room: &Room,
