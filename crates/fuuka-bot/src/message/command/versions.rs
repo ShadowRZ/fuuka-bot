@@ -164,11 +164,11 @@ pub async fn process(
         );
 
         text.push_str(&format!("* {count} servers running on {info_str}"));
-        if servers.len() != 0 {
+        if !servers.is_empty() {
             let servers: Vec<_> = servers.iter().map(ToString::to_string).collect();
             text.push_str(" (");
             text.push_str(&servers.join(", "));
-            text.push_str(")");
+            text.push(')');
         }
         text.push('\n');
     }
