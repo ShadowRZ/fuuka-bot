@@ -81,7 +81,7 @@ pub async fn process(
         });
     }
 
-    let mut result = BTreeMap::<Option<ServerInfo>, u32>::new();
+    let mut result = BTreeMap::<Option<ServerInfo>, (u32, Vec<OwnedServerName>)>::new();
 
     let mut errors = String::new();
 
@@ -89,7 +89,10 @@ pub async fn process(
         match resp {
             Ok(resp) => {
                 let Some(server) = resp.server else {
-                    result.entry(None).and_modify(|c| *c += 1).or_insert(1);
+                    result
+                        .entry(None)
+                        .and_modify(|(c, _)| *c += 1)
+                        .or_insert((1, Vec::new()));
                     continue;
                 };
 
@@ -125,8 +128,11 @@ pub async fn process(
 
                 result
                     .entry(Some(ServerInfo { software, version }))
-                    .and_modify(|c| *c += 1)
-                    .or_insert(1);
+                    .and_modify(|(c, servers)| {
+                        *c += 1;
+                        servers.push(server_name.clone());
+                    })
+                    .or_insert((1, vec![server_name]));
             }
             Err(e) => errors.push_str(&format!("* {server_name}: {e:#}\n")),
         }
@@ -134,7 +140,7 @@ pub async fn process(
 
     let mut text = "## Versions\n".to_string();
 
-    for (info, count) in result.into_iter().rev() {
+    for (info, (count, servers)) in result.into_iter().rev() {
         let Some(ServerInfo { software, version }) = info else {
             text.push_str(&format!("* {count} servers are running on (Unknown)\n"));
             continue;
@@ -157,7 +163,14 @@ pub async fn process(
                 .unwrap_or("(Unknown)".to_string())
         );
 
-        text.push_str(&format!("* {count} servers running on {info_str}\n"));
+        text.push_str(&format!("* {count} servers running on {info_str}"));
+        if servers.len() != 0 {
+            let servers: Vec<_> = servers.iter().map(ToString::to_string).collect();
+            text.push_str(" (");
+            text.push_str(&servers.join(", "));
+            text.push_str(")");
+        }
+        text.push('\n');
     }
     text.push_str("\n## Errors\n");
     text.push_str(&errors);
