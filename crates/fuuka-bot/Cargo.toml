@@ -40,7 +40,7 @@ parking_lot = "0.13.0"
 pep440_rs = "0.7.3"
 pin-project-lite = "0.2.17"
 regex = "1.13.1"
-rpassword = { version = "7.5.4" }
+rpassword = { version = "7.5.5" }
 secrecy.workspace = true
 serde.workspace = true
 serde-bool = "0.1.6"
