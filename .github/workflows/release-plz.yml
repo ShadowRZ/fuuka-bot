@@ -52,7 +52,7 @@ jobs:
         with:
           client-id: ${{ vars.HANEKOKORO_BOT_CLIENT_ID }}
           private-key: ${{ secrets.HANEKOKORO_BOT_PRIVATE_KEY }}
-          permission-checks: write
+          permission-contents: write
           permission-pull-requests: write
       - name: Run release-plz
         uses: release-plz/action@66b324fd6c72d05d2a08568492ecdd62bfb8a62b # v0.5.148
