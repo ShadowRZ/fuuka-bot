@@ -91,7 +91,7 @@ impl PixivClient {
             .header(COOKIE, cookie)
             .body(
                 http_body_util::Empty::<Bytes>::new()
-                    .map_err(|e| Error::Other(Box::new(e) as BoxError))
+                    .map_err(|_| unreachable!())
                     .boxed(),
             )?;
 

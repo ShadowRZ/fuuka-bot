@@ -155,7 +155,7 @@ impl HitokotoClient {
             .uri(uri)
             .body(
                 http_body_util::Empty::<Bytes>::new()
-                    .map_err(|e| Error::Other(Box::new(e) as BoxError))
+                    .map_err(|_| unreachable!())
                     .boxed(),
             )
             .map_err(Error::Http)?;
