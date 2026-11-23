@@ -297,7 +297,14 @@ pub mod bot {
     #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash, clap::Subcommand)]
     pub enum BotCommand {
         SetAvatar,
-        SetDisplayName { display_name: String },
+        SetDisplayName {
+            display_name: String,
+        },
+        // Configure the bot's MSC4426 status.
+        SetStatus {
+            text: Option<String>,
+            emoji: Option<String>,
+        },
     }
 }
 

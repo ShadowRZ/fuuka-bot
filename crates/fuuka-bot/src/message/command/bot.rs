@@ -78,6 +78,12 @@ pub async fn process(
                 .set_display_name(Some(&display_name))
                 .await?;
         }
+        BotCommand::SetStatus { text, emoji } => {
+            client
+                .account()
+                .set_status(emoji.unwrap_or_default(), text.unwrap_or_default())
+                .await?;
+        }
     }
 
     Ok(())

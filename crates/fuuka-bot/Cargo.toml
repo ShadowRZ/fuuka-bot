@@ -75,6 +75,7 @@ features = [
   "sqlite",
   "federation-api",
   "markdown",
+  "unstable-msc4426",
 ]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
 rev = "f4a94ad6141846f9ddaa8be5117260d1311196b9"
