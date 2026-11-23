@@ -5,21 +5,294 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-21
+
+### Added
+- *(bot)* Add versions command by @ShadowRZ
+- *(nixpkgs)* Address clippy warnings by @ShadowRZ
+- *(bot)* Add at command by @ShadowRZ
+- *(ci)* Add debug info to nix-fast-build by @ShadowRZ
+- *(tls)* Add matrix-sdk's rustls-aws-lc-rs feature as a default feature by @ShadowRZ
+- *(flake)* Add cargo-deny to Nix Flake devShell by @ShadowRZ
+- *(pr_tracker)* Add further debugging by @ShadowRZ
+- Add back PR Tracker by @ShadowRZ
+- Add ratelimit to Octocrab client by @ShadowRZ
+- *(ci)* Add audit config by @ShadowRZ
+- Add server command by @ShadowRZ
+- Add timeout configuration by @ShadowRZ
+
+### Changed
+- *(deps)* Update and cleanup dependencies by @ShadowRZ
+- *(server)* Change server version query to behave more like spec by @ShadowRZ
+- *(pr_tracker)* Don't use GraphQL, send directly by @ShadowRZ
+- *(deps)* Lock file maintenance by @renovate[bot] in [#168](https://github.com/ShadowRZ/fuuka-bot/pull/168)
+- *(deps)* Update rust to v1.99.1 by @renovate[bot] in [#167](https://github.com/ShadowRZ/fuuka-bot/pull/167)
+- *(deps)* Update rust to v1.99.0 by @renovate[bot] in [#158](https://github.com/ShadowRZ/fuuka-bot/pull/158)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#161](https://github.com/ShadowRZ/fuuka-bot/pull/161)
+- *(deps)* Update rust crate minijinja to v3 by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk to 8769f1ab4e7b5f4e4a89089370ff472f89e1d1c3 by @ShadowRZ
+- *(deps)* Update rust crate serde_json to 1.0.154 by @renovate[bot] in [#163](https://github.com/ShadowRZ/fuuka-bot/pull/163)
+- *(bot)* Clarify at command's output by @ShadowRZ
+- *(deps)* Lock file maintenance by @renovate[bot] in [#154](https://github.com/ShadowRZ/fuuka-bot/pull/154)
+- *(deps)* Update rust crate thiserror to 2.0.21 by @renovate[bot] in [#153](https://github.com/ShadowRZ/fuuka-bot/pull/153)
+- Update TOML formatting by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(deps)* Update orhun/git-cliff-action action to v4.9.1 by @renovate[bot] in [#152](https://github.com/ShadowRZ/fuuka-bot/pull/152)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#151](https://github.com/ShadowRZ/fuuka-bot/pull/151)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#147](https://github.com/ShadowRZ/fuuka-bot/pull/147)
+- *(deps)* Update rust to v1.98.1 by @renovate[bot] in [#143](https://github.com/ShadowRZ/fuuka-bot/pull/143)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#144](https://github.com/ShadowRZ/fuuka-bot/pull/144)
+- *(deps)* Update cachix/cachix-action digest to 38b0826 by @renovate[bot] in [#140](https://github.com/ShadowRZ/fuuka-bot/pull/140)
+- *(deps)* Update orhun/git-cliff-action action to v4.9.0 by @renovate[bot] in [#141](https://github.com/ShadowRZ/fuuka-bot/pull/141)
+- *(deps)* Update actions/deploy-pages action to v5.0.1 by @renovate[bot] in [#142](https://github.com/ShadowRZ/fuuka-bot/pull/142)
+- *(deps)* Update rust to v1.98.0 by @renovate[bot] in [#130](https://github.com/ShadowRZ/fuuka-bot/pull/130)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#139](https://github.com/ShadowRZ/fuuka-bot/pull/139)
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(deps)* Update rust crates versions by @ShadowRZ
+- *(deps)* Update rust crate thiserror to 2.0.20 by @renovate[bot] in [#136](https://github.com/ShadowRZ/fuuka-bot/pull/136)
+- *(deps)* Update rust crate serde to 1.0.229 by @renovate[bot] in [#134](https://github.com/ShadowRZ/fuuka-bot/pull/134)
+- *(deps)* Update rust crate http-body-util to 0.1.5 by @renovate[bot] in [#133](https://github.com/ShadowRZ/fuuka-bot/pull/133)
+- *(deps)* Update rust crate bytes to 1.12.1 by @renovate[bot] in [#131](https://github.com/ShadowRZ/fuuka-bot/pull/131)
+- *(deps)* Update rust crate http to 1.5.0 by @renovate[bot] in [#132](https://github.com/ShadowRZ/fuuka-bot/pull/132)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#129](https://github.com/ShadowRZ/fuuka-bot/pull/129)
+- *(check)* Update deny checks by @ShadowRZ
+- *(deps)* Bump dependency range for Renovate by @ShadowRZ
+- *(deps)* Update rust crate chacha20 to 0.10.2 by @ShadowRZ
+- *(ci)* Disable bitmaps related audits by @ShadowRZ
+- *(deps)* Update dependencies by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(deps)* Lock file maintenance by @renovate[bot] in [#125](https://github.com/ShadowRZ/fuuka-bot/pull/125)
+- *(deps)* Update rust crate minijinja to v2.23.0 by @renovate[bot] in [#124](https://github.com/ShadowRZ/fuuka-bot/pull/124)
+- *(deps)* Update rust crate clap to v4.6.6 by @renovate[bot] in [#123](https://github.com/ShadowRZ/fuuka-bot/pull/123)
+- *(deps)* Update rust crate minijinja to v2.22.0 by @renovate[bot] in [#122](https://github.com/ShadowRZ/fuuka-bot/pull/122)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#121](https://github.com/ShadowRZ/fuuka-bot/pull/121)
+- *(deps)* Update rust crate http to v1.5.0 by @renovate[bot] in [#120](https://github.com/ShadowRZ/fuuka-bot/pull/120)
+- *(deps)* Update rust to v1.97.1 by @renovate[bot] in [#94](https://github.com/ShadowRZ/fuuka-bot/pull/94)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#117](https://github.com/ShadowRZ/fuuka-bot/pull/117)
+- *(deps)* Update rust crate octocrab to v0.54.1 by @renovate[bot] in [#118](https://github.com/ShadowRZ/fuuka-bot/pull/118)
+- *(deps)* Update actions/checkout action to v7.0.1 by @renovate[bot] in [#114](https://github.com/ShadowRZ/fuuka-bot/pull/114)
+- *(deps)* Update rust crate fastrand to v2.5.0 by @renovate[bot] in [#109](https://github.com/ShadowRZ/fuuka-bot/pull/109)
+- *(deps)* Update rust crate formatx to v0.4.2 by @renovate[bot] in [#110](https://github.com/ShadowRZ/fuuka-bot/pull/110)
+- *(deps)* Update rust crate serde_json to v1.0.151 by @renovate[bot] in [#111](https://github.com/ShadowRZ/fuuka-bot/pull/111)
+- *(deps)* Update rust crate time to v0.3.54 by @renovate[bot] in [#112](https://github.com/ShadowRZ/fuuka-bot/pull/112)
+- *(deps)* Update rust crate tokio to v1.53.1 by @renovate[bot] in [#115](https://github.com/ShadowRZ/fuuka-bot/pull/115)
+- *(deps)* Update rust crate serde-bool to v0.1.5 by @renovate[bot] in [#116](https://github.com/ShadowRZ/fuuka-bot/pull/116)
+- *(deps)* Update rust crate clap to v4.6.4 by @renovate[bot] in [#113](https://github.com/ShadowRZ/fuuka-bot/pull/113)
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(deps)* Update rust crate thiserror to v2.0.19 by @renovate[bot] in [#108](https://github.com/ShadowRZ/fuuka-bot/pull/108)
+- *(deps)* Update rust crate serde to v1.0.229 by @renovate[bot] in [#107](https://github.com/ShadowRZ/fuuka-bot/pull/107)
+- *(deps)* Update rust crate anyhow to v1.0.104 by @renovate[bot] in [#106](https://github.com/ShadowRZ/fuuka-bot/pull/106)
+- *(deps)* Update rust-futures monorepo to v0.3.33 by @renovate[bot] in [#105](https://github.com/ShadowRZ/fuuka-bot/pull/105)
+- *(deps)* Update rust crate tokio to v1.53.0 by @renovate[bot] in [#104](https://github.com/ShadowRZ/fuuka-bot/pull/104)
+- *(deps)* Update rust crate tokio to v1.52.4 by @renovate[bot] in [#103](https://github.com/ShadowRZ/fuuka-bot/pull/103)
+- *(deps)* Update rust crate toml to v1.1.3 by @renovate[bot] in [#100](https://github.com/ShadowRZ/fuuka-bot/pull/100)
+- *(deps)* Update rust crate http-body-util to v0.1.4 by @renovate[bot] in [#98](https://github.com/ShadowRZ/fuuka-bot/pull/98)
+- *(deps)* Update rust crate http-body to v1.1.0 by @renovate[bot] in [#99](https://github.com/ShadowRZ/fuuka-bot/pull/99)
+- *(deps)* Update rust crate clap to v4.6.2 by @renovate[bot] in [#101](https://github.com/ShadowRZ/fuuka-bot/pull/101)
+- *(deps)* Update rust crate regex to v1.13.1 by @renovate[bot] in [#102](https://github.com/ShadowRZ/fuuka-bot/pull/102)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#97](https://github.com/ShadowRZ/fuuka-bot/pull/97)
+- *(deps)* Update rust crate regex to v1.13.0 by @renovate[bot] in [#95](https://github.com/ShadowRZ/fuuka-bot/pull/95)
+- *(deps)* Update rust crate bytes to v1.12.1 by @renovate[bot] in [#93](https://github.com/ShadowRZ/fuuka-bot/pull/93)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#90](https://github.com/ShadowRZ/fuuka-bot/pull/90)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#89](https://github.com/ShadowRZ/fuuka-bot/pull/89)
+- *(deps)* Update rust to v1.96.1 by @renovate[bot] in [#87](https://github.com/ShadowRZ/fuuka-bot/pull/87)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#88](https://github.com/ShadowRZ/fuuka-bot/pull/88)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#75](https://github.com/ShadowRZ/fuuka-bot/pull/75)
+- *(deps)* Update rust crate formatx to 0.3.0 by @ShadowRZ
+- *(deps)* Update rust crate quinn to 0.11.11 by @ShadowRZ
+- *(deps)* Update matrix-sdk by @ShadowRZ
+- *(deps)* Update rust crate time to v0.3.51 by @renovate[bot] in [#86](https://github.com/ShadowRZ/fuuka-bot/pull/86)
+- *(deps)* Update rust crate bytes to v1.12.0 by @renovate[bot] in [#85](https://github.com/ShadowRZ/fuuka-bot/pull/85)
+- *(deps)* Update rust crate minijinja to v2.21.0 by @renovate[bot] in [#82](https://github.com/ShadowRZ/fuuka-bot/pull/82)
+- *(deps)* Update nixbuild/nix-quick-install-action action to v35 by @renovate[bot] in [#84](https://github.com/ShadowRZ/fuuka-bot/pull/84)
+- *(deps)* Update actions/checkout action to v7 by @renovate[bot] in [#83](https://github.com/ShadowRZ/fuuka-bot/pull/83)
+- *(deps)* Update rust crate time to v0.3.49 by @renovate[bot] in [#79](https://github.com/ShadowRZ/fuuka-bot/pull/79)
+- *(deps)* Update rust crate octocrab to v0.53.1 by @renovate[bot] in [#78](https://github.com/ShadowRZ/fuuka-bot/pull/78)
+- *(deps)* Update rust crate regex to v1.12.4 by @renovate[bot] in [#77](https://github.com/ShadowRZ/fuuka-bot/pull/77)
+- *(deps)* Update rust crate http to v1.4.2 by @renovate[bot] in [#76](https://github.com/ShadowRZ/fuuka-bot/pull/76)
+- *(deps)* Update actions/checkout action to v6.0.3 by @renovate[bot] in [#72](https://github.com/ShadowRZ/fuuka-bot/pull/72)
+- *(deps)* Update rust crate rpassword to v7.5.4 by @renovate[bot] in [#71](https://github.com/ShadowRZ/fuuka-bot/pull/71)
+- *(deps)* Update rust to v1.96.0 by @renovate[bot] in [#70](https://github.com/ShadowRZ/fuuka-bot/pull/70)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#67](https://github.com/ShadowRZ/fuuka-bot/pull/67)
+- *(deps)* Update rust crate http to v1.4.1 by @renovate[bot] in [#69](https://github.com/ShadowRZ/fuuka-bot/pull/69)
+- *(deps)* Update rust crate reqwest to v0.13.4 by @renovate[bot] in [#68](https://github.com/ShadowRZ/fuuka-bot/pull/68)
+- *(deps)* Update rust crate tower-http to v0.6.11 by @renovate[bot] in [#63](https://github.com/ShadowRZ/fuuka-bot/pull/63)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#66](https://github.com/ShadowRZ/fuuka-bot/pull/66)
+- *(deps)* Update rust crate serde_json to v1.0.150 by @renovate[bot] in [#65](https://github.com/ShadowRZ/fuuka-bot/pull/65)
+- *(deps)* Update rust crate minijinja to v2.20.0 by @renovate[bot] in [#64](https://github.com/ShadowRZ/fuuka-bot/pull/64)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#61](https://github.com/ShadowRZ/fuuka-bot/pull/61)
+- *(deps)* Update cachix/cachix-action digest to 5f2d7c5 by @renovate[bot] in [#58](https://github.com/ShadowRZ/fuuka-bot/pull/58)
+- *(deps)* Update rust crate tokio to v1.52.3 by @renovate[bot] in [#60](https://github.com/ShadowRZ/fuuka-bot/pull/60)
+- *(deps)* Lock file maintenance by @renovate[bot] in [#59](https://github.com/ShadowRZ/fuuka-bot/pull/59)
+- *(deps)* Pin dependencies by @renovate[bot] in [#57](https://github.com/ShadowRZ/fuuka-bot/pull/57)
+- *(ci)* Use nix-fast-build instead by @ShadowRZ
+- *(deps)* Reconfigure Renovate by @ShadowRZ
+- *(deps)* Flake.lock: Update by @ShadowRZ
+- *(build)* Bump rust toolchain to 1.95.0 by @ShadowRZ
+- *(flake)* Override stdenv for aarch64-unknown-linux-musl devShell by @ShadowRZ
+- *(ci)* Use GHA for CI instead of Garnix by @ShadowRZ
+- *(deps)* Update dependencies by @ShadowRZ
+- *(deps)* Bump rust crate matrix-sdk by @ShadowRZ
+- *(deps)* Update rust crate axum to v0.8.9 by @renovate[bot] in [#48](https://github.com/ShadowRZ/fuuka-bot/pull/48)
+- *(deps)* Update rust crate clap to v4.6.1 by @renovate[bot] in [#49](https://github.com/ShadowRZ/fuuka-bot/pull/49)
+- *(deps)* Update orhun/git-cliff-action action to v4.8.0 by @renovate[bot] in [#51](https://github.com/ShadowRZ/fuuka-bot/pull/51)
+- *(deps)* Update rust crate reqwest to v0.13.3 by @renovate[bot] in [#52](https://github.com/ShadowRZ/fuuka-bot/pull/52)
+- *(deps)* Update rust crate rpassword to v7.5.2 by @renovate[bot] in [#53](https://github.com/ShadowRZ/fuuka-bot/pull/53)
+- *(deps)* Update rust crate tokio to v1.52.2 by @renovate[bot] in [#54](https://github.com/ShadowRZ/fuuka-bot/pull/54)
+- *(deps)* Update rust crate tower-http to v0.6.10 by @renovate[bot] in [#56](https://github.com/ShadowRZ/fuuka-bot/pull/56)
+- *(deps)* Update actions/upload-pages-artifact action to v5 by @renovate[bot] in [#45](https://github.com/ShadowRZ/fuuka-bot/pull/45)
+- *(deps)* Update softprops/action-gh-release action to v3 by @renovate[bot] in [#47](https://github.com/ShadowRZ/fuuka-bot/pull/47)
+- *(deps)* Update rust crate tokio to v1.52.1 by @renovate[bot] in [#44](https://github.com/ShadowRZ/fuuka-bot/pull/44)
+- *(tls)* Ring -> aws-lc-rs by @ShadowRZ
+- *(deps)* Update rust crate fastrand to v2.4.1 by @renovate[bot] in [#41](https://github.com/ShadowRZ/fuuka-bot/pull/41)
+- *(deps)* Update rust crate octocrab to v0.49.7 by @renovate[bot] in [#40](https://github.com/ShadowRZ/fuuka-bot/pull/40)
+- *(deps)* Update rust crate tokio to v1.51.0 by @renovate[bot] in [#30](https://github.com/ShadowRZ/fuuka-bot/pull/30)
+- *(deps)* Bump rust crate matrix-sdk by @ShadowRZ
+- Revert "fix(deps): update rust crate sha2 to 0.11.0 " by @ShadowRZ
+- *(build)* Bump rust toolchain to 1.94.1 by @ShadowRZ
+- Update by @ShadowRZ
+- *(deps)* Update rust crate minijinja to v2.19.0 by @renovate[bot] in [#31](https://github.com/ShadowRZ/fuuka-bot/pull/31)
+- *(deps)* Update rust crate clap to v4.6.0 by @renovate[bot] in [#32](https://github.com/ShadowRZ/fuuka-bot/pull/32)
+- *(deps)* Update rust crate tracing-subscriber to v0.3.23 by @renovate[bot] in [#33](https://github.com/ShadowRZ/fuuka-bot/pull/33)
+- *(deps)* Update softprops/action-gh-release action to v2.6.1 by @renovate[bot] in [#34](https://github.com/ShadowRZ/fuuka-bot/pull/34)
+- *(deps)* Update actions/configure-pages action to v6 by @renovate[bot] in [#37](https://github.com/ShadowRZ/fuuka-bot/pull/37)
+- *(deps)* Update actions/deploy-pages action to v5 by @renovate[bot] in [#38](https://github.com/ShadowRZ/fuuka-bot/pull/38)
+- *(deps)* Update rust crate octocrab to v0.49.6 by @renovate[bot] in [#35](https://github.com/ShadowRZ/fuuka-bot/pull/35)
+- *(deps)* Bump rust crate matrix-sdk by @ShadowRZ
+- *(build)* Bump rust toolchain to 1.94.0 by @ShadowRZ
+- Update by @ShadowRZ
+- *(deps)* Update rust crate pin-project-lite to v0.2.17 by @renovate[bot] in [#29](https://github.com/ShadowRZ/fuuka-bot/pull/29)
+- Simplify service types by @ShadowRZ
+- *(pixiv)* Use a new pixiv ajax API crate by @ShadowRZ
+- *(deps)* Bump Cargo.lock by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- Update by @ShadowRZ
+- Move to Cargo workspaces by @ShadowRZ
+- *(jerryxiao)* Use formatx for formatted content by @ShadowRZ
+- Fixup error type formatting by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(crates)* Use tower::Service based API for HTTP interactions by @ShadowRZ
+- *(hitokoto)* Use tower::Service based API for HTTP interactions by @ShadowRZ
+- *(github)* Use HttpCacheLayer from octocrab by @ShadowRZ
+- *(hitokoto)* Fill full hitokoto response payload by @ShadowRZ
+- Update tracing logs to include prefixs by @ShadowRZ
+- *(nixpkgs)* Also send message on PR closed by @ShadowRZ
+- *(nixpkgs)* Also send message on PR merged by @ShadowRZ
+- Enable send queue by @ShadowRZ
+- Use ServiceBuilder methods for rate limiting by @ShadowRZ
+- Pin pixrs version by @ShadowRZ
+- *(deps)* Update rust crate clap to v4.5.60 by @renovate[bot] in [#22](https://github.com/ShadowRZ/fuuka-bot/pull/22)
+- *(deps)* Update rust crate anyhow to v1.0.102 by @renovate[bot] in [#26](https://github.com/ShadowRZ/fuuka-bot/pull/26)
+- *(deps)* Update rust crate minijinja to v2.16.0 by @renovate[bot] in [#27](https://github.com/ShadowRZ/fuuka-bot/pull/27)
+- *(deps)* Update orhun/git-cliff-action action to v4.7.1 by @renovate[bot] in [#28](https://github.com/ShadowRZ/fuuka-bot/pull/28)
+- Stop Renovate from bumping ruma git hash by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- Use matrix-sdk's federation-api feature by @ShadowRZ
+- Cleanup by @ShadowRZ
+- *(deps)* Bump Cargo.lock by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- Ensure test code are gated with cfg directive by @ShadowRZ
+- Rewrite Nixpkgs PR tracker without tracking feature by @ShadowRZ
+- Move to new Context API by @ShadowRZ
+- Prepare out for refactoring GitHub support by @ShadowRZ
+- Prepare for using octocrab by @ShadowRZ
+- Reorgnaize configs by @ShadowRZ
+- *(docs)* Cleanup crate docs by @ShadowRZ
+- Move membership stream to new path by @ShadowRZ
+- *(deps)* Update rust crate toml to v0.9.12 by @ShadowRZ
+- Relicense to AGPL-3.0-or-later by @ShadowRZ
+- *(media-proxy)* Use matrix_sdk::Client directly instead by @ShadowRZ
+- Move environment functions to separate module by @ShadowRZ
+- Move Matrix functions to crate::matrix by @ShadowRZ
+- *(deps)* Update rust crate thiserror to v2.0.18 by @ShadowRZ
+- *(deps)* Bump Cargo.lock by @ShadowRZ
+- *(deps)* Update rust crate reqwest to v0.12.28 by @ShadowRZ
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- Reformat code by @ShadowRZ
+- Update by @ShadowRZ
+- Use builder pattern for constructing client by @ShadowRZ
+- *(deps)* Update rust crate anyhow to v1.0.101 by @renovate[bot] in [#20](https://github.com/ShadowRZ/fuuka-bot/pull/20)
+- *(deps)* Update rust crate time to v0.3.47 by @renovate[bot] in [#19](https://github.com/ShadowRZ/fuuka-bot/pull/19)
+- *(fmt)* Reformat codes by @ShadowRZ
+- *(command)* Allow Pixiv ranking to pass category by @ShadowRZ
+- Move bot command system to clap by @ShadowRZ
+- *(cli)* Use clap for parsing CLI arguments by @ShadowRZ
+- Move some matrix related functions to crate::matrix by @ShadowRZ
+- *(deps)* Update rust crate regex to v1.12.3 by @renovate[bot] in [#18](https://github.com/ShadowRZ/fuuka-bot/pull/18)
+- *(deps)* Update rust crate bytes to v1.11.1 by @renovate[bot] in [#17](https://github.com/ShadowRZ/fuuka-bot/pull/17)
+
+### Fixed
+- *(ci)* Correct GitHub release action (x3) by @ShadowRZ
+- *(ci)* Correct GitHub release action (x2) by @ShadowRZ
+- *(ci)* Correct GitHub release action by @ShadowRZ
+- *(bot)* Correct span names by @ShadowRZ
+- *(nixpkgs)* Move track option check outside by @ShadowRZ
+- *(deps)* Update rust crate octocrab to 0.54.5 by @renovate[bot] in [#169](https://github.com/ShadowRZ/fuuka-bot/pull/169)
+- *(deps)* Update rust crate minijinja to 3.0.1 by @renovate[bot] in [#160](https://github.com/ShadowRZ/fuuka-bot/pull/160)
+- *(deps)* Update rust crate tokio to 1.53.3 by @renovate[bot] in [#166](https://github.com/ShadowRZ/fuuka-bot/pull/166)
+- *(deps)* Update rust crate octocrab to 0.54.4 by @renovate[bot] in [#165](https://github.com/ShadowRZ/fuuka-bot/pull/165)
+- *(deps)* Update rust crate sha2 to 0.11.1 by @renovate[bot] in [#164](https://github.com/ShadowRZ/fuuka-bot/pull/164)
+- *(deps)* Update rust crate toml to 1.1.8 by @renovate[bot] in [#162](https://github.com/ShadowRZ/fuuka-bot/pull/162)
+- *(deps)* Update rust crate octocrab to 0.54.3 by @renovate[bot] in [#159](https://github.com/ShadowRZ/fuuka-bot/pull/159)
+- *(deps)* Update rust crate tokio to 1.53.2 by @renovate[bot] in [#156](https://github.com/ShadowRZ/fuuka-bot/pull/156)
+- *(deps)* Update rust crate serde-bool to 0.1.6 by @renovate[bot] in [#155](https://github.com/ShadowRZ/fuuka-bot/pull/155)
+- *(deps)* Update rust crate toml to 1.1.7 by @renovate[bot] in [#157](https://github.com/ShadowRZ/fuuka-bot/pull/157)
+- *(config)* Move serde field rename to variant by @ShadowRZ
+- *(bot)* Don't respawn send queue by @ShadowRZ
+- *(deps)* Update rust crate clap to 4.6.7 by @renovate[bot] in [#150](https://github.com/ShadowRZ/fuuka-bot/pull/150)
+- *(deps)* Update rust crate octocrab to 0.54.2 by @renovate[bot] in [#149](https://github.com/ShadowRZ/fuuka-bot/pull/149)
+- *(deps)* Update rust crate crc32fast to 1.5.2 by @renovate[bot] in [#148](https://github.com/ShadowRZ/fuuka-bot/pull/148)
+- *(deps)* Update rust crate toml to 1.1.6 by @renovate[bot] in [#146](https://github.com/ShadowRZ/fuuka-bot/pull/146)
+- *(deps)* Update rust crate reqwest to 0.13.5 by @renovate[bot] in [#145](https://github.com/ShadowRZ/fuuka-bot/pull/145)
+- *(ci)* Don't use nix-fast-build by @ShadowRZ
+- *(ci)* Correct CI nix-fast-build command by @ShadowRZ
+- *(matrix)* Fix federation OutgoingRequest import by @ShadowRZ
+- *(deps)* Update rust crate imagesize to 0.15.0 by @renovate[bot] in [#96](https://github.com/ShadowRZ/fuuka-bot/pull/96)
+- *(deps)* Update rust crate octocrab to 0.54.0 by @renovate[bot] in [#92](https://github.com/ShadowRZ/fuuka-bot/pull/92)
+- *(deps)* Update rust crate formatx to 0.4.0 by @renovate[bot] in [#91](https://github.com/ShadowRZ/fuuka-bot/pull/91)
+- *(audit)* Ignore RUSTSEC-2026-0173 for now by @ShadowRZ
+- *(deps)* Update rust crate tower-http to 0.7.0 by @renovate[bot] in [#81](https://github.com/ShadowRZ/fuuka-bot/pull/81)
+- *(deps)* Update rust crate octocrab to 0.53.0 by @renovate[bot] in [#74](https://github.com/ShadowRZ/fuuka-bot/pull/74)
+- *(deps)* Update rust crate octocrab to 0.52.0 by @renovate[bot] in [#73](https://github.com/ShadowRZ/fuuka-bot/pull/73)
+- *(deps)* Update rust crate octocrab to 0.51.0 by @renovate[bot] in [#62](https://github.com/ShadowRZ/fuuka-bot/pull/62)
+- *(ci)* Actually setup Cachix in CI by @ShadowRZ
+- Fix clippy lint by @ShadowRZ
+- *(github)* Directly use respose type since octocrab handles errors now by @ShadowRZ
+- *(send_queue)* Try to delegate send queue progress reporing to a new task by @ShadowRZ
+- *(deps)* Update rust crate octocrab to 0.50.0 by @renovate[bot] in [#55](https://github.com/ShadowRZ/fuuka-bot/pull/55)
+- *(deps)* Update rust crate rustls-webpki to 0.103.10 by @ShadowRZ
+- *(deps)* Update rust crate sha2, hmac by @ShadowRZ
+- *(deps)* Update rust crate toml to v1 by @renovate[bot] in [#23](https://github.com/ShadowRZ/fuuka-bot/pull/23)
+- *(deps)* Update rust crate sha2 to 0.11.0 by @renovate[bot] in [#36](https://github.com/ShadowRZ/fuuka-bot/pull/36)
+- *(deps)* Update rust crate file-format to 0.29.0 by @renovate[bot] in [#39](https://github.com/ShadowRZ/fuuka-bot/pull/39)
+- *(config)* Allow default value for tag triggers by @ShadowRZ
+- Fix example config by @ShadowRZ
+- Fix log emitting by @ShadowRZ
+- Fix serde defaults by @ShadowRZ
+
+### Removed
+- *(flake)* Remove flake-utils and flake-parts by @ShadowRZ
+- Remove custom error type by @ShadowRZ
+- Remove tokio-console and direct journald support by @ShadowRZ
+- Remove hickory-dns support for reqwest by @ShadowRZ
+- Remove rustls-tls-native-roots feature by @ShadowRZ
+- Remove interactive-login feature by @ShadowRZ
+
 ## [0.4.7] - 2026-02-02
 
 ### Added
-- *(command)* Add bot subcommands
-- *(command)* Add delete command
-- Add secret storage commands
-- Add recover-cross-signing subcommand
-- *(dev)* Add Justfile
-- *(build)* Add more targets
+- *(command)* Add bot subcommands by @ShadowRZ
+- *(command)* Add delete command by @ShadowRZ
+- Add secret storage commands by @ShadowRZ
+- Add recover-cross-signing subcommand by @ShadowRZ
+- *(dev)* Add Justfile by @ShadowRZ
+- *(build)* Add more targets by @ShadowRZ
 
 ### Changed
-- Make default timeout a static variable
-- Increase Matrix client timeout to 5 minutes
-- *(build)* Bump rust toolchain to 1.93.0
-- Update
+- Make default timeout a static variable by @ShadowRZ
+- Increase Matrix client timeout to 5 minutes by @ShadowRZ
+- *(build)* Bump rust toolchain to 1.93.0 by @ShadowRZ
+- Update by @ShadowRZ
 - *(deps)* Update rust crate time to v0.3.46 by @renovate[bot] in [#16](https://github.com/ShadowRZ/fuuka-bot/pull/16)
 - *(deps)* Update rust crate matrix-sdk by @ShadowRZ
 - *(deps)* Update rust crate thiserror to v2.0.18 by @renovate[bot] in [#15](https://github.com/ShadowRZ/fuuka-bot/pull/15)
@@ -37,8 +310,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configure Renovate by @ShadowRZ
 
 ### Fixed
-- *(changelog)* Properly categorize some commits
-- Fetch backup status from server
+- *(changelog)* Properly categorize some commits by @ShadowRZ
+- Fetch backup status from server by @ShadowRZ
 - *(deps)* Update rust crate graphql_client to 0.16.0 by @renovate[bot] in [#12](https://github.com/ShadowRZ/fuuka-bot/pull/12)
 - *(docs)* Fix mdbook docs build by @ShadowRZ
 
@@ -558,6 +831,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Contributors
 * @ShadowRZ made their first contribution
 
+[unreleased]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.7...v0.5.0
 [0.4.7]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/ShadowRZ/fuuka-bot/compare/v0.4.4...v0.4.5
