@@ -6,7 +6,10 @@ no-default-features = false
 [advisories]
 unmaintained = "workspace"
 unsound = "all"
-ignore = [{ id = "RUSTSEC-2023-0071", reason = "JWK not used" }]
+ignore = [
+  { id = "RUSTSEC-2023-0071", reason = "JWK not used" },
+  { id = "RUSTSEC-2026-0387", reason = "JWK not used" },
+]
 
 [licenses]
 allow = [
