@@ -1,4 +1,4 @@
-name: Create a release for the tag
+name: release
 
 on:
   push:
@@ -10,11 +10,13 @@ permissions: {}
 
 jobs:
   release:
+    name: release
     runs-on: ubuntu-slim
     permissions:
       contents: write
     steps:
       - name: Checkout
+        # taiki-e/checkout-action@v1 doesn't support --depth=0
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0

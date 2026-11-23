@@ -1,0 +1,58 @@
+name: flake
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions: {}
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.ref == 'refs/heads/master' && format('flake-master-{0}', github.sha) || format('flake-{0}', github.ref)  }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: taiki-e/checkout-action@7d1e50e93dc4fb3bba58f85018fadf77898aee8b # v1.4.2
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - name: Configure Cachix
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: fuuka-bot
+          extraPullNames: nix-community
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          skipPush: true
+      - name: Check Flake
+        run: nix flake check
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.ref == 'refs/heads/master' && format('flake-master-{0}', github.sha) || format('flake-{0}', github.ref)  }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - name: Configure Cachix
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: fuuka-bot
+          extraPullNames: nix-community
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: Check Flake
+        run: nix build
