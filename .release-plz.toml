@@ -33,10 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
 body = """
-{%- macro remote_url() -%}
-  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
-{%- endmacro -%}
-
 {% if version -%}
     ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else -%}
@@ -50,23 +46,10 @@ body = """
             {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
             {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
             {% if commit.remote.pr_number %} in \
-            [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
+            [#{{ commit.remote.pr_number }}]({{ remote.link }}/pull/{{ commit.remote.pr_number }}) \
             {%- endif -%}
     {% endfor %}
 {% endfor %}
-
-{%- if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
-    ### New Contributors
-{%- endif -%}
-
-{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-  * @{{ contributor.username }} made their first contribution
-    {%- if contributor.pr_number %} in \
-      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
-    {%- endif %}
-{%- endfor %}\n
-
-{%- if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}{% raw %}\n{% endraw -%}{% endif %}
 
 """
 trim = true
@@ -95,6 +78,10 @@ commit_parsers = [
   { message = "^fix", group = "Fixed" },
   { message = "^.*: fix", group = "Fixed" },
   { message = "^.*", group = "Changed" },
+]
+link_parsers = [
+  { pattern = "#(\\d+)", href = "{{ remote.link }}/issues/$1" },
+  { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1" },
 ]
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
