@@ -3,13 +3,16 @@ changelog_update = false
 dependencies_update = false
 semver_check = false
 publish = false
+git_only = true
 git_tag_enable = false
 git_release_draft = true
 git_release_enable = false
+release = false
 pr_name = "chore: release v{{ version }}"
 
 [[package]]
 name = "fuuka-bot"
+release = true
 changelog_update = true
 changelog_include = ["fuuka_bot"]
 changelog_path = "./CHANGELOG.md"
