@@ -150,7 +150,9 @@ pub enum Args {
         #[arg(name = "MODE_OR_ILLUST_ID", default_value = "daily")]
         command: self::pixiv::PixivCommand,
     },
-    /// Bot management commands,
+    /// Bot management commands.
+    ///
+    /// While help are shown, these commands only have effects if invoked by a admin user.
     #[command(subcommand)]
     Bot(self::bot::BotCommand),
     /// Nixpkgs command.
@@ -296,11 +298,15 @@ pub mod pixiv {
 pub mod bot {
     #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Hash, clap::Subcommand)]
     pub enum BotCommand {
+        // Set the bot's avatar.
+        //
+        // You need to reply to an image message to set the avatar.
         SetAvatar,
+        // Set the bot's display name.
         SetDisplayName {
             display_name: String,
         },
-        // Configure the bot's MSC4426 status.
+        // Set the bot's MSC4426 status.
         SetStatus {
             text: Option<String>,
             emoji: Option<String>,
