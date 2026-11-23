@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-11-23
+
+### Added
+- *(docs)* Add rustdoc for commands by @ShadowRZ
+- *(bot)* Add MSC4426 command by @ShadowRZ
+- *(versions)* Add server names to the output by @ShadowRZ
+
+### Changed
+- *(deps)* Update rust crate matrix-sdk by @ShadowRZ
+- *(versions)* Fix clippy lints by @ShadowRZ
+
+### Fixed
+- *(deps)* Update rust crate regex to 1.13.2 by @renovate[bot] in [#186](https://github.com/ShadowRZ/fuuka-bot/pull/186)
+- *(deps)* Update rust crate clap to 4.6.9 by @renovate[bot] in [#184](https://github.com/ShadowRZ/fuuka-bot/pull/184)
+- *(deps)* Update rust crate pin-project-lite to 0.2.18 by @renovate[bot] in [#187](https://github.com/ShadowRZ/fuuka-bot/pull/187)
+- *(deps)* Update rust crate rpassword to 7.5.5 by @renovate[bot] in [#182](https://github.com/ShadowRZ/fuuka-bot/pull/182)
+- *(deps)* Update rust crate crc32fast to 1.5.5 by @renovate[bot] in [#181](https://github.com/ShadowRZ/fuuka-bot/pull/181)
+- *(deps)* Update rust crate minijinja to 3.1.0 by @renovate[bot] in [#180](https://github.com/ShadowRZ/fuuka-bot/pull/180)
+- *(deps)* Update rust crate toml to 1.2.1 by @renovate[bot] in [#178](https://github.com/ShadowRZ/fuuka-bot/pull/178)
+- *(deps)* Update rust crate mime to 0.3.18 by @renovate[bot] in [#179](https://github.com/ShadowRZ/fuuka-bot/pull/179)
+- *(deps)* Update rust crate crc32fast to 1.5.4 by @renovate[bot] in [#177](https://github.com/ShadowRZ/fuuka-bot/pull/177)
+- *(deps)* Update rust crate octocrab to 0.54.9 by @renovate[bot] in [#176](https://github.com/ShadowRZ/fuuka-bot/pull/176)
+- *(deps)* Update rust crate minijinja to 3.0.5 by @renovate[bot] in [#175](https://github.com/ShadowRZ/fuuka-bot/pull/175)
+- *(deps)* Update rust crate minijinja to 3.0.3 by @renovate[bot] in [#172](https://github.com/ShadowRZ/fuuka-bot/pull/172)
+- *(deps)* Update rust crate tokio to 1.54.1 by @renovate[bot] in [#173](https://github.com/ShadowRZ/fuuka-bot/pull/173)
+- *(deps)* Update rust crate parking_lot to 0.13.0 by @renovate[bot] in [#171](https://github.com/ShadowRZ/fuuka-bot/pull/171)
+- *(deps)* Update rust crate crc32fast to 1.5.3 by @renovate[bot] in [#170](https://github.com/ShadowRZ/fuuka-bot/pull/170)
+
+
 ## [0.5.0] - 2026-10-21
 
 ### Added
