@@ -52,5 +52,5 @@ jobs:
           name: fuuka-bot
           extraPullNames: nix-community
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Check Flake
+      - name: Build
         run: nix build

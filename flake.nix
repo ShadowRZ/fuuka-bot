@@ -43,7 +43,6 @@
         in
         {
           inherit (packages)
-            fuuka-bot
             fuuka-bot-clippy
             fuuka-bot-doc
             fuuka-bot-fmt
