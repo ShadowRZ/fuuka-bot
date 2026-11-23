@@ -109,7 +109,7 @@ pub(crate) async fn reset_cross_signing(client: &matrix_sdk::Client) -> anyhow::
                     uiaa::UserIdentifier::Matrix(client.user_id().unwrap().to_owned().into()),
                     password,
                 );
-                password.session = Some(uiaa.session.clone());
+                password.session = Some(uiaa.session().to_string());
 
                 handle.auth(uiaa::AuthData::Password(password)).await?;
             }

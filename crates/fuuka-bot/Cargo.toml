@@ -77,7 +77,7 @@ features = [
   "markdown",
 ]
 git = "https://github.com/matrix-org/matrix-rust-sdk"
-rev = "8769f1ab4e7b5f4e4a89089370ff472f89e1d1c3"
+rev = "f4a94ad6141846f9ddaa8be5117260d1311196b9"
 
 [dependencies.reqwest]
 default-features = false
