@@ -64,7 +64,7 @@ tracing-subscriber = { version = "0.3.23", features = [
   "env-filter",
   "parking_lot",
 ] }
-url = { version = "2.5.8", features = ["serde"] }
+url = { version = "2.5.9", features = ["serde"] }
 
 [dependencies.matrix-sdk]
 default-features = false
