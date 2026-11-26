@@ -6,6 +6,8 @@ use matrix_sdk::{
     media::{MediaFormat, MediaRequestParameters},
     ruma::events::{
         AnyMessageLikeEvent, AnyTimelineEvent,
+        reaction::ReactionEventContent,
+        relation::Annotation,
         room::{
             MediaSource,
             message::{MessageType, OriginalRoomMessageEvent, RoomMessageEvent},
@@ -85,6 +87,12 @@ pub async fn process(
                 .await?;
         }
     }
+
+    room.send(ReactionEventContent::new(Annotation::new(
+        ev.event_id.clone(),
+        "✅".to_string(),
+    )))
+    .await?;
 
     Ok(())
 }
