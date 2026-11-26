@@ -36,7 +36,6 @@ minijinja = { version = "3.1.0", default-features = false, features = [
 octocrab = { version = "0.54.9", default-features = false, features = [
   "jwt-rust-crypto",
 ] }
-parking_lot = "0.13.0"
 pep440_rs = "0.7.3"
 pin-project-lite = "0.2.18"
 regex = "1.13.2"
