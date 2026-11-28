@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-11-28
+
+### Added
+- *(bot)* Add reaction when success by @ShadowRZ
+
+### Fixed
+- *(deps)* Update rust crate crc32fast to 1.5.6 by @renovate[bot] in [#196](https://github.com/ShadowRZ/fuuka-bot/pull/196)
+- *(deps)* Update rust crate clap to 4.6.10 by @renovate[bot] in [#198](https://github.com/ShadowRZ/fuuka-bot/pull/198)
+- *(deps)* Update rust crate hickory-resolver to 0.26.4 by @renovate[bot] in [#199](https://github.com/ShadowRZ/fuuka-bot/pull/199)
+- *(deps)* Update rust crate toml to 1.2.3 by @renovate[bot] in [#200](https://github.com/ShadowRZ/fuuka-bot/pull/200)
+- *(deps)* Update rust crate anyhow to 1.0.105 by @renovate[bot] in [#195](https://github.com/ShadowRZ/fuuka-bot/pull/195)
+- *(deps)* Update rust crate url to 2.5.9 by @renovate[bot] in [#192](https://github.com/ShadowRZ/fuuka-bot/pull/192)
+- *(deps)* Update rust crate toml to 1.2.2 by @renovate[bot] in [#193](https://github.com/ShadowRZ/fuuka-bot/pull/193)
+
+### Removed
+- *(deps)* Remove unused parking_lot by @ShadowRZ
+
+
 ## [0.5.1] - 2026-11-23
 
 ### Added
